@@ -20,9 +20,9 @@ service cloud.firestore {
       return data.keys().hasAll(['name', 'slug', 'adminEmail', 'adminName', 'whatsapp', 'packageId', 'status', 'createdAt']) &&
              data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
              data.slug is string && data.slug.size() > 0 && data.slug.size() < 100 &&
-             data.adminEmail is string && data.adminEmail.size() > 5 &&
+             data.adminEmail is string && data.adminEmail.size() >= 3 &&
              data.adminName is string && data.adminName.size() > 0 &&
-             data.whatsapp is string && data.whatsapp.size() > 5 &&
+             data.whatsapp is string && data.whatsapp.size() >= 4 &&
              data.packageId in ['basic', 'pro', 'enterprise'] &&
              data.status in ['pending', 'active'] &&
              data.createdAt == request.time &&
@@ -34,8 +34,10 @@ service cloud.firestore {
     match /schools/{schoolId} {
       allow get: if true;
       allow list: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
-      allow create: if isValidId(schoolId) && isValidSchool(request.resource.data);
-      allow update: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
+      allow create: if isValidId(schoolId) && 
+                      (request.auth.uid == schoolId || request.auth.token.email.lower() == 'ismanto095@gmail.com') && 
+                      isValidSchool(request.resource.data);
+      allow update: if request.auth.token.email.lower() == 'ismanto095@gmail.com' || (request.auth.uid == schoolId);
     }
   }
 }
