@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useParams, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useParams, Outlet, Navigate } from 'react-router-dom';
 import { SchoolProvider, useSchool } from './contexts/SchoolContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -33,27 +33,37 @@ import SuperAdmin from './pages/SuperAdmin';
 
 function SchoolLoader() {
   const { schoolSlug } = useParams();
-  const { setSchoolBySlug, loading, error } = useSchool();
+  const { setSchoolBySlug, school, loading, error } = useSchool();
 
   useEffect(() => {
     if (schoolSlug) {
       setSchoolBySlug(schoolSlug);
     }
-  }, [schoolSlug]);
+  }, [schoolSlug, setSchoolBySlug]);
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen bg-brand-bg">
-      <div className="w-12 h-12 border-4 border-brand-accent border-t-brand-sidebar rounded-full animate-spin"></div>
+    <div className="flex items-center justify-center min-h-screen bg-white">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-brand-accent border-t-brand-sidebar rounded-full animate-spin"></div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 animate-pulse">Memuat Institusi...</p>
+      </div>
     </div>
   );
   
   if (error) return (
-    <div className="flex items-center justify-center min-h-screen bg-brand-bg flex-col gap-4">
-      <div className="text-4xl font-black text-brand-sidebar italic uppercase">Error <span className="text-brand-accent">404</span></div>
-      <p className="font-bold text-slate-500 uppercase tracking-widest text-xs">{error}</p>
-      <a href="/" className="bg-brand-sidebar text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest">Kembali ke Beranda</a>
+    <div className="flex items-center justify-center min-h-screen bg-slate-50 flex-col gap-6 p-6 text-center">
+      <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center">
+        <div className="text-4xl font-black text-red-500 italic uppercase">404</div>
+      </div>
+      <div className="space-y-2">
+        <h2 className="text-2xl font-black text-brand-sidebar italic uppercase leading-tight">Sekolah <span className="text-red-500">Tidak Ditemukan</span></h2>
+        <p className="font-bold text-slate-400 uppercase tracking-widest text-[10px] max-w-xs mx-auto">Kami tidak dapat menemukan institusi dengan alamat: <span className="text-brand-sidebar underline italic">{schoolSlug}</span></p>
+      </div>
+      <a href="/" className="bg-brand-sidebar text-white px-10 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-brand-sidebar/20 hover:scale-105 active:scale-95 transition-all italic">Kembali ke Beranda</a>
     </div>
   );
+
+  if (!school && !loading && !error) return null;
 
   return <Outlet />;
 }
@@ -71,6 +81,7 @@ export default function App() {
           
           {/* Multi-tenancy Routes */}
           <Route path="/s/:schoolSlug" element={<SchoolLoader />}>
+             <Route index element={<Navigate to="dashboard" replace />} />
              <Route path="login" element={<Login />} />
              <Route path="dashboard" element={<Layout />}>
                 <Route index element={<Dashboard />} />
