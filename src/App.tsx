@@ -27,6 +27,7 @@ import Relasi from './pages/Relasi';
 import Keuangan from './pages/Keuangan';
 import Diskusi from './pages/Diskusi';
 import AiAsisten from './pages/AiAsisten';
+import Purchase from './pages/Purchase';
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/preview" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/purchase" element={<Purchase />} />
         
         <Route path="/dashboard" element={<Layout />}>
           <Route index element={<Dashboard />} />

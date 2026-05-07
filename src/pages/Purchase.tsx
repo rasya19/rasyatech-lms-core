@@ -1,0 +1,362 @@
+import React, { useState } from 'react';
+import { motion } from 'motion/react';
+import { 
+  Check, 
+  ArrowRight, 
+  ShieldCheck, 
+  Zap, 
+  Globe, 
+  Users, 
+  CreditCard,
+  Building,
+  Rocket
+} from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { cn } from '@/src/lib/utils';
+
+const packages = [
+  {
+    id: 'basic',
+    name: 'Paket Mandiri',
+    price: 'Rp 450.000',
+    period: '/tahun',
+    description: 'Cocok untuk guru atau tutor individu yang ingin memulai kelas online.',
+    icon: <Zap className="w-6 h-6" />,
+    features: [
+      'Hingga 50 Siswa',
+      'Penyimpanan Materi 5GB',
+      'Ujian & Kuis Otomatis',
+      'Laporan Nilai Dasar',
+      'Support via Email'
+    ],
+    color: 'brand-accent'
+  },
+  {
+    id: 'pro',
+    name: 'Paket Sekolah',
+    price: 'Rp 1.250.000',
+    period: '/tahun',
+    description: 'Solusi lengkap untuk sekolah dengan fitur manajemen guru dan siswa.',
+    icon: <Rocket className="w-6 h-6" />,
+    popular: true,
+    features: [
+      'Hingga 500 Siswa',
+      'Penyimpanan Materi 50GB',
+      'Multi-Guru & Staf',
+      'E-Raport & SKL Otomatis',
+      'AI Assistant Integrasi',
+      'Support Prioritas 24/7'
+    ],
+    color: 'brand-sidebar'
+  },
+  {
+    id: 'enterprise',
+    name: 'Paket Institusi',
+    price: 'Custom',
+    period: '',
+    description: 'Untuk Yayasan atau Dinas Pendidikan dengan banyak cabang sekolah.',
+    icon: <Building className="w-6 h-6" />,
+    features: [
+      'Siswa Tanpa Batas',
+      'Penyimpanan Cloud Dedicated',
+      'White-label (Logo Sendiri)',
+      'API Integrasi Custom',
+      'Dedicated Account Manager'
+    ],
+    color: 'slate-800'
+  }
+];
+
+export default function Purchase() {
+  const [selectedPackage, setSelectedPackage] = useState(packages[1]);
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    name: '',
+    schoolName: '',
+    email: '',
+    phone: '',
+    address: ''
+  });
+  const navigate = useNavigate();
+
+  const handleNext = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (step === 1) setStep(2);
+    else {
+      // Logic for processing purchase
+      alert(`Pendaftaran ${selectedPackage.name} berhasil! Tim kami akan menghubungi Anda via WhatsApp.`);
+      navigate('/login');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-brand-bg font-sans selection:bg-brand-accent selection:text-white">
+      {/* Header */}
+      <header className="bg-white border-b border-brand-border py-4 px-6 md:px-12 flex justify-between items-center sticky top-0 z-50">
+        <Link to="/" className="flex items-center gap-2 group">
+          <div className="w-10 h-10 bg-brand-sidebar rounded-xl flex items-center justify-center text-brand-accent font-black italic shadow-lg shadow-brand-sidebar/10 group-hover:scale-105 transition-transform">A</div>
+          <span className="font-black text-brand-sidebar tracking-tighter text-xl italic uppercase">ARMILLA <span className="text-brand-accent">NUSA</span></span>
+        </Link>
+        <div className="flex items-center gap-4">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden md:block">Butuh Bantuan?</span>
+          <a href="#" className="bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-2 hover:bg-green-600 transition-colors">
+            WhatsApp CS
+          </a>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-6 py-12 md:py-20">
+        {/* Progress Bar */}
+        <div className="max-w-md mx-auto mb-16 px-4">
+          <div className="flex items-center justify-between relative">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-200 z-0"></div>
+            <div className={cn(
+              "absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-brand-accent z-0 transition-all duration-500",
+              step === 1 ? 'w-0' : 'w-full'
+            )}></div>
+            
+            {[1, 2].map((i) => (
+              <div key={i} className={cn(
+                "w-10 h-10 rounded-full flex items-center justify-center font-black z-10 transition-colors duration-300",
+                step >= i ? 'bg-brand-accent text-white' : 'bg-white border-2 border-slate-200 text-slate-300'
+              )}>
+                {step > i ? <Check className="w-5 h-5" /> : i}
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between mt-4">
+            <span className={cn("text-[10px] font-black uppercase tracking-widest italic", step === 1 ? 'text-brand-sidebar' : 'text-slate-400')}>Pilih Paket</span>
+            <span className={cn("text-[10px] font-black uppercase tracking-widest italic", step === 2 ? 'text-brand-sidebar' : 'text-slate-400')}>Konfirmasi Data</span>
+          </div>
+        </div>
+
+        {step === 1 ? (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-12"
+          >
+            <div className="text-center max-w-2xl mx-auto space-y-4">
+              <h1 className="text-4xl md:text-5xl font-black text-brand-sidebar italic uppercase leading-none tracking-tighter">
+                INVESTASI <span className="text-brand-accent underline underline-offset-8">MASA DEPAN</span> PENDIDIKAN
+              </h1>
+              <p className="text-slate-500 font-medium">Pilih paket yang paling sesuai dengan kebutuhan institusi Anda.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {packages.map((pkg) => (
+                <div 
+                  key={pkg.id}
+                  onClick={() => setSelectedPackage(pkg)}
+                  className={cn(
+                    "relative bg-white border-2 rounded-[2.5rem] p-8 cursor-pointer transition-all duration-500 group",
+                    selectedPackage.id === pkg.id 
+                      ? "border-brand-accent shadow-2xl shadow-brand-accent/20 -translate-y-2" 
+                      : "border-slate-100 hover:border-slate-200"
+                  )}
+                >
+                  {pkg.popular && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-sidebar text-brand-accent text-[10px] font-black uppercase tracking-widest px-6 py-2 rounded-full border-2 border-white shadow-lg">
+                      Paling Populer
+                    </div>
+                  )}
+
+                  <div className={cn(
+                    "w-14 h-14 rounded-2xl flex items-center justify-center mb-6 text-white shadow-lg transition-transform group-hover:scale-110",
+                    pkg.id === 'basic' ? 'bg-brand-accent' : pkg.id === 'pro' ? 'bg-brand-sidebar' : 'bg-slate-800'
+                  )}>
+                    {pkg.icon}
+                  </div>
+
+                  <h3 className="font-black text-brand-sidebar uppercase italic text-xl mb-2 tracking-tight group-hover:text-brand-accent transition-colors">{pkg.name}</h3>
+                  <div className="flex items-baseline gap-1 mb-4">
+                    <span className="text-3xl font-black text-brand-sidebar tracking-tight">{pkg.price}</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">{pkg.period}</span>
+                  </div>
+                  <p className="text-slate-500 text-xs font-medium mb-8 leading-relaxed">{pkg.description}</p>
+
+                  <div className="space-y-4 mb-10">
+                    {pkg.features.map((feature, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <div className="w-5 h-5 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-brand-accent/10 transition-colors">
+                          <Check className="w-3 h-3 text-brand-accent" />
+                        </div>
+                        <span className="text-xs font-bold text-slate-600 tracking-tight">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className={cn(
+                    "w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all",
+                    selectedPackage.id === pkg.id
+                      ? "bg-brand-sidebar text-white" 
+                      : "bg-slate-50 text-slate-400 group-hover:bg-slate-100"
+                  )}>
+                    {selectedPackage.id === pkg.id ? 'Terpilih' : 'Pilih Paket'}
+                    {selectedPackage.id === pkg.id && <ArrowRight className="w-4 h-4 ml-2" />}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-center">
+              <button 
+                onClick={() => setStep(2)}
+                className="bg-brand-accent text-brand-sidebar px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-xl shadow-brand-accent/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-4"
+              >
+                Lanjutkan Pendaftaran <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="grid grid-cols-1 lg:grid-cols-2 gap-12"
+          >
+            {/* Left: Summary */}
+            <div className="space-y-8">
+              <div className="bg-brand-sidebar rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                  <Globe className="w-64 h-64 rotate-12" />
+                </div>
+                
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-accent italic mb-6 block">Order Summary</span>
+                <h2 className="text-4xl font-black italic uppercase tracking-tighter mb-8 leading-none">
+                  KONFIRMASI <br />
+                  <span className="text-brand-accent">PEMESANAN</span>
+                </h2>
+
+                <div className="space-y-6 pt-6 border-t border-white/10 relative z-10">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Paket Pilihan</span>
+                    <span className="text-xl font-black italic uppercase text-brand-accent">{selectedPackage.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Total Investasi</span>
+                    <span className="text-2xl font-black text-white">{selectedPackage.price}</span>
+                  </div>
+                  <div className="pt-6">
+                    <p className="text-[10px] text-white/40 italic leading-relaxed font-medium">
+                      * Harga sudah termasuk biaya setup awal dan pelatihan dasar operasional untuk tim admin/guru.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white border border-brand-border rounded-3xl p-6 flex items-center gap-4 group hover:border-brand-accent transition-colors">
+                  <div className="p-3 bg-brand-bg rounded-2xl text-brand-accent group-hover:bg-brand-accent group-hover:text-brand-sidebar transition-all">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-[10px] font-black uppercase text-slate-400">Keamanan</h4>
+                    <p className="text-xs font-bold text-brand-sidebar">Data Terenkripsi</p>
+                  </div>
+                </div>
+                <div className="bg-white border border-brand-border rounded-3xl p-6 flex items-center gap-4 group hover:border-brand-accent transition-colors">
+                  <div className="p-3 bg-brand-bg rounded-2xl text-brand-accent group-hover:bg-brand-accent group-hover:text-brand-sidebar transition-all">
+                    <Users className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-[10px] font-black uppercase text-slate-400">Support</h4>
+                    <p className="text-xs font-bold text-brand-sidebar">CS Indonesia</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Form */}
+            <div className="bg-white border border-brand-border rounded-[2.5rem] p-10 shadow-lg">
+              <h3 className="text-2xl font-black italic uppercase tracking-tight text-brand-sidebar mb-8">Data <span className="text-brand-accent">Pendaftar</span></h3>
+              
+              <form onSubmit={handleNext} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Nama Penanggung Jawab</label>
+                    <input 
+                      type="text" 
+                      required
+                      className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
+                      placeholder="Contoh: Budi Santoso"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Nama Institusi / Sekolah</label>
+                    <input 
+                      type="text" 
+                      required
+                      className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
+                      placeholder="Contoh: SMA Negeri 1 Kemang"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Alamat Email Aktif</label>
+                  <input 
+                    type="email" 
+                    required
+                    className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
+                    placeholder="nama@sekolah.sch.id"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Nomor WhatsApp</label>
+                  <input 
+                    type="tel" 
+                    required
+                    className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
+                    placeholder="0812XXXXXXXX"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Metode Pembayaran Utama</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {['Transfer Bank', 'E-Wallet', 'VA Online'].map((m) => (
+                      <div key={m} className="bg-slate-50 border border-brand-border rounded-xl p-3 flex flex-col items-center gap-2 group cursor-pointer hover:border-brand-accent transition-all">
+                        <CreditCard className="w-5 h-5 text-slate-400 group-hover:text-brand-accent" />
+                        <span className="text-[8px] font-black uppercase text-slate-400 group-hover:text-brand-sidebar">{m}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-4 flex flex-col md:flex-row gap-4">
+                  <button 
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="flex-1 bg-slate-100 text-slate-500 py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all"
+                  >
+                    Kembali
+                  </button>
+                  <button 
+                    type="submit"
+                    className="flex-[2] bg-brand-sidebar text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-brand-sidebar/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                  >
+                    Selesaikan Pembelian <Rocket className="w-5 h-5" />
+                  </button>
+                </div>
+              </form>
+            </div>
+          </motion.div>
+        )}
+      </main>
+
+      <footer className="bg-brand-sidebar py-12 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 border-t border-white/5 pt-8">
+           <div className="flex items-center gap-2">
+             <div className="w-8 h-8 bg-brand-accent rounded-lg flex items-center justify-center text-brand-sidebar font-black italic">A</div>
+             <span className="text-white/50 text-[10px] font-bold uppercase tracking-widest">© 2024 ARMILLA NUSA EDUCATION TECHNOLOGY</span>
+           </div>
+           <div className="flex gap-6">
+             <a href="#" className="text-white/30 hover:text-brand-accent text-[10px] font-bold uppercase tracking-widest transition-colors">Syarat & Ketentuan</a>
+             <a href="#" className="text-white/30 hover:text-brand-accent text-[10px] font-bold uppercase tracking-widest transition-colors">Kebijakan Privasi</a>
+           </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
