@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
@@ -25,18 +25,19 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const setSchoolBySlug = async (slug: string) => {
+  const setSchoolBySlug = useCallback(async (slug: string) => {
+    const normalizedSlug = slug.toLowerCase();
     setLoading(true);
     setError(null);
     try {
-      const docRef = doc(db, 'schools', slug);
+      const docRef = doc(db, 'schools', normalizedSlug);
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
         setSchool({ id: docSnap.id, ...docSnap.data() } as School);
       } else {
         // Fallback: try query if migration is not fully complete or for compatibility
-        const q = query(collection(db, 'schools'), where('slug', '==', slug));
+        const q = query(collection(db, 'schools'), where('slug', '==', normalizedSlug));
         const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {
@@ -53,7 +54,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // Empty dependencies to keep the function reference stable
 
   return (
     <SchoolContext.Provider value={{ school, loading, error, setSchoolBySlug }}>
