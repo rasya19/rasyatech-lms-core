@@ -511,7 +511,12 @@ export default function LandingPage() {
            );
          })()}
          <div className="max-w-7xl mx-auto px-6 mt-20 pt-8 border-t border-brand-border flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center md:text-left">
-            <span>© 2026 {SCHOOL_NAME}. All Rights Reserved.</span>
+            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
+               <span>© 2026 {SCHOOL_NAME}. All Rights Reserved.</span>
+               <Link to="/super-admin" className="text-slate-300 hover:text-brand-accent transition-colors flex items-center gap-1.5 border-l border-slate-200 pl-8 ml-4 hidden md:flex">
+                  <ShieldCheck className="w-3 h-3" /> Super Admin Portal
+               </Link>
+            </div>
             <div className="flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-full">
                <span className="text-slate-500">Official Tech Partner:</span>
                <span className="text-brand-sidebar font-black italic tracking-tighter text-xs">RASYAC<span className="text-brand-accent">OMP</span></span>

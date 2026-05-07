@@ -425,6 +425,16 @@ export default function Login() {
            </div>
         </div>
 
+        {/* Super Admin Access Discrete Entry */}
+        <div className="text-center">
+           <Link 
+             to="/super-admin"
+             className="text-[9px] font-black uppercase text-slate-300 hover:text-brand-accent transition-colors tracking-[0.2em] italic"
+           >
+             Super Admin Central Access
+           </Link>
+        </div>
+
       </div>
     </div>
   );
