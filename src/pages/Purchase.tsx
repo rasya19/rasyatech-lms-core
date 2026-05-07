@@ -123,14 +123,22 @@ export default function Purchase() {
 
       setStep(3);
     } catch (error: any) {
-      console.error('Registration error:', error);
+      console.error('Registration error details:', error);
       let errorMessage = 'Gagal mendaftar. Silakan coba lagi.';
+      
       if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'Email sudah terdaftar. Silakan gunakan email lain.';
+        errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain atau hubungi admin.';
       } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password terlalu lemah. Gunakan minimal 6 karakter.';
+        errorMessage = 'Password terlalu lemah. Mohon gunakan minimal 6 karakter.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage = 'Metode pendaftaran Email/Password belum diaktifkan di Firebase Console. Silakan aktifkan di menu Authentication -> Sign-in method.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Format email tidak valid.';
+      } else if (error.message && error.message.includes('permission-denied')) {
+        errorMessage = 'Izin ditolak oleh Database (Security Rules). Pastikan semua data terisi dengan benar.';
       }
-      alert(errorMessage);
+      
+      alert(`⚠️ ${errorMessage}\n\nDetail: ${error.message}`);
     } finally {
       setIsLoading(false);
     }

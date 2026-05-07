@@ -17,13 +17,18 @@ service cloud.firestore {
 
     // School validation helper
     function isValidSchool(data) {
-      return data.keys().hasAll(['name', 'slug', 'adminEmail', 'packageId', 'status', 'createdAt']) &&
+      return data.keys().hasAll(['name', 'slug', 'adminEmail', 'adminName', 'whatsapp', 'packageId', 'status', 'createdAt']) &&
              data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
-             data.slug is string && data.slug.size() > 0 && data.slug.size() < 50 &&
+             data.slug is string && data.slug.size() > 0 && data.slug.size() < 100 &&
              data.adminEmail is string && data.adminEmail.size() > 5 &&
+             data.adminName is string && data.adminName.size() > 0 &&
+             data.whatsapp is string && data.whatsapp.size() > 5 &&
              data.packageId in ['basic', 'pro', 'enterprise'] &&
              data.status in ['pending', 'active'] &&
-             data.createdAt == request.time;
+             data.createdAt == request.time &&
+             (!('npsn' in data) || data.npsn is string) &&
+             (!('address' in data) || data.address is string) &&
+             (!('paymentMethod' in data) || data.paymentMethod is string);
     }
 
     match /schools/{schoolId} {
