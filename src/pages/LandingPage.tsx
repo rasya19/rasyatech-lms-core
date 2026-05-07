@@ -34,11 +34,6 @@ export default function LandingPage() {
 
   return (
     <div className="bg-white font-sans selection:bg-brand-accent selection:text-white scroll-smooth relative">
-      {/* Ads Native Bar (Sticky Bottom) */}
-      <div className="fixed bottom-0 left-0 w-full z-100 bg-white/80 backdrop-blur-md border-t border-brand-border shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-        <AdBanner className="w-full" slot="Native Bottom Bar" />
-      </div>
-
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-md border-b border-brand-border z-100 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between">
@@ -455,6 +450,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer id="kontak" className="bg-slate-50 border-t border-brand-border py-20 px-6">
+         <AdBanner className="w-full mb-16 opacity-80" slot="Footer Banner" />
          {(() => {
            const savedContact = localStorage.getItem('school_contact');
            const contact = savedContact ? JSON.parse(savedContact) : {
