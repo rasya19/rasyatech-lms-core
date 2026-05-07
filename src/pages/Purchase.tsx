@@ -13,8 +13,9 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/src/lib/utils';
-import { db } from '@/src/lib/firebase';
+import { db, auth } from '@/src/lib/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 const packages = [
   {
@@ -77,8 +78,11 @@ export default function Purchase() {
   const [formData, setFormData] = useState({
     name: '',
     schoolName: '',
+    npsn: '',
+    address: '',
     email: '',
     phone: '',
+    password: '',
   });
   const navigate = useNavigate();
 
@@ -91,11 +95,22 @@ export default function Purchase() {
 
     setIsLoading(true);
     try {
+      // 1. Create Firebase Auth User
+      const userCredential = await createUserWithEmailAndPassword(
+        auth, 
+        formData.email, 
+        formData.password
+      );
+      const user = userCredential.user;
+
+      // 2. Save School Data to Firestore
       const slug = formData.schoolName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      const registrationId = `reg_${Date.now()}`;
+      const registrationId = user.uid; // Use Auth UID as document ID for easier management
       
       await setDoc(doc(db, 'schools', registrationId), {
         name: formData.schoolName,
+        npsn: formData.npsn,
+        address: formData.address,
         adminName: formData.name,
         adminEmail: formData.email,
         whatsapp: formData.phone,
@@ -107,9 +122,15 @@ export default function Purchase() {
       });
 
       setStep(3);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
-      alert('Gagal mendaftar. Silakan coba lagi nanti atau hubungi CS.');
+      let errorMessage = 'Gagal mendaftar. Silakan coba lagi.';
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'Email sudah terdaftar. Silakan gunakan email lain.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password terlalu lemah. Gunakan minimal 6 karakter.';
+      }
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -327,18 +348,55 @@ export default function Purchase() {
                       placeholder="Contoh: SMA Negeri 1 Kemang"
                     />
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">NPSN Sekolah</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={formData.npsn}
+                      onChange={(e) => setFormData({...formData, npsn: e.target.value})}
+                      className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
+                      placeholder="8 digit nomor NPSN"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Alamat Email Aktif</label>
-                  <input 
-                    type="email" 
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Alamat Lengkap Sekolah</label>
+                  <textarea 
                     required
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
-                    placeholder="nama@sekolah.sch.id"
+                    rows={2}
+                    value={formData.address}
+                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                    className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none resize-none"
+                    placeholder="Jl. Pendidikan No. 1, Kota..."
                   />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Alamat Email Aktif (Login)</label>
+                    <input 
+                      type="email" 
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
+                      placeholder="nama@sekolah.sch.id"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Buat Password Login</label>
+                    <input 
+                      type="password" 
+                      required
+                      minLength={6}
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
+                      placeholder="Min. 6 karakter"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">

@@ -23,6 +23,8 @@ import { id } from 'date-fns/locale';
 interface SchoolRegistration {
   id: string;
   name: string;
+  npsn?: string;
+  address?: string;
   adminName: string;
   adminEmail: string;
   whatsapp: string;
@@ -68,9 +70,23 @@ export default function SuperAdmin() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error('Login error:', error);
-      alert('Gagal login. Pastikan Anda menggunakan akun yang diizinkan.');
+    } catch (error: any) {
+      console.error('Login error details:', error);
+      let message = 'Gagal login. Silakan coba lagi.';
+      let help = '';
+      
+      if (error.code === 'auth/unauthorized-domain') {
+        message = 'DOMAIN BELUM TERDAFTAR';
+        help = 'Silakan masuk ke Firebase Console -> Authentication -> Settings -> Authorized Domains dan tambahkan domain ini.';
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        message = 'LOGIN DIBATALKAN';
+        help = 'Anda menutup jendela login sebelum selesai.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        message = 'METODE LOGIN NONAKTIF';
+        help = 'Aktifkan metode Google di Firebase Console -> Authentication -> Sign-in method.';
+      }
+      
+      alert(`⚠️ ${message}\n\n${help}\n\nError: ${error.message}`);
     }
   };
 
@@ -87,6 +103,10 @@ export default function SuperAdmin() {
     }
   };
 
+  const handleLogout = () => {
+    auth.signOut();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -95,7 +115,7 @@ export default function SuperAdmin() {
     );
   }
 
-  if (!user || user.email !== SUPER_ADMIN_EMAIL) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-brand-sidebar flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-[2.5rem] p-10 text-center shadow-2xl">
@@ -111,6 +131,29 @@ export default function SuperAdmin() {
             className="w-full bg-brand-sidebar text-white py-4 rounded-xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-brand-sidebar/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 italic"
           >
             Login Google <ShieldCheck className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (user.email !== SUPER_ADMIN_EMAIL) {
+    return (
+      <div className="min-h-screen bg-brand-sidebar flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-[2.5rem] p-10 text-center shadow-2xl">
+          <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <XCircle className="w-10 h-10 text-red-500" />
+          </div>
+          <h1 className="text-2xl font-black italic uppercase text-brand-sidebar mb-2 tracking-tighter">Akses <span className="text-red-500">Ditolak</span></h1>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 leading-relaxed">
+            Akun <span className="text-brand-sidebar">{user.email}</span> tidak memiliki akses sebagai Super Admin.
+          </p>
+          <p className="text-[10px] text-slate-400 mb-8 italic">Silakan login menggunakan akun {SUPER_ADMIN_EMAIL}</p>
+          <button 
+            onClick={handleLogout}
+            className="w-full bg-slate-100 text-slate-600 py-4 rounded-xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-200 transition-all flex items-center justify-center gap-3 italic"
+          >
+            Logout & Ganti Akun <LogOut className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -206,6 +249,7 @@ export default function SuperAdmin() {
                 <div className="flex-1 space-y-1">
                    <div className="flex items-center gap-2">
                       <h3 className="font-black italic uppercase text-brand-sidebar text-lg">{reg.name}</h3>
+                      <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 rounded">NPSN: {reg.npsn || '-'}</span>
                       <span className={cn(
                         "text-[8px] font-black uppercase px-2 py-0.5 rounded-full",
                         reg.packageId === 'basic' ? 'bg-blue-100 text-blue-600' :
@@ -231,6 +275,10 @@ export default function SuperAdmin() {
                          <p className="text-xs font-bold text-slate-600 flex items-center gap-1 italic lowercase">
                            <CreditCard className="w-3 h-3" /> {reg.paymentMethod || 'manual'}
                          </p>
+                      </div>
+                      <div>
+                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Alamat</p>
+                         <p className="text-[10px] font-medium text-slate-600 line-clamp-1 italic">{reg.address || '-'}</p>
                       </div>
                       <div>
                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Terdaftar</p>
