@@ -117,7 +117,7 @@ export default function Layout() {
           { icon: GraduationCap, label: 'Data Alumni', path: `${prefix}/dashboard/alumni` },
           { icon: UserPlus, label: 'PPDB Kami', path: `${prefix}/dashboard/ppdb` },
           { icon: Settings, label: 'Manajemen Web', path: `${prefix}/dashboard/site` },
-          { icon: Globe, label: 'Web Utama', path: '/', isExternal: true },
+          { icon: Globe, label: 'Web Utama', path: schoolSlug ? `/s/${schoolSlug}` : '/', isExternal: true },
         ];
       case 'Guru':
         return [

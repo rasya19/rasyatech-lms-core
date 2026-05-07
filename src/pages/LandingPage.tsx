@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { SCHOOL_NAME, getSchoolParts } from '../constants';
+import { useSchool } from '../contexts/SchoolContext';
 import { 
   ArrowRight, 
   BookOpen, 
@@ -21,7 +22,19 @@ import { cn } from '@/src/lib/utils';
 import AdBanner from '@/src/components/AdBanner';
 
 export default function LandingPage() {
+  const { school } = useSchool();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+
+  const schoolName = school?.name || SCHOOL_NAME;
+  const parts = school?.name 
+    ? { first: school.name.split(' ')[0], rest: school.name.split(' ').slice(1).join(' ') }
+    : getSchoolParts();
+
+  const accreditation = school?.accreditation || localStorage.getItem('school_accreditation') || 'A (UNGGUL)';
+  const npsn = school?.npsn || localStorage.getItem('school_npsn') || '6987****';
+  const address = school?.address || localStorage.getItem('school_address') || 'Perum Grand Lebakwangi Lestari Desa Mekarwangi Kec. Lebakwangi Kab. Kuningan';
+  const phone = school?.whatsapp || localStorage.getItem('school_phone') || '+62 852-2502-5555';
+  const email = school?.adminEmail || localStorage.getItem('school_email') || 'pkbmarmillanusa@gmail.com';
 
   const navLinks = [
     { name: 'Tentang Kami', href: '#tentang-kami' },
@@ -41,7 +54,7 @@ export default function LandingPage() {
              <div className="w-11 h-11 bg-brand-sidebar rounded-xl flex items-center justify-center text-brand-accent font-black italic shadow-lg shadow-brand-sidebar/20 group-hover:scale-105 transition-transform">A</div>
              <div className="flex flex-col">
                 <span className="font-black text-brand-sidebar uppercase italic tracking-tighter leading-none text-xl">
-                  {getSchoolParts().first} <span className="text-brand-accent">{getSchoolParts().rest}</span>
+                  {parts.first} <span className="text-brand-accent">{parts.rest}</span>
                 </span>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mt-1">Supported by <span className="text-brand-accent">Rasyacomp</span></span>
              </div>
@@ -67,7 +80,7 @@ export default function LandingPage() {
             <Link to="/purchase" className="bg-white border-2 border-brand-sidebar text-brand-sidebar px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-50 transition-all italic flex items-center gap-2">
               Daftar Sekolah <Rocket className="w-3 h-3 text-brand-accent" />
             </Link>
-            <Link to="/login" className="bg-brand-sidebar text-white px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-accent hover:scale-105 transition-all shadow-xl shadow-brand-sidebar/20 italic">
+            <Link to={school ? `/s/${school.slug}/login` : "/login"} className="bg-brand-sidebar text-white px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-accent hover:scale-105 transition-all shadow-xl shadow-brand-sidebar/20 italic">
               Portal Masuk
             </Link>
           </div>
@@ -111,7 +124,7 @@ export default function LandingPage() {
                     Daftar Sekolah <Rocket className="w-4 h-4 text-brand-accent" />
                   </Link>
                   <Link 
-                    to="/login" 
+                    to={school ? `/s/${school.slug}/login` : "/login"} 
                     onClick={() => setIsMenuOpen(false)}
                     className="w-full bg-brand-sidebar text-white py-4 rounded-xl text-center text-xs font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 italic"
                   >
@@ -139,7 +152,7 @@ export default function LandingPage() {
            >
               <div className="inline-flex items-center gap-3 bg-white border border-brand-border px-4 py-2 rounded-2xl text-[10px] font-black text-brand-sidebar uppercase tracking-[0.2em] mb-10 shadow-sm">
                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                 TERAKREDITASI {localStorage.getItem('school_accreditation') || 'A (UNGGUL)'}
+                 TERAKREDITASI {accreditation}
               </div>
               <h1 className="text-6xl md:text-8xl font-black text-brand-sidebar leading-[0.85] tracking-tighter italic mb-10 group">
                 MEMBANGUN <br />
@@ -153,7 +166,7 @@ export default function LandingPage() {
                  <Link to="/purchase" className="bg-brand-sidebar text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] shadow-2xl shadow-brand-sidebar/40 flex items-center justify-center gap-4 group/btn hover:scale-105 active:scale-95 transition-all italic">
                    Daftar Sekarang <Rocket className="w-5 h-5 group-hover/btn:translate-x-2 transition-transform" />
                  </Link>
-                 <Link to="/ppdb" className="bg-white border-2 border-brand-sidebar text-brand-sidebar px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] hover:bg-slate-50 transition-all flex items-center justify-center italic">
+                 <Link to={school ? `/s/${school.slug}/dashboard/ppdb` : "/ppdb"} className="bg-white border-2 border-brand-sidebar text-brand-sidebar px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] hover:bg-slate-50 transition-all flex items-center justify-center italic">
                    PPDB Online
                  </Link>
               </div>
@@ -172,9 +185,9 @@ export default function LandingPage() {
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[10s]"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-brand-sidebar/90 via-brand-sidebar/20 to-transparent flex flex-col justify-end p-12 text-white">
-                     <p className="text-5xl font-black italic tracking-tighter mb-2">{SCHOOL_NAME}</p>
+                     <p className="text-5xl font-black italic tracking-tighter mb-2">{schoolName}</p>
                      <p className="text-[10px] text-brand-accent font-black uppercase tracking-[0.3em] bg-white/10 backdrop-blur-md self-start px-4 py-2 rounded-full border border-white/20 uppercase">
-                      NPSN: {localStorage.getItem('school_npsn') || '6987****'} • KEMENDIKBUD
+                      NPSN: {npsn} • KEMENDIKBUD
                      </p>
                   </div>
               </div>
@@ -190,7 +203,7 @@ export default function LandingPage() {
       {/* Stats Section moved into About Us */}
       <section id="tentang-kami" className="py-32 px-6 bg-brand-sidebar text-white relative overflow-hidden">
          <div className="absolute top-0 left-0 w-full h-full pointer-events-none flex items-center justify-center">
-            <h2 className="text-[20vw] font-black text-white/5 whitespace-nowrap italic tracking-tighter">ABOUT{SCHOOL_NAME}</h2>
+            <h2 className="text-[20vw] font-black text-white/5 whitespace-nowrap italic tracking-tighter">ABOUT{schoolName}</h2>
          </div>
          <div className="max-w-7xl mx-auto relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 mb-24">
@@ -204,7 +217,7 @@ export default function LandingPage() {
                </div>
                <div className="space-y-8">
                   <p className="text-lg text-slate-300 font-medium italic leading-relaxed">
-                    PKBM {SCHOOL_NAME} hadir sebagai solusi pendidikan alternatif yang setara dan bermartabat. Kami percaya bahwa setiap orang berhak mendapatkan pendidikan tanpa batasan usia, waktu, dan tempat.
+                    PKBM {schoolName} hadir sebagai solusi pendidikan alternatif yang setara dan bermartabat. Kami percaya bahwa setiap orang berhak mendapatkan pendidikan tanpa batasan usia, waktu, dan tempat.
                   </p>
                   <p className="text-slate-400 italic text-sm leading-relaxed">
                     Dengan bimbingan tutor profesional dan dukungan infrastruktur teknologi dari Rasyacomp, kami memastikan setiap warga belajar mendapatkan pengalaman pendidikan yang relevan dengan kebutuhan zaman.
@@ -319,7 +332,7 @@ export default function LandingPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
                <div>
                   <h2 className="text-3xl font-bold text-brand-sidebar italic uppercase">Berita & <span className="text-brand-accent">Informasi</span></h2>
-                  <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-2 italic">Update terbaru dari {SCHOOL_NAME}</p>
+                  <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-2 italic">Update terbaru dari {schoolName}</p>
                </div>
                <Link to="/pengumuman" className="text-xs font-black text-brand-accent uppercase tracking-widest border-b-2 border-brand-accent pb-1">Lihat Semua Berita</Link>
             </div>
@@ -472,7 +485,7 @@ export default function LandingPage() {
                    <div className="w-10 h-10 bg-brand-sidebar rounded-xl flex items-center justify-center text-brand-accent font-black italic shadow-lg shadow-brand-sidebar/20">A</div>
                    <div className="flex flex-col">
                       <span className="font-black text-brand-sidebar uppercase italic tracking-tighter leading-none text-lg">
-                        {getSchoolParts().first} <span className="text-brand-accent">{getSchoolParts().rest}</span>
+                        {parts.first} <span className="text-brand-accent">{parts.rest}</span>
                       </span>
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mt-1.5">Infrastructure by <span className="text-brand-accent">Rasyacomp</span></span>
                    </div>
@@ -489,22 +502,22 @@ export default function LandingPage() {
                <div className="space-y-4">
                   <h4 className="font-bold text-brand-sidebar uppercase text-xs tracking-widest italic">Hubungi Kami</h4>
                   <div className="flex items-start gap-3 text-xs text-slate-500 font-medium italic">
-                     <MapPin className="w-4 h-4 text-brand-accent shrink-0" /> {contact.address}
+                     <MapPin className="w-4 h-4 text-brand-accent shrink-0" /> {address}
                   </div>
                   <div className="flex items-center gap-3 text-xs text-slate-500 font-medium italic">
-                     <Phone className="w-4 h-4 text-brand-accent shrink-0" /> {contact.phone}
+                     <Phone className="w-4 h-4 text-brand-accent shrink-0" /> {phone}
                   </div>
                   <div className="flex items-center gap-3 text-xs text-slate-500 font-medium italic">
-                     <Mail className="w-4 h-4 text-brand-accent shrink-0" /> {contact.email}
+                     <Mail className="w-4 h-4 text-brand-accent shrink-0" /> {email}
                   </div>
                </div>
 
                 <div className="space-y-4">
                   <h4 className="font-bold text-brand-sidebar uppercase text-xs tracking-widest italic">Tautan Cepat</h4>
                   <ul className="text-xs text-slate-500 font-bold space-y-2 uppercase leading-none italic">
-                     <li><Link to="/ppdb" className="hover:text-brand-accent">PPDB Online</Link></li>
-                     <li><Link to="/login" className="hover:text-brand-accent">Cek Sertifikat (Portal)</Link></li>
-                     <li><a href={localStorage.getItem('school_consultation_link') || `https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-brand-accent">Bantuan Siswa</a></li>
+                     <li><Link to={school ? `/s/${school.slug}/dashboard/ppdb` : "/ppdb"} className="hover:text-brand-accent">PPDB Online</Link></li>
+                     <li><Link to={school ? `/s/${school.slug}/login` : "/login"} className="hover:text-brand-accent">Cek Sertifikat (Portal)</Link></li>
+                     <li><a href={localStorage.getItem('school_consultation_link') || `https://wa.me/${phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-brand-accent">Bantuan Siswa</a></li>
                   </ul>
                </div>
             </div>
@@ -512,7 +525,7 @@ export default function LandingPage() {
          })()}
          <div className="max-w-7xl mx-auto px-6 mt-20 pt-8 border-t border-brand-border flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
-               <span>© 2026 {SCHOOL_NAME}. All Rights Reserved.</span>
+               <span>© 2026 {schoolName}. All Rights Reserved.</span>
                <Link to="/super-admin" className="text-slate-300 hover:text-brand-accent transition-colors flex items-center gap-1.5 border-l border-slate-200 pl-8 ml-4 hidden md:flex">
                   <ShieldCheck className="w-3 h-3" /> Super Admin Portal
                </Link>
@@ -526,7 +539,7 @@ export default function LandingPage() {
 
       {/* Floating Consultation Button */}
       <a 
-        href={localStorage.getItem('school_consultation_link') || 'https://wa.me/6285225025555'}
+        href={localStorage.getItem('school_consultation_link') || `https://wa.me/${phone.replace(/[^0-9]/g, '')}`}
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-8 right-8 bg-brand-accent text-white p-4 rounded-full shadow-2xl shadow-brand-accent/40 z-50 hover:scale-110 transition-all group flex items-center gap-3 overflow-hidden"

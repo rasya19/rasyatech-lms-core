@@ -81,7 +81,7 @@ export default function App() {
           
           {/* Multi-tenancy Routes */}
           <Route path="/s/:schoolSlug" element={<SchoolLoader />}>
-             <Route index element={<Navigate to="dashboard" replace />} />
+             <Route index element={<LandingPage />} />
              <Route path="login" element={<Login />} />
              <Route path="dashboard" element={<Layout />}>
                 <Route index element={<Dashboard />} />
