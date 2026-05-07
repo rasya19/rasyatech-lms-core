@@ -1,6 +1,7 @@
 import { SCHOOL_NAME, getSchoolParts } from '../constants';
 import React, { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useParams } from 'react-router-dom';
+import { useSchool } from '../contexts/SchoolContext';
 import { 
   LayoutDashboard, 
   Users, 
@@ -42,6 +43,8 @@ import { cn } from '@/src/lib/utils';
 type Role = 'Admin' | 'Guru' | 'Siswa';
 
 export default function Layout() {
+  const { schoolSlug } = useParams();
+  const { school } = useSchool();
   const [role, setRole] = useState<Role>((localStorage.getItem('userRole') as Role) || 'Siswa');
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -54,7 +57,15 @@ export default function Layout() {
     confirm: ''
   });
 
-  const { first: schoolFirst, rest: schoolRest } = getSchoolParts();
+  // Use school data from context if available, fallback to constants
+  // @ts-ignore
+  const schoolDisplayName = school?.name || SCHOOL_NAME;
+  const parts = school?.name 
+    ? { first: school.name.split(' ')[0], rest: school.name.split(' ').slice(1).join(' ') }
+    : getSchoolParts();
+
+  const schoolFirst = parts.first;
+  const schoolRest = parts.rest;
 
   // Sync role to localStorage if changed (for demo purposes)
   const handleRoleChange = (newRole: Role) => {
@@ -67,7 +78,7 @@ export default function Layout() {
     localStorage.removeItem('userRole');
     localStorage.removeItem('isDemoMode');
     localStorage.removeItem('adminName');
-    window.location.href = '/login';
+    window.location.href = schoolSlug ? `/s/${schoolSlug}/login` : '/login';
   };
 
   const handleUpdatePassword = (e: React.FormEvent) => {
@@ -89,43 +100,44 @@ export default function Layout() {
   const adminName = localStorage.getItem('adminName') || (role === 'Admin' ? 'Administrator' : role);
 
   const getNavItems = (): (any & { isExternal?: boolean })[] => {
+    const prefix = schoolSlug ? `/s/${schoolSlug}` : '';
     switch (role) {
       case 'Admin':
         return [
-          { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-          { icon: Users, label: 'Data Siswa', path: '/dashboard/siswa' },
-          { icon: UserCheck, label: 'Data Guru', path: '/dashboard/guru' },
-          { icon: Link2, label: 'Relasi Mengajar', path: '/dashboard/relasi' },
-          { icon: Layers, label: 'Kelola Kelas', path: '/dashboard/kelas' },
-          { icon: FileText, label: 'Cek Raport', path: '/dashboard/raport' },
-          { icon: Wallet, label: 'Keuangan', path: '/dashboard/keuangan' },
-          { icon: MessageSquare, label: 'Ruang Diskusi', path: '/dashboard/diskusi' },
-          { icon: Sparkles, label: 'Asisten AI', path: '/dashboard/ai-asisten' },
-          { icon: ArrowUpCircle, label: 'Kenaikan Kelas', path: '/dashboard/kenaikan' },
-          { icon: GraduationCap, label: 'Data Alumni', path: '/dashboard/alumni' },
-          { icon: UserPlus, label: 'PPDB Kami', path: '/dashboard/ppdb' },
-          { icon: Settings, label: 'Manajemen Web', path: '/dashboard/site' },
+          { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
+          { icon: Users, label: 'Data Siswa', path: `${prefix}/dashboard/siswa` },
+          { icon: UserCheck, label: 'Data Guru', path: `${prefix}/dashboard/guru` },
+          { icon: Link2, label: 'Relasi Mengajar', path: `${prefix}/dashboard/relasi` },
+          { icon: Layers, label: 'Kelola Kelas', path: `${prefix}/dashboard/kelas` },
+          { icon: FileText, label: 'Cek Raport', path: `${prefix}/dashboard/raport` },
+          { icon: Wallet, label: 'Keuangan', path: `${prefix}/dashboard/keuangan` },
+          { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },
+          { icon: Sparkles, label: 'Asisten AI', path: `${prefix}/dashboard/ai-asisten` },
+          { icon: ArrowUpCircle, label: 'Kenaikan Kelas', path: `${prefix}/dashboard/kenaikan` },
+          { icon: GraduationCap, label: 'Data Alumni', path: `${prefix}/dashboard/alumni` },
+          { icon: UserPlus, label: 'PPDB Kami', path: `${prefix}/dashboard/ppdb` },
+          { icon: Settings, label: 'Manajemen Web', path: `${prefix}/dashboard/site` },
           { icon: Globe, label: 'Web Utama', path: '/', isExternal: true },
         ];
       case 'Guru':
         return [
-          { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-          { icon: BookOpen, label: 'Materi Ajar', path: '/dashboard/materi' },
-          { icon: ClipboardCheck, label: 'Kelola Ujian', path: '/dashboard/ujian' },
-          { icon: MessageSquare, label: 'Ruang Diskusi', path: '/dashboard/diskusi' },
-          { icon: Sparkles, label: 'Asisten AI', path: '/dashboard/ai-asisten' },
-          { icon: FileBarChart, label: 'Input Nilai', path: '/dashboard/nilai' },
-          { icon: FileText, label: 'Cek Raport', path: '/dashboard/raport' },
+          { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
+          { icon: BookOpen, label: 'Materi Ajar', path: `${prefix}/dashboard/materi` },
+          { icon: ClipboardCheck, label: 'Kelola Ujian', path: `${prefix}/dashboard/ujian` },
+          { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },
+          { icon: Sparkles, label: 'Asisten AI', path: `${prefix}/dashboard/ai-asisten` },
+          { icon: FileBarChart, label: 'Input Nilai', path: `${prefix}/dashboard/nilai` },
+          { icon: FileText, label: 'Cek Raport', path: `${prefix}/dashboard/raport` },
         ];
       default: // Siswa
         return [
-          { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-          { icon: BookOpen, label: 'Materi Saya', path: '/dashboard/materi' },
-          { icon: ClipboardCheck, label: 'Ikut Ujian', path: '/dashboard/ujian' },
-          { icon: MessageSquare, label: 'Ruang Diskusi', path: '/dashboard/diskusi' },
-          { icon: FileBarChart, label: 'Nilai Saya', path: '/dashboard/nilai' },
-          { icon: FileText, label: 'Raport Saya', path: '/dashboard/raport' },
-          { icon: ScrollText, label: 'SKL Digital', path: '/dashboard/skl' },
+          { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
+          { icon: BookOpen, label: 'Materi Saya', path: `${prefix}/dashboard/materi` },
+          { icon: ClipboardCheck, label: 'Ikut Ujian', path: `${prefix}/dashboard/ujian` },
+          { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },
+          { icon: FileBarChart, label: 'Nilai Saya', path: `${prefix}/dashboard/nilai` },
+          { icon: FileText, label: 'Raport Saya', path: `${prefix}/dashboard/raport` },
+          { icon: ScrollText, label: 'SKL Digital', path: `${prefix}/dashboard/skl` },
         ];
     }
   };
@@ -133,7 +145,7 @@ export default function Layout() {
   const navItems = getNavItems();
 
   const secondaryItems = [
-    { icon: Megaphone, label: 'Pengumuman', path: '/dashboard/pengumuman' },
+    { icon: Megaphone, label: 'Pengumuman', path: `${schoolSlug ? '/s/' + schoolSlug : ''}/dashboard/pengumuman` },
   ];
 
   return (

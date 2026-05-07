@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() <= 64 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // School validation helper
+    function isValidSchool(data) {
+      return data.keys().hasAll(['name', 'slug', 'adminEmail', 'packageId', 'status', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.slug is string && data.slug.size() > 0 && data.slug.size() < 50 &&
+             data.adminEmail is string && data.adminEmail.size() > 5 &&
+             data.packageId in ['basic', 'pro', 'enterprise'] &&
+             data.status in ['pending', 'active'] &&
+             data.createdAt == request.time;
+    }
+
+    match /schools/{schoolId} {
+      allow get: if true;
+      allow list: if false; // Prevention of scraping
+      allow create: if isValidId(schoolId) && isValidSchool(request.resource.data);
+      allow update: if false; // Manual admin approval in this flow
+    }
+  }
+}

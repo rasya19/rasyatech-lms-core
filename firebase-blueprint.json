@@ -1,0 +1,28 @@
+{
+  "entities": {
+    "school": {
+      "title": "School",
+      "description": "Represents a school or institution using the LMS platform.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Legal name of the school." },
+        "slug": { "type": "string", "description": "Unique URL identifier for the school (multi-tenancy)." },
+        "adminEmail": { "type": "string", "format": "email" },
+        "whatsapp": { "type": "string" },
+        "packageId": { "type": "string", "enum": ["basic", "pro", "enterprise"] },
+        "status": { "type": "string", "enum": ["pending", "active", "suspended"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "logoUrl": { "type": "string" },
+        "themeColor": { "type": "string" }
+      },
+      "required": ["name", "slug", "adminEmail", "packageId", "status"]
+    }
+  },
+  "firestore": {
+    "/schools/{schoolId}": {
+      "schema": "school",
+      "description": "Collection of schools registered on the platform."
+    }
+  }
+}

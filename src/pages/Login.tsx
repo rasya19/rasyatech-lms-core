@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
+import { useSchool } from '../contexts/SchoolContext';
 import { 
   ShieldCheck, 
   UserCheck, 
@@ -19,6 +20,8 @@ type PortalType = 'siswa' | 'guru' | 'admin';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { schoolSlug } = useParams();
+  const { school } = useSchool();
   const [selectedPortal, setSelectedPortal] = useState<PortalType | null>(null);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -29,6 +32,9 @@ export default function Login() {
     newPassword: '',
     confirmPassword: ''
   });
+
+  const schoolName = school?.name || 'PKBM Armilla Nusa Terpadu';
+  const prefix = schoolSlug ? `/s/${schoolSlug}` : '';
 
   const portals = [
     { 
@@ -90,7 +96,7 @@ export default function Login() {
             if (foundSiswa.mustChangePassword || !foundSiswa.password || foundSiswa.password === '12345') {
               setIsChangingPassword(true);
             } else {
-              navigate('/dashboard');
+              navigate(`${prefix}/dashboard`);
             }
             return;
           }
@@ -125,7 +131,7 @@ export default function Login() {
           if (formData.username.length > 5 && selectedPortal !== 'admin' && formData.password.includes('123')) {
             setIsChangingPassword(true);
           } else {
-            navigate('/dashboard');
+            navigate(`${prefix}/dashboard`);
           }
         } else {
           alert('Username atau password salah! Gunakan akun Admin Utama Anda atau gunakan akun demo_admin untuk uji coba.');
@@ -157,8 +163,8 @@ export default function Login() {
         }
       }
 
-      alert('Password berhasil diperbarui! Selamat datang di Portal Armilla.');
-      navigate('/dashboard');
+      alert(`Password berhasil diperbarui! Selamat datang di Portal ${schoolName}.`);
+      navigate(`${prefix}/dashboard`);
     }, 1200);
   };
 
@@ -179,7 +185,7 @@ export default function Login() {
                 Portal <span className="text-brand-accent">{selectedPortal ? 'Login' : 'Layanan'}</span>
               </h2>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-                {selectedPortal ? `Akses ${selectedPortal.toUpperCase()}` : 'PKBM Armilla Nusa Terpadu'}
+                {selectedPortal ? `Akses ${selectedPortal.toUpperCase()}` : schoolName}
               </p>
            </div>
         </div>

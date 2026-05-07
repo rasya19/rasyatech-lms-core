@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/src/lib/utils';
+import { db } from '@/src/lib/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const packages = [
   {
@@ -70,22 +72,45 @@ const packages = [
 export default function Purchase() {
   const [selectedPackage, setSelectedPackage] = useState(packages[1]);
   const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     schoolName: '',
     email: '',
     phone: '',
-    address: ''
   });
   const navigate = useNavigate();
 
-  const handleNext = (e: React.FormEvent) => {
+  const handleNext = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (step === 1) setStep(2);
-    else {
-      // Logic for processing purchase
-      alert(`Pendaftaran ${selectedPackage.name} berhasil! Tim kami akan menghubungi Anda via WhatsApp.`);
-      navigate('/login');
+    if (step === 1) {
+      setStep(2);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const slug = formData.schoolName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const registrationId = `reg_${Date.now()}`;
+      
+      await setDoc(doc(db, 'schools', registrationId), {
+        name: formData.schoolName,
+        adminName: formData.name,
+        adminEmail: formData.email,
+        whatsapp: formData.phone,
+        packageId: selectedPackage.id,
+        slug: slug,
+        status: 'pending',
+        createdAt: serverTimestamp(),
+      });
+
+      alert(`Pendaftaran ${formData.schoolName} berhasil! Tim kami akan mengirimkan link aktivasi ke email ${formData.email} dalam waktu 1x24 jam.`);
+      navigate('/');
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('Gagal mendaftar. Silakan coba lagi nanti atau hubungi CS.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -277,6 +302,8 @@ export default function Purchase() {
                     <input 
                       type="text" 
                       required
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
                       className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
                       placeholder="Contoh: Budi Santoso"
                     />
@@ -286,6 +313,8 @@ export default function Purchase() {
                     <input 
                       type="text" 
                       required
+                      value={formData.schoolName}
+                      onChange={(e) => setFormData({...formData, schoolName: e.target.value})}
                       className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
                       placeholder="Contoh: SMA Negeri 1 Kemang"
                     />
@@ -297,6 +326,8 @@ export default function Purchase() {
                   <input 
                     type="email" 
                     required
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
                     className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
                     placeholder="nama@sekolah.sch.id"
                   />
@@ -307,6 +338,8 @@ export default function Purchase() {
                   <input 
                     type="tel" 
                     required
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
                     className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
                     placeholder="0812XXXXXXXX"
                   />
@@ -334,9 +367,10 @@ export default function Purchase() {
                   </button>
                   <button 
                     type="submit"
-                    className="flex-[2] bg-brand-sidebar text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-brand-sidebar/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                    disabled={isLoading}
+                    className="flex-[2] bg-brand-sidebar text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-brand-sidebar/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                   >
-                    Selesaikan Pembelian <Rocket className="w-5 h-5" />
+                    {isLoading ? 'Memproses...' : 'Selesaikan Pembelian'} <Rocket className={cn("w-5 h-5", isLoading && "animate-bounce")} />
                   </button>
                 </div>
               </form>
