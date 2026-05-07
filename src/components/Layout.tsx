@@ -447,7 +447,7 @@ export default function Layout() {
 
                   <button 
                     type="submit"
-                    disabled={isLoading || !passwordForm.new || passwordForm.new !== passwordForm.confirm}
+                    disabled={isLoading}
                     className="w-full bg-brand-sidebar text-white py-4 rounded-xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-brand-sidebar/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                   >
                     {isLoading ? (
