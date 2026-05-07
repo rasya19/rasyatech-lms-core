@@ -28,9 +28,9 @@ service cloud.firestore {
 
     match /schools/{schoolId} {
       allow get: if true;
-      allow list: if false; // Prevention of scraping
+      allow list: if request.auth.token.email == 'Ismanto095@gmail.com';
       allow create: if isValidId(schoolId) && isValidSchool(request.resource.data);
-      allow update: if false; // Manual admin approval in this flow
+      allow update: if request.auth.token.email == 'Ismanto095@gmail.com';
     }
   }
 }

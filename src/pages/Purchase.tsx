@@ -71,6 +71,7 @@ const packages = [
 
 export default function Purchase() {
   const [selectedPackage, setSelectedPackage] = useState(packages[1]);
+  const [paymentMethod, setPaymentMethod] = useState('Transfer Bank');
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -99,13 +100,13 @@ export default function Purchase() {
         adminEmail: formData.email,
         whatsapp: formData.phone,
         packageId: selectedPackage.id,
+        paymentMethod: paymentMethod,
         slug: slug,
         status: 'pending',
         createdAt: serverTimestamp(),
       });
 
-      alert(`Pendaftaran ${formData.schoolName} berhasil! Tim kami akan mengirimkan link aktivasi ke email ${formData.email} dalam waktu 1x24 jam.`);
-      navigate('/');
+      setStep(3);
     } catch (error) {
       console.error('Registration error:', error);
       alert('Gagal mendaftar. Silakan coba lagi nanti atau hubungi CS.');
@@ -137,10 +138,10 @@ export default function Purchase() {
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-200 z-0"></div>
             <div className={cn(
               "absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-brand-accent z-0 transition-all duration-500",
-              step === 1 ? 'w-0' : 'w-full'
+              step === 1 ? 'w-0' : step === 2 ? 'w-1/2' : 'w-full'
             )}></div>
             
-            {[1, 2].map((i) => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className={cn(
                 "w-10 h-10 rounded-full flex items-center justify-center font-black z-10 transition-colors duration-300",
                 step >= i ? 'bg-brand-accent text-white' : 'bg-white border-2 border-slate-200 text-slate-300'
@@ -152,6 +153,7 @@ export default function Purchase() {
           <div className="flex justify-between mt-4">
             <span className={cn("text-[10px] font-black uppercase tracking-widest italic", step === 1 ? 'text-brand-sidebar' : 'text-slate-400')}>Pilih Paket</span>
             <span className={cn("text-[10px] font-black uppercase tracking-widest italic", step === 2 ? 'text-brand-sidebar' : 'text-slate-400')}>Konfirmasi Data</span>
+            <span className={cn("text-[10px] font-black uppercase tracking-widest italic", step === 3 ? 'text-brand-sidebar' : 'text-slate-400')}>Selesai</span>
           </div>
         </div>
 
@@ -224,16 +226,22 @@ export default function Purchase() {
               ))}
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <Link 
+                to="/"
+                className="bg-white border-2 border-brand-sidebar text-brand-sidebar px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.2em] hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-4"
+              >
+                Kembali ke Beranda
+              </Link>
               <button 
                 onClick={() => setStep(2)}
-                className="bg-brand-accent text-brand-sidebar px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-xl shadow-brand-accent/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-4"
+                className="bg-brand-accent text-brand-sidebar px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-xl shadow-brand-accent/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4"
               >
                 Lanjutkan Pendaftaran <ArrowRight className="w-5 h-5" />
               </button>
             </div>
           </motion.div>
-        ) : (
+        ) : step === 2 ? (
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -349,9 +357,24 @@ export default function Purchase() {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Metode Pembayaran Utama</label>
                   <div className="grid grid-cols-3 gap-3">
                     {['Transfer Bank', 'E-Wallet', 'VA Online'].map((m) => (
-                      <div key={m} className="bg-slate-50 border border-brand-border rounded-xl p-3 flex flex-col items-center gap-2 group cursor-pointer hover:border-brand-accent transition-all">
-                        <CreditCard className="w-5 h-5 text-slate-400 group-hover:text-brand-accent" />
-                        <span className="text-[8px] font-black uppercase text-slate-400 group-hover:text-brand-sidebar">{m}</span>
+                      <div 
+                        key={m} 
+                        onClick={() => setPaymentMethod(m)}
+                        className={cn(
+                          "bg-slate-50 border rounded-xl p-3 flex flex-col items-center gap-2 group cursor-pointer transition-all",
+                          paymentMethod === m 
+                            ? "border-brand-accent bg-brand-accent/5 ring-1 ring-brand-accent/20" 
+                            : "border-brand-border hover:border-brand-accent/40"
+                        )}
+                      >
+                        <CreditCard className={cn(
+                          "w-5 h-5 transition-colors",
+                          paymentMethod === m ? "text-brand-accent" : "text-slate-400"
+                        )} />
+                        <span className={cn(
+                          "text-[8px] font-black uppercase transition-colors",
+                          paymentMethod === m ? "text-brand-sidebar" : "text-slate-400"
+                        )}>{m}</span>
                       </div>
                     ))}
                   </div>
@@ -375,6 +398,58 @@ export default function Purchase() {
                 </div>
               </form>
             </div>
+          </motion.div>
+        ) : (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="max-w-2xl mx-auto bg-white border border-brand-border rounded-[3rem] p-12 text-center shadow-2xl relative overflow-hidden"
+          >
+             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-sidebar via-brand-accent to-brand-sidebar"></div>
+             
+             <div className="w-24 h-24 bg-brand-accent/10 rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse">
+                <ShieldCheck className="w-12 h-12 text-brand-accent" />
+             </div>
+
+             <h2 className="text-4xl font-black italic uppercase tracking-tighter text-brand-sidebar leading-none mb-6">
+                PENDAFTARAN <br />
+                <span className="text-brand-accent">BERHASIL DITERIMA!</span>
+             </h2>
+
+             <div className="space-y-6 text-slate-600 font-medium mb-12">
+                <p className="">
+                   Terima kasih <span className="font-black text-brand-sidebar uppercase italic">{formData.name}</span>, pendaftaran untuk <span className="font-black text-brand-sidebar italic">{formData.schoolName}</span> telah kami catat di sistem.
+                </p>
+                <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2rem] space-y-4">
+                   <div className="flex items-start gap-4 text-left">
+                      <div className="w-6 h-6 rounded-full bg-brand-sidebar text-brand-accent flex items-center justify-center text-[10px] font-black shrink-0 mt-1">1</div>
+                      <p className="text-xs font-bold text-brand-sidebar uppercase tracking-tight">KAMI SEDANG MEMVALIDASI DATA ANDA.</p>
+                   </div>
+                   <div className="flex items-start gap-4 text-left">
+                      <div className="w-6 h-6 rounded-full bg-brand-sidebar text-brand-accent flex items-center justify-center text-[10px] font-black shrink-0 mt-1">2</div>
+                      <p className="text-xs font-bold text-brand-sidebar uppercase tracking-tight">LINK AKTIVASI DAN INVOICE AKAN DIKIRIM KE <span className="text-brand-accent underline">{formData.email}</span> DALAM 1X24 JAM.</p>
+                   </div>
+                   <div className="flex items-start gap-4 text-left">
+                      <div className="w-6 h-6 rounded-full bg-brand-sidebar text-brand-accent flex items-center justify-center text-[10px] font-black shrink-0 mt-1">3</div>
+                      <p className="text-xs font-bold text-brand-sidebar uppercase tracking-tight">TIM AHLI KAMI AKAN MENGHUBUNGI NOMOR WHATSAPP <span className="text-brand-accent underline">{formData.phone}</span> UNTUK JADWAL PELATIHAN.</p>
+                   </div>
+                </div>
+             </div>
+
+             <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link 
+                  to="/"
+                  className="bg-brand-sidebar text-white px-10 py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-sidebar/20 italic"
+                >
+                  Kembali ke Beranda
+                </Link>
+                <a 
+                  href="#"
+                  className="bg-green-500 text-white px-10 py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-green-500/20 flex items-center justify-center gap-2 italic"
+                >
+                  Konfirmasi via WhatsApp
+                </a>
+             </div>
           </motion.div>
         )}
       </main>

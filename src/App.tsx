@@ -29,6 +29,7 @@ import Keuangan from './pages/Keuangan';
 import Diskusi from './pages/Diskusi';
 import AiAsisten from './pages/AiAsisten';
 import Purchase from './pages/Purchase';
+import SuperAdmin from './pages/SuperAdmin';
 
 function SchoolLoader() {
   const { schoolSlug } = useParams();
@@ -66,6 +67,7 @@ export default function App() {
           <Route path="/preview" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/purchase" element={<Purchase />} />
+          <Route path="/super-admin" element={<SuperAdmin />} />
           
           {/* Multi-tenancy Routes */}
           <Route path="/s/:schoolSlug" element={<SchoolLoader />}>
