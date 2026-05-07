@@ -17,7 +17,8 @@ service cloud.firestore {
 
     // School validation helper
     function isValidSchool(data) {
-      return data.keys().hasAll(['name', 'slug', 'adminEmail', 'adminName', 'whatsapp', 'packageId', 'status', 'createdAt']) &&
+      return data.keys().hasAll(['ownerUid', 'name', 'slug', 'adminEmail', 'adminName', 'whatsapp', 'packageId', 'status', 'createdAt']) &&
+             data.ownerUid is string &&
              data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
              data.slug is string && data.slug.size() > 0 && data.slug.size() < 100 &&
              data.adminEmail is string && data.adminEmail.size() >= 3 &&
@@ -35,9 +36,10 @@ service cloud.firestore {
       allow get: if true;
       allow list: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
       allow create: if isValidId(schoolId) && 
-                      (request.auth.uid == schoolId || request.auth.token.email.lower() == 'ismanto095@gmail.com') && 
+                      request.auth.uid == request.resource.data.ownerUid && 
+                      !exists(/databases/$(database)/documents/schools/$(schoolId)) &&
                       isValidSchool(request.resource.data);
-      allow update: if request.auth.token.email.lower() == 'ismanto095@gmail.com' || (request.auth.uid == schoolId);
+      allow update: if request.auth.token.email.lower() == 'ismanto095@gmail.com' || (request.auth.uid == resource.data.ownerUid);
     }
   }
 }

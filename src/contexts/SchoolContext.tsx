@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 interface School {
   id: string;
@@ -29,15 +29,23 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const q = query(collection(db, 'schools'), where('slug', '==', slug));
-      const querySnapshot = await getDocs(q);
+      const docRef = doc(db, 'schools', slug);
+      const docSnap = await getDoc(docRef);
       
-      if (!querySnapshot.empty) {
-        const doc = querySnapshot.docs[0];
-        setSchool({ id: doc.id, ...doc.data() } as School);
+      if (docSnap.exists()) {
+        setSchool({ id: docSnap.id, ...docSnap.data() } as School);
       } else {
-        setSchool(null);
-        setError('Sekolah tidak ditemukan');
+        // Fallback: try query if migration is not fully complete or for compatibility
+        const q = query(collection(db, 'schools'), where('slug', '==', slug));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const doc = querySnapshot.docs[0];
+          setSchool({ id: doc.id, ...doc.data() } as School);
+        } else {
+          setSchool(null);
+          setError('Sekolah tidak ditemukan');
+        }
       }
     } catch (err) {
       console.error('Fetch school error:', err);

@@ -105,9 +105,10 @@ export default function Purchase() {
 
       // 2. Save School Data to Firestore
       const slug = formData.schoolName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      const registrationId = user.uid; // Use Auth UID as document ID for easier management
+      const registrationId = slug; // Use Slug as document ID for easier public lookup
       
       await setDoc(doc(db, 'schools', registrationId), {
+        ownerUid: user.uid,
         name: formData.schoolName,
         npsn: formData.npsn,
         address: formData.address,
