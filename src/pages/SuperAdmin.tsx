@@ -42,12 +42,12 @@ export default function SuperAdmin() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
-  const SUPER_ADMIN_EMAIL = 'Ismanto095@gmail.com';
+  const SUPER_ADMIN_EMAIL = 'ismanto095@gmail.com';
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (currentUser?.email === SUPER_ADMIN_EMAIL) {
+      if (currentUser?.email?.toLowerCase() === SUPER_ADMIN_EMAIL) {
         const q = query(collection(db, 'schools'), orderBy('createdAt', 'desc'));
         const unsubFirestore = onSnapshot(q, (snapshot) => {
           const docs = snapshot.docs.map(doc => ({
@@ -137,7 +137,7 @@ export default function SuperAdmin() {
     );
   }
 
-  if (user.email !== SUPER_ADMIN_EMAIL) {
+  if (user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL) {
     return (
       <div className="min-h-screen bg-brand-sidebar flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-[2.5rem] p-10 text-center shadow-2xl">

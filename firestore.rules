@@ -28,9 +28,9 @@ service cloud.firestore {
 
     match /schools/{schoolId} {
       allow get: if true;
-      allow list: if request.auth.token.email == 'Ismanto095@gmail.com';
+      allow list: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
       allow create: if isValidId(schoolId) && isValidSchool(request.resource.data);
-      allow update: if request.auth.token.email == 'Ismanto095@gmail.com';
+      allow update: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
     }
   }
 }
