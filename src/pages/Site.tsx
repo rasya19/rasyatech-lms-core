@@ -1,8 +1,10 @@
-import { SCHOOL_NAME } from '../constants';
 import React, { useState, useEffect } from 'react';
 import { Globe, Layout as LayoutIcon, Image as ImageIcon, MessageSquare, Settings, ExternalLink, Eye, MousePointer2, Plus, Trash2, Edit3, Save } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
+import { useSchool } from '../contexts/SchoolContext';
+import { db } from '../lib/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 interface Berita {
   id: string;
@@ -15,6 +17,33 @@ interface Berita {
 }
 
 export default function Site() {
+  const { school } = useSchool();
+  const [isSavingIdentity, setIsSavingIdentity] = useState(false);
+  
+  const [identityForm, setIdentityForm] = useState({
+    name: school?.name || '',
+    npsn: school?.npsn || '',
+    accreditation: school?.accreditation || 'Belum Terakreditasi',
+    address: school?.address || '',
+    whatsapp: school?.whatsapp || '',
+    email: school?.adminEmail || ''
+  });
+
+  useEffect(() => {
+    if (school) {
+      setIdentityForm({
+        name: school.name,
+        npsn: school.npsn || '',
+        accreditation: school.accreditation || 'Belum Terakreditasi',
+        address: school.address || '',
+        whatsapp: school.whatsapp || '',
+        email: school.adminEmail || ''
+      });
+    }
+  }, [school]);
+
+  const [isSavingContact, setIsSavingContact] = useState(false);
+
   const [consultationLink, setConsultationLink] = useState(
     localStorage.getItem('school_consultation_link') || 'https://wa.me/6281234567890?text=Halo%20Admin,%20saya%20ingin%20konsultasi.'
   );
@@ -454,27 +483,27 @@ export default function Site() {
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Nama Sekolah</label>
                 <input 
-                  id="school-name-input"
                   type="text"
                   className="w-full bg-slate-50 border border-brand-border rounded-xl p-4 text-xs font-bold focus:border-brand-accent outline-none"
-                  defaultValue={SCHOOL_NAME}
+                  value={identityForm.name}
+                  onChange={(e) => setIdentityForm({...identityForm, name: e.target.value})}
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">NPSN</label>
                 <input 
-                  id="school-npsn-input"
                   type="text"
                   className="w-full bg-slate-50 border border-brand-border rounded-xl p-4 text-xs font-bold focus:border-brand-accent outline-none"
-                  defaultValue={localStorage.getItem('school_npsn') || 'P9961234'}
+                  value={identityForm.npsn}
+                  onChange={(e) => setIdentityForm({...identityForm, npsn: e.target.value})}
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Akreditasi</label>
                 <select 
-                  id="school-accreditation-input"
                   className="w-full bg-slate-50 border border-brand-border rounded-xl p-4 text-xs font-bold focus:border-brand-accent outline-none"
-                  defaultValue={localStorage.getItem('school_accreditation') || 'A (Unggul)'}
+                  value={identityForm.accreditation}
+                  onChange={(e) => setIdentityForm({...identityForm, accreditation: e.target.value})}
                 >
                   <option value="A (Unggul)">A (Unggul)</option>
                   <option value="B (Baik)">B (Baik)</option>
@@ -485,21 +514,29 @@ export default function Site() {
             </div>
             
             <button 
-              onClick={() => {
-                const name = (document.getElementById('school-name-input') as HTMLInputElement).value;
-                const npsn = (document.getElementById('school-npsn-input') as HTMLInputElement).value;
-                const acc = (document.getElementById('school-accreditation-input') as HTMLSelectElement).value;
-                
-                localStorage.setItem('school_name', name);
-                localStorage.setItem('school_npsn', npsn);
-                localStorage.setItem('school_accreditation', acc);
-                
-                alert('Identitas sekolah berhasil diperbarui!');
-                window.location.reload();
+              disabled={isSavingIdentity || !school}
+              onClick={async () => {
+                if (!school) return;
+                setIsSavingIdentity(true);
+                try {
+                  const schoolRef = doc(db, 'schools', school.id);
+                  await updateDoc(schoolRef, {
+                    name: identityForm.name,
+                    npsn: identityForm.npsn,
+                    accreditation: identityForm.accreditation
+                  });
+                  alert('Identitas sekolah berhasil diperbarui!');
+                  window.location.reload();
+                } catch (error) {
+                  console.error('Update error:', error);
+                  alert('Gagal memperbarui identitas: ' + error);
+                } finally {
+                  setIsSavingIdentity(false);
+                }
               }}
-              className="bg-brand-sidebar text-white px-8 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-brand-sidebar/20 hover:scale-105 transition-all italic"
+              className="bg-brand-sidebar text-white px-8 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-brand-sidebar/20 hover:scale-105 transition-all italic disabled:opacity-50"
             >
-              Simpan Identitas
+              {isSavingIdentity ? 'Menyimpan...' : 'Simpan Identitas'}
             </button>
           </div>
 
@@ -692,27 +729,53 @@ export default function Site() {
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Alamat Lengkap</label>
                   <textarea 
                     className="w-full bg-slate-50 border border-brand-border rounded-xl p-4 text-xs font-bold focus:border-brand-accent outline-none h-20 resize-none"
-                    value={contactInfo.address}
-                    onChange={(e) => setContactInfo({...contactInfo, address: e.target.value})}
+                    value={identityForm.address}
+                    onChange={(e) => setIdentityForm({...identityForm, address: e.target.value})}
                   />
                </div>
                <div className="space-y-1.5">
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">WhatsApp/Telepon</label>
                   <input 
                     className="w-full bg-slate-50 border border-brand-border rounded-xl p-4 text-xs font-bold focus:border-brand-accent outline-none"
-                    value={contactInfo.phone}
-                    onChange={(e) => setContactInfo({...contactInfo, phone: e.target.value})}
+                    value={identityForm.whatsapp}
+                    onChange={(e) => setIdentityForm({...identityForm, whatsapp: e.target.value})}
                   />
                </div>
                <div className="space-y-1.5">
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Email Sekolah</label>
                   <input 
                     className="w-full bg-slate-50 border border-brand-border rounded-xl p-4 text-xs font-bold focus:border-brand-accent outline-none"
-                    value={contactInfo.email}
-                    onChange={(e) => setContactInfo({...contactInfo, email: e.target.value})}
+                    value={identityForm.email}
+                    onChange={(e) => setIdentityForm({...identityForm, email: e.target.value})}
                   />
                </div>
             </div>
+            
+            <button 
+              disabled={isSavingContact || !school}
+              onClick={async () => {
+                if (!school) return;
+                setIsSavingContact(true);
+                try {
+                  const schoolRef = doc(db, 'schools', school.id);
+                  await updateDoc(schoolRef, {
+                    address: identityForm.address,
+                    whatsapp: identityForm.whatsapp,
+                    adminEmail: identityForm.email
+                  });
+                  alert('Info kontak berhasil diperbarui!');
+                  window.location.reload();
+                } catch (error) {
+                  console.error('Update error:', error);
+                  alert('Gagal memperbarui kontak: ' + error);
+                } finally {
+                  setIsSavingContact(false);
+                }
+              }}
+              className="bg-brand-sidebar text-white px-8 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-brand-sidebar/20 hover:scale-105 transition-all italic disabled:opacity-50 mt-6"
+            >
+              {isSavingContact ? 'Menyimpan...' : 'Simpan Kontak'}
+            </button>
           </div>
 
           {/* Gallery Management */}

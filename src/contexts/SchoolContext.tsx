@@ -6,6 +6,11 @@ interface School {
   id: string;
   name: string;
   slug: string;
+  npsn?: string;
+  accreditation?: string;
+  address?: string;
+  whatsapp?: string;
+  adminEmail?: string;
   logoUrl?: string;
   themeColor?: string;
   status: string;

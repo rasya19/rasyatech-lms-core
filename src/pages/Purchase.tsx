@@ -79,6 +79,7 @@ export default function Purchase() {
     name: '',
     schoolName: '',
     npsn: '',
+    accreditation: 'Belum Terakreditasi',
     address: '',
     email: '',
     phone: '',
@@ -111,6 +112,7 @@ export default function Purchase() {
         ownerUid: user.uid,
         name: formData.schoolName,
         npsn: formData.npsn,
+        accreditation: formData.accreditation,
         address: formData.address,
         adminName: formData.name,
         adminEmail: formData.email,
@@ -367,6 +369,20 @@ export default function Purchase() {
                       className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
                       placeholder="8 digit nomor NPSN"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Akreditasi</label>
+                    <select 
+                      required
+                      value={formData.accreditation}
+                      onChange={(e) => setFormData({...formData, accreditation: e.target.value})}
+                      className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none appearance-none"
+                    >
+                      <option value="A (Unggul)">A (Unggul)</option>
+                      <option value="B (Baik)">B (Baik)</option>
+                      <option value="C (Cukup)">C (Cukup)</option>
+                      <option value="Belum Terakreditasi">Belum Terakreditasi</option>
+                    </select>
                   </div>
                 </div>
 

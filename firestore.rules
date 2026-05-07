@@ -28,6 +28,7 @@ service cloud.firestore {
              data.status in ['pending', 'active'] &&
              data.createdAt == request.time &&
              (!('npsn' in data) || data.npsn is string) &&
+             (!('accreditation' in data) || data.accreditation is string) &&
              (!('address' in data) || data.address is string) &&
              (!('paymentMethod' in data) || data.paymentMethod is string);
     }
