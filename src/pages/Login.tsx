@@ -57,7 +57,7 @@ export default function Login() {
       color: 'hover:border-brand-sidebar group-hover:text-brand-sidebar',
       bg: 'group-hover:bg-slate-100',
       dummy: { 
-        user: import.meta.env.VITE_ADMIN_USER || 'admin', 
+        user: import.meta.env.VITE_ADMIN_USER || 'pkbmarmillanusa@gmail.com', 
         pass: import.meta.env.VITE_ADMIN_PASS || 'admin123' 
       },
       demo: {

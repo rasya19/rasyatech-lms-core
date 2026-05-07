@@ -29,11 +29,15 @@ import {
   MessageSquare,
   Sparkles,
   Menu,
-  X
+  X,
+  Lock,
+  Eye,
+  EyeOff,
+  ShieldAlert,
+  ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
-import AdBanner from './AdBanner';
 
 type Role = 'Admin' | 'Guru' | 'Siswa';
 
@@ -41,6 +45,14 @@ export default function Layout() {
   const [role, setRole] = useState<Role>((localStorage.getItem('userRole') as Role) || 'Siswa');
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    current: '',
+    new: '',
+    confirm: ''
+  });
 
   const { first: schoolFirst, rest: schoolRest } = getSchoolParts();
 
@@ -56,6 +68,21 @@ export default function Layout() {
     localStorage.removeItem('isDemoMode');
     localStorage.removeItem('adminName');
     window.location.href = '/login';
+  };
+
+  const handleUpdatePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordForm.new !== passwordForm.confirm) {
+      alert('Password konfirmasi tidak cocok!');
+      return;
+    }
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      setIsPasswordModalOpen(false);
+      setPasswordForm({ current: '', new: '', confirm: '' });
+      alert('Password berhasil diperbarui! Gunakan password baru untuk login berikutnya.');
+    }, 1500);
   };
 
   const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
@@ -243,6 +270,15 @@ export default function Layout() {
           </div>
 
           <div className="flex items-center gap-4">
+            {role === 'Admin' && (
+              <button 
+                onClick={() => setIsPasswordModalOpen(true)}
+                className="p-1.5 text-brand-text-muted hover:bg-slate-50 hover:text-brand-accent rounded-lg transition-all cursor-pointer"
+                title="Ganti Password"
+              >
+                <Lock className="w-5 h-5" />
+              </button>
+            )}
             <div className="relative p-1.5 text-brand-text-muted hover:bg-slate-50 rounded-lg transition-all cursor-pointer">
               <Bell className="w-5 h-5" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-accent rounded-full border-2 border-white"></span>
@@ -317,9 +353,116 @@ export default function Layout() {
             <Outlet />
           </motion.div>
         </div>
-        <footer className="mt-auto">
-          <AdBanner className="w-full bg-white border-t border-brand-border" slot="Dashboard Native Footer" />
-        </footer>
+
+        {/* Password Change Modal */}
+        <AnimatePresence>
+          {isPasswordModalOpen && (
+            <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsPasswordModalOpen(false)}
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-md bg-white rounded-[2rem] border border-brand-border p-8 shadow-2xl"
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-brand-bg rounded-2xl border border-brand-border text-brand-accent">
+                      <Lock className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-brand-sidebar uppercase italic tracking-widest text-lg">GANTI <span className="text-brand-accent">PASSWORD</span></h3>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter italic">Pengamanan Akun Administrator</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setIsPasswordModalOpen(false)} className="text-slate-400 hover:text-brand-sidebar">
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleUpdatePassword} className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Password Sekarang</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <ShieldAlert className="w-4 h-4" />
+                      </div>
+                      <input 
+                        type="password" 
+                        required
+                        value={passwordForm.current}
+                        onChange={(e) => setPasswordForm({...passwordForm, current: e.target.value})}
+                        className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 pl-12 pr-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Password Baru</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <Lock className="w-4 h-4" />
+                      </div>
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        required
+                        value={passwordForm.new}
+                        onChange={(e) => setPasswordForm({...passwordForm, new: e.target.value})}
+                        placeholder="••••••••"
+                        className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 pl-12 pr-12 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-brand-accent"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Konfirmasi Password Baru</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <Check className="w-4 h-4" />
+                      </div>
+                      <input 
+                        type="password" 
+                        required
+                        value={passwordForm.confirm}
+                        onChange={(e) => setPasswordForm({...passwordForm, confirm: e.target.value})}
+                        className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 pl-12 pr-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit"
+                    disabled={isLoading || !passwordForm.new || passwordForm.new !== passwordForm.confirm}
+                    className="w-full bg-brand-sidebar text-white py-4 rounded-xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-brand-sidebar/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                  >
+                    {isLoading ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        Simpan Perubahan <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </section>
 
       {/* Right Panel - Dense Info (Visible on Large Screens) */}
@@ -374,8 +517,6 @@ export default function Layout() {
            <p className="text-[11px] text-slate-300">Webinar AI in Education akan dimulai dalam 2 jam.</p>
            <button className="w-full mt-3 py-1.5 bg-brand-accent rounded-lg text-[10px] font-bold">Ingatkan Saya</button>
         </div>
-
-        <AdBanner slot="sidebar_bottom" format="rectangle" className="mt-auto" type="placeholder" />
       </aside>
     </div>
   );
