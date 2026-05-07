@@ -1,0 +1,382 @@
+import { SCHOOL_NAME, getSchoolParts } from '../constants';
+import React, { useState } from 'react';
+import { NavLink, Outlet } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  Users, 
+  UserCheck, 
+  GraduationCap, 
+  BookOpen, 
+  ClipboardCheck, 
+  FileBarChart, 
+  ScrollText, 
+  UserPlus, 
+  Megaphone,
+  LogOut,
+  Bell,
+  Search,
+  Calendar,
+  Clock,
+  ChevronDown,
+  FileText,
+  Layers,
+  ArrowUpCircle,
+  Globe,
+  Check,
+  Link2,
+  Wallet,
+  Settings,
+  MessageSquare,
+  Sparkles,
+  Menu,
+  X
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { cn } from '@/src/lib/utils';
+import AdBanner from './AdBanner';
+
+type Role = 'Admin' | 'Guru' | 'Siswa';
+
+export default function Layout() {
+  const [role, setRole] = useState<Role>((localStorage.getItem('userRole') as Role) || 'Siswa');
+  const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const { first: schoolFirst, rest: schoolRest } = getSchoolParts();
+
+  // Sync role to localStorage if changed (for demo purposes)
+  const handleRoleChange = (newRole: Role) => {
+    setRole(newRole);
+    localStorage.setItem('userRole', newRole);
+    setIsRoleMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('isDemoMode');
+    localStorage.removeItem('adminName');
+    window.location.href = '/login';
+  };
+
+  const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
+  const adminName = localStorage.getItem('adminName') || (role === 'Admin' ? 'Administrator' : role);
+
+  const getNavItems = (): (any & { isExternal?: boolean })[] => {
+    switch (role) {
+      case 'Admin':
+        return [
+          { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+          { icon: Users, label: 'Data Siswa', path: '/dashboard/siswa' },
+          { icon: UserCheck, label: 'Data Guru', path: '/dashboard/guru' },
+          { icon: Link2, label: 'Relasi Mengajar', path: '/dashboard/relasi' },
+          { icon: Layers, label: 'Kelola Kelas', path: '/dashboard/kelas' },
+          { icon: FileText, label: 'Cek Raport', path: '/dashboard/raport' },
+          { icon: Wallet, label: 'Keuangan', path: '/dashboard/keuangan' },
+          { icon: MessageSquare, label: 'Ruang Diskusi', path: '/dashboard/diskusi' },
+          { icon: Sparkles, label: 'Asisten AI', path: '/dashboard/ai-asisten' },
+          { icon: ArrowUpCircle, label: 'Kenaikan Kelas', path: '/dashboard/kenaikan' },
+          { icon: GraduationCap, label: 'Data Alumni', path: '/dashboard/alumni' },
+          { icon: UserPlus, label: 'PPDB Kami', path: '/dashboard/ppdb' },
+          { icon: Settings, label: 'Manajemen Web', path: '/dashboard/site' },
+          { icon: Globe, label: 'Web Utama', path: '/', isExternal: true },
+        ];
+      case 'Guru':
+        return [
+          { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+          { icon: BookOpen, label: 'Materi Ajar', path: '/dashboard/materi' },
+          { icon: ClipboardCheck, label: 'Kelola Ujian', path: '/dashboard/ujian' },
+          { icon: MessageSquare, label: 'Ruang Diskusi', path: '/dashboard/diskusi' },
+          { icon: Sparkles, label: 'Asisten AI', path: '/dashboard/ai-asisten' },
+          { icon: FileBarChart, label: 'Input Nilai', path: '/dashboard/nilai' },
+          { icon: FileText, label: 'Cek Raport', path: '/dashboard/raport' },
+        ];
+      default: // Siswa
+        return [
+          { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+          { icon: BookOpen, label: 'Materi Saya', path: '/dashboard/materi' },
+          { icon: ClipboardCheck, label: 'Ikut Ujian', path: '/dashboard/ujian' },
+          { icon: MessageSquare, label: 'Ruang Diskusi', path: '/dashboard/diskusi' },
+          { icon: FileBarChart, label: 'Nilai Saya', path: '/dashboard/nilai' },
+          { icon: FileText, label: 'Raport Saya', path: '/dashboard/raport' },
+          { icon: ScrollText, label: 'SKL Digital', path: '/dashboard/skl' },
+        ];
+    }
+  };
+
+  const navItems = getNavItems();
+
+  const secondaryItems = [
+    { icon: Megaphone, label: 'Pengumuman', path: '/dashboard/pengumuman' },
+  ];
+
+  return (
+    <div className="flex h-screen bg-brand-bg overflow-hidden relative">
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar - Narrow/Darkish in HD theme */}
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-50 w-64 bg-brand-sidebar flex flex-col transition-transform duration-300 transform lg:relative lg:translate-x-0 print:hidden",
+        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:w-20 xl:w-64"
+      )}>
+        <div className="p-6 flex items-center justify-between lg:justify-start gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-brand-accent rounded-xl flex items-center justify-center text-white font-black italic shadow-lg shadow-brand-accent/20">A</div>
+            <div className="flex flex-col lg:hidden xl:flex">
+               <h1 className="text-lg font-black text-white tracking-tighter uppercase italic leading-none">
+                 {schoolFirst} <span className="text-brand-accent">{schoolRest}</span>
+               </h1>
+               <span className="text-[7px] font-black text-slate-500 uppercase tracking-[0.2em] leading-none mt-1.5">By <span className="text-brand-accent">Rasyacomp</span></span>
+            </div>
+          </div>
+          <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden text-slate-400">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        
+        <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto custom-scrollbar">
+          <p className="text-[10px] font-bold text-slate-500 px-3 py-2 uppercase tracking-widest lg:hidden xl:block">Utama</p>
+          {navItems.map((item) => (
+            item.isExternal ? (
+              <a
+                key={item.path}
+                href={item.path}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group justify-start text-slate-400 hover:bg-white/10 hover:text-white"
+              >
+                <item.icon className="w-5 h-5 shrink-0" />
+                <span className="font-medium text-sm lg:hidden xl:block">{item.label}</span>
+              </a>
+            ) : (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={({ isActive }) => cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group justify-start",
+                  isActive 
+                    ? "bg-brand-accent text-white" 
+                    : "text-slate-400 hover:bg-white/10 hover:text-white"
+                )}
+              >
+                <item.icon className="w-5 h-5 shrink-0" />
+                <span className="font-medium text-sm lg:hidden xl:block">{item.label}</span>
+              </NavLink>
+            )
+          ))}
+
+          <div className="pt-4 mt-4 border-t border-white/5">
+            <p className="text-[10px] font-bold text-slate-500 px-3 py-2 uppercase tracking-widest lg:hidden xl:block">Informasi</p>
+            {secondaryItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={({ isActive }) => cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group justify-start",
+                  isActive 
+                    ? "bg-brand-accent text-white" 
+                    : "text-slate-400 hover:bg-white/10 hover:text-white"
+                )}
+              >
+                <item.icon className="w-5 h-5 shrink-0" />
+                <span className="font-medium text-sm lg:hidden xl:block">{item.label}</span>
+              </NavLink>
+            ))}
+          </div>
+        </nav>
+
+        <div className="p-4 border-t border-white/10 space-y-4">
+          <div className="px-3 py-2 bg-white/5 rounded-lg border border-white/5 lg:hidden xl:block">
+             <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">Tech Ecosystem</p>
+             <p className="text-[10px] font-black text-white italic tracking-tighter uppercase">RASYAC<span className="text-brand-accent">OMP</span> <span className="text-[8px] text-slate-500 font-bold not-italic">CLOUD</span></p>
+          </div>
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-3 w-full text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all justify-start"
+          >
+            <LogOut className="w-5 h-5 shrink-0" />
+            <span className="font-medium text-sm lg:hidden xl:block">Keluar</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <section className="flex-1 flex flex-col min-w-0 bg-white lg:bg-brand-bg print:bg-white print:p-0 h-full relative">
+        {/* Header - HD theme is clean/white */}
+        <header className="h-16 bg-white border-b border-brand-border flex items-center justify-between px-4 lg:px-8 shrink-0 print:hidden gap-4">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2 lg:hidden text-brand-sidebar hover:bg-slate-100 rounded-lg transition-all"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <div className="hidden lg:block">
+               <h2 className="text-sm font-bold text-brand-text-main mb-0 hidden md:block">
+                 {adminName} <span className="text-brand-accent italic">{role}</span>
+               </h2>
+               <p className="text-[10px] text-brand-text-muted uppercase tracking-wider hidden md:block">
+                 {isDemoMode ? 'Sedang dalam mode uji coba publik' : (role === 'Siswa' ? 'Selamat belajar kembali' : role === 'Guru' ? 'Manajemen pembelajaran hari ini' : 'Kendali sistem pusat Armilla')}
+               </p>
+            </div>
+          </div>
+
+          <div className="flex-1 max-w-sm px-3 py-1.5 rounded-lg bg-slate-100 flex items-center gap-2">
+            <Search className="w-3.5 h-3.5 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Cari..." 
+              className="bg-transparent border-none outline-none text-xs w-full focus:ring-0"
+            />
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="relative p-1.5 text-brand-text-muted hover:bg-slate-50 rounded-lg transition-all cursor-pointer">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-accent rounded-full border-2 border-white"></span>
+            </div>
+            
+            {/* Role Switcher - ONLY show for Admin role to toggle between views */}
+            {role === 'Admin' && (
+              <div className="relative">
+                <button 
+                  onClick={() => setIsRoleMenuOpen(!isRoleMenuOpen)}
+                  className="flex items-center gap-2 border border-brand-border pl-3 pr-2 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 transition-all font-bold"
+                >
+                   <span className="text-[10px] font-black uppercase text-brand-accent tracking-widest">{role} VIEW</span>
+                   <ChevronDown className={cn("w-3 h-3 transition-transform", isRoleMenuOpen && "rotate-180")} />
+                </button>
+                
+                <AnimatePresence>
+                  {isRoleMenuOpen && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 5 }}
+                      className="absolute right-0 mt-2 w-40 bg-white border border-brand-border rounded-xl shadow-xl z-50 overflow-hidden"
+                    >
+                      <div className="p-2 bg-slate-50 border-b border-brand-border">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Simulasi Role</p>
+                      </div>
+                      {(['Admin', 'Guru', 'Siswa'] as Role[]).map((r) => (
+                        <button
+                          key={r}
+                          onClick={() => handleRoleChange(r)}
+                          className={cn(
+                            "w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-colors flex items-center justify-between",
+                            role === r ? "text-brand-accent" : "text-slate-500"
+                          )}
+                        >
+                          {r} {role === r && <Check className="w-3 h-3" />}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
+            <div className="w-8 h-8 bg-brand-border rounded-full border border-brand-accent flex items-center justify-center text-[10px] font-bold text-brand-text-main">
+               {adminName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+            </div>
+          </div>
+        </header>
+
+        {/* Demo Mode Banner */}
+        {isDemoMode && (
+          <div className="bg-brand-accent/10 border-b border-brand-accent/20 px-4 lg:px-8 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-brand-accent animate-pulse" />
+              <span className="text-[10px] font-black text-brand-accent uppercase tracking-[0.2em] italic">Aktif: Mode Demo & Uji Coba</span>
+            </div>
+            <p className="text-[9px] text-brand-accent font-bold italic leading-none hidden md:block">
+              Beberapa fitur tulis-ke-spreadsheet mungkin dibatasi untuk menjaga keamanan data utama.
+            </p>
+          </div>
+        )}
+
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto p-6 md:p-8">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Outlet />
+          </motion.div>
+        </div>
+        <footer className="mt-auto">
+          <AdBanner className="w-full bg-white border-t border-brand-border" slot="Dashboard Native Footer" />
+        </footer>
+      </section>
+
+      {/* Right Panel - Dense Info (Visible on Large Screens) */}
+      <aside className="w-80 bg-white border-l border-brand-border hidden xl:flex flex-col p-6 space-y-8 overflow-y-auto print:hidden">
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-brand-text-main">Kalender Belajar</h3>
+            <span className="text-[10px] font-bold text-brand-accent">Mei 2026</span>
+          </div>
+          <div className="grid grid-cols-7 gap-1 text-center">
+            {['S', 'S', 'R', 'K', 'J', 'S', 'M'].map((d, i) => (
+              <span key={`${d}-${i}`} className="text-[10px] text-brand-text-muted font-bold py-1">{d}</span>
+            ))}
+            {Array.from({ length: 14 }, (_, i) => (
+              <div 
+                key={i} 
+                className={cn(
+                  "aspect-square flex items-center justify-center text-[11px] rounded-md transition-all cursor-pointer",
+                  i === 2 ? "bg-brand-accent text-white font-bold" : "text-brand-text-main hover:bg-brand-bg"
+                )}
+              >
+                {i + 12}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="text-sm font-bold text-brand-text-main">Tugas Mendatang</h3>
+          {[
+            { title: 'Kuis Fotografi', deadline: 'Hari ini, 23:59', color: 'bg-brand-accent' },
+            { title: 'Project Akhir', deadline: 'Besok, 18:00', color: 'bg-orange-400' },
+            { title: 'Review Modul 2', deadline: 'Terlambat 2 Jam', color: 'bg-red-500' },
+          ].map((task, i) => (
+            <div key={i} className="flex gap-3 items-start p-3 bg-brand-bg rounded-lg border-l-4" style={{ borderColor: i === 0 ? '#3b82f6' : i === 1 ? '#fbbf24' : '#ef4444' }}>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-brand-text-main truncate">{task.title}</p>
+                <div className="flex items-center gap-1 mt-1">
+                  <Clock className="w-3 h-3 text-brand-text-muted" />
+                  <span className="text-[10px] text-brand-text-muted">{task.deadline}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-brand-sidebar rounded-xl p-4 text-white">
+           <div className="flex items-center gap-2 mb-2">
+             <Calendar className="w-4 h-4 text-brand-accent" />
+             <span className="text-xs font-bold">Event Kampus</span>
+           </div>
+           <p className="text-[11px] text-slate-300">Webinar AI in Education akan dimulai dalam 2 jam.</p>
+           <button className="w-full mt-3 py-1.5 bg-brand-accent rounded-lg text-[10px] font-bold">Ingatkan Saya</button>
+        </div>
+
+        <AdBanner slot="sidebar_bottom" format="rectangle" className="mt-auto" type="placeholder" />
+      </aside>
+    </div>
+  );
+}
