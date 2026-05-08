@@ -16,6 +16,7 @@ interface School {
   status: string;
   expiryDate?: string;
   studentLimit?: number;
+  custom_domain?: string;
 }
 
 interface SchoolContextType {
@@ -31,6 +32,44 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   const [school, setSchool] = useState<School | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const resolveByHostname = async () => {
+      const hostname = window.location.hostname;
+      // You can define your production base domain here
+      const baseDomain = 'armillalms.id'; 
+      
+      let slug = '';
+      let customDomain = '';
+
+      if (hostname.endsWith(`.${baseDomain}`)) {
+        slug = hostname.replace(`.${baseDomain}`, '');
+      } else if (hostname !== baseDomain && !hostname.includes('localhost') && !hostname.includes('run.app')) {
+        // Assume it might be a custom domain if it's not the base domain and not a dev environment
+        customDomain = hostname;
+      }
+
+      if (slug) {
+        setSchoolBySlug(slug);
+      } else if (customDomain) {
+        setLoading(true);
+        try {
+          const q = query(collection(db, 'schools'), where('custom_domain', '==', customDomain));
+          const querySnapshot = await getDocs(q);
+          if (!querySnapshot.empty) {
+            const data = querySnapshot.docs[0].data();
+            setSchool({ id: querySnapshot.docs[0].id, ...data } as School);
+          }
+        } catch (err) {
+          console.error('Custom domain resolution error:', err);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    resolveByHostname();
+  }, []);
 
   const setSchoolBySlug = useCallback(async (slug: string) => {
     const normalizedSlug = slug.toLowerCase();

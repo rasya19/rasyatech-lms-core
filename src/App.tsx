@@ -68,46 +68,64 @@ function SchoolLoader() {
   return <Outlet />;
 }
 
-export default function App() {
-  return (
-    <BrowserRouter>
-      <SchoolProvider>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/preview" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/purchase" element={<Purchase />} />
-          <Route path="/super-admin" element={<SuperAdmin />} />
-          
-          {/* Multi-tenancy Routes */}
-          <Route path="/s/:schoolSlug" element={<SchoolLoader />}>
-             <Route index element={<LandingPage />} />
-             <Route path="login" element={<Login />} />
-             <Route path="dashboard" element={<Layout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="course/:id" element={<CourseDetail />} />
-                <Route path="siswa" element={<Siswa />} />
-                <Route path="guru" element={<Guru />} />
-                <Route path="relasi" element={<Relasi />} />
-                <Route path="alumni" element={<Alumni />} />
-                <Route path="materi" element={<Materi />} />
-                <Route path="ujian" element={<Ujian />} />
-                <Route path="nilai" element={<Nilai />} />
-                <Route path="raport" element={<Raport />} />
-                <Route path="kelas" element={<Kelas />} />
-                <Route path="kenaikan" element={<KenaikanKelas />} />
-                <Route path="skl" element={<SKL />} />
-                <Route path="ppdb" element={<PPDB />} />
-                <Route path="pengumuman" element={<Pengumuman />} />
-                <Route path="site" element={<Site />} />
-                <Route path="keuangan" element={<Keuangan />} />
-                <Route path="diskusi" element={<Diskusi />} />
-                <Route path="ai-asisten" element={<AiAsisten />} />
-             </Route>
-          </Route>
+function AppContent() {
+  const { school, loading } = useSchool();
 
-          <Route path="/dashboard" element={<Layout />}>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-brand-accent border-t-brand-sidebar rounded-full animate-spin"></div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 animate-pulse">Menghubungkan Institusi...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      {/* Root Path - Switches based on domain detection */}
+      <Route path="/" element={school ? <LandingPage /> : <LandingPage />} />
+      <Route path="/preview" element={<LandingPage />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/purchase" element={<Purchase />} />
+      <Route path="/super-admin" element={<SuperAdmin />} />
+      
+      {/* If subdomain/custom domain is detected, allow accessing dashboard routes at root */}
+      {school && (
+        <>
+          <Route path="login" element={<Login />} />
+          <Route path="dashboard" element={<Layout />}>
+             <Route index element={<Dashboard />} />
+             <Route path="course/:id" element={<CourseDetail />} />
+             <Route path="siswa" element={<Siswa />} />
+             <Route path="guru" element={<Guru />} />
+             <Route path="relasi" element={<Relasi />} />
+             <Route path="alumni" element={<Alumni />} />
+             <Route path="materi" element={<Materi />} />
+             <Route path="ujian" element={<Ujian />} />
+             <Route path="nilai" element={<Nilai />} />
+             <Route path="raport" element={<Raport />} />
+             <Route path="kelas" element={<Kelas />} />
+             <Route path="kenaikan" element={<KenaikanKelas />} />
+             <Route path="skl" element={<SKL />} />
+             <Route path="ppdb" element={<PPDB />} />
+             <Route path="pengumuman" element={<Pengumuman />} />
+             <Route path="site" element={<Site />} />
+             <Route path="keuangan" element={<Keuangan />} />
+             <Route path="diskusi" element={<Diskusi />} />
+             <Route path="ai-asisten" element={<AiAsisten />} />
+          </Route>
+        </>
+      )}
+
+      {/* Multi-tenancy Routes (Legacy/Fallback) */}
+      <Route path="/s/:schoolSlug" element={<SchoolLoader />}>
+         <Route index element={<LandingPage />} />
+         <Route path="login" element={<Login />} />
+         <Route path="dashboard" element={<Layout />}>
             <Route index element={<Dashboard />} />
+            {/* ... other child routes ... */}
             <Route path="course/:id" element={<CourseDetail />} />
             <Route path="siswa" element={<Siswa />} />
             <Route path="guru" element={<Guru />} />
@@ -126,8 +144,41 @@ export default function App() {
             <Route path="keuangan" element={<Keuangan />} />
             <Route path="diskusi" element={<Diskusi />} />
             <Route path="ai-asisten" element={<AiAsisten />} />
-          </Route>
-        </Routes>
+         </Route>
+      </Route>
+
+      <Route path="/dashboard" element={<Layout />}>
+        {/* These might be global dashboard or school dashboard if context exists */}
+        <Route index element={<Dashboard />} />
+        {/* ... */}
+        <Route path="course/:id" element={<CourseDetail />} />
+        <Route path="siswa" element={<Siswa />} />
+        <Route path="guru" element={<Guru />} />
+        <Route path="relasi" element={<Relasi />} />
+        <Route path="alumni" element={<Alumni />} />
+        <Route path="materi" element={<Materi />} />
+        <Route path="ujian" element={<Ujian />} />
+        <Route path="nilai" element={<Nilai />} />
+        <Route path="raport" element={<Raport />} />
+        <Route path="kelas" element={<Kelas />} />
+        <Route path="kenaikan" element={<KenaikanKelas />} />
+        <Route path="skl" element={<SKL />} />
+        <Route path="ppdb" element={<PPDB />} />
+        <Route path="pengumuman" element={<Pengumuman />} />
+        <Route path="site" element={<Site />} />
+        <Route path="keuangan" element={<Keuangan />} />
+        <Route path="diskusi" element={<Diskusi />} />
+        <Route path="ai-asisten" element={<AiAsisten />} />
+      </Route>
+    </Routes>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <SchoolProvider>
+        <AppContent />
       </SchoolProvider>
     </BrowserRouter>
   );

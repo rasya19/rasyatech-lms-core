@@ -42,6 +42,7 @@ interface SchoolRegistration {
   status: 'pending' | 'active' | 'suspended';
   expiryDate?: string;
   studentLimit?: number;
+  custom_domain?: string;
   createdAt: any;
 }
 
@@ -1099,7 +1100,33 @@ export default function SuperAdmin() {
                    </div>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-4">
+                   <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Custom Domain</label>
+                      <input 
+                        type="text" 
+                        placeholder="lms.sekolah.com"
+                        defaultValue={selectedSchoolForConfig.custom_domain || ''}
+                        onChange={(e) => {
+                          setSelectedSchoolForConfig({...selectedSchoolForConfig, custom_domain: e.target.value});
+                        }}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs font-bold text-brand-sidebar outline-none focus:border-brand-accent"
+                      />
+                      <p className="text-[9px] text-slate-400 font-medium italic mt-1 px-2">Kosongkan jika hanya menggunakan subdomain.</p>
+                   </div>
+
+                   <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Subdomain Slug</label>
+                      <input 
+                        type="text" 
+                        defaultValue={selectedSchoolForConfig.slug}
+                        onChange={(e) => {
+                          setSelectedSchoolForConfig({...selectedSchoolForConfig, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')});
+                        }}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs font-bold text-brand-sidebar outline-none focus:border-brand-accent"
+                      />
+                   </div>
+
                    <div className="space-y-1.5">
                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Masa Aktif Sekolah</label>
                       <input 
@@ -1131,7 +1158,9 @@ export default function SuperAdmin() {
                    <button 
                      onClick={() => handleUpdateSchoolConfig(selectedSchoolForConfig.id, {
                         expiryDate: selectedSchoolForConfig.expiryDate,
-                        studentLimit: Number(selectedSchoolForConfig.studentLimit)
+                        studentLimit: Number(selectedSchoolForConfig.studentLimit),
+                        slug: selectedSchoolForConfig.slug,
+                        custom_domain: selectedSchoolForConfig.custom_domain
                      })}
                      className="w-full bg-brand-sidebar text-white py-4 rounded-xl font-black text-xs uppercase tracking-[0.3em] shadow-xl shadow-brand-sidebar/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group mt-4 italic"
                    >
