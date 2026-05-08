@@ -11,7 +11,9 @@ import Dashboard from './pages/Dashboard';
 import CourseDetail from './pages/CourseDetail';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
-import Siswa from './pages/Siswa';
+import DataSiswa from './pages/DataSiswa';
+import BankSoal from './pages/BankSoal';
+import HasilUjian from './pages/HasilUjian';
 import Guru from './pages/Guru';
 import Alumni from './pages/Alumni';
 import Materi from './pages/Materi';
@@ -105,7 +107,9 @@ function AppContent() {
           <Route path="dashboard" element={<Layout />}>
              <Route index element={<Dashboard />} />
              <Route path="course/:id" element={<CourseDetail />} />
-             <Route path="siswa" element={<Siswa />} />
+             <Route path="siswa" element={<DataSiswa />} />
+             <Route path="soal" element={<BankSoal />} />
+             <Route path="hasil-ujian" element={<HasilUjian />} />
              <Route path="guru" element={<Guru />} />
              <Route path="relasi" element={<Relasi />} />
              <Route path="alumni" element={<Alumni />} />
@@ -136,7 +140,9 @@ function AppContent() {
             <Route index element={<Dashboard />} />
             {/* ... other child routes ... */}
             <Route path="course/:id" element={<CourseDetail />} />
-            <Route path="siswa" element={<Siswa />} />
+            <Route path="siswa" element={<DataSiswa />} />
+            <Route path="soal" element={<BankSoal />} />
+            <Route path="hasil-ujian" element={<HasilUjian />} />
             <Route path="guru" element={<Guru />} />
             <Route path="relasi" element={<Relasi />} />
             <Route path="alumni" element={<Alumni />} />
@@ -163,7 +169,9 @@ function AppContent() {
         <Route index element={<Dashboard />} />
         {/* ... */}
         <Route path="course/:id" element={<CourseDetail />} />
-        <Route path="siswa" element={<Siswa />} />
+        <Route path="siswa" element={<DataSiswa />} />
+        <Route path="soal" element={<BankSoal />} />
+        <Route path="hasil-ujian" element={<HasilUjian />} />
         <Route path="guru" element={<Guru />} />
         <Route path="relasi" element={<Relasi />} />
         <Route path="alumni" element={<Alumni />} />
