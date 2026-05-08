@@ -29,13 +29,16 @@ const MOCK_COURSES: Course[] = [
 ];
 
 export default function Dashboard() {
+  const { school } = useSchool();
+  const adminName = localStorage.getItem('adminName') || 'Administrator';
+
   return (
     <div className="space-y-6 max-w-5xl">
       {/* Welcome Section */}
       <section className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-2">
         <div>
           <h2 className="text-xl font-bold text-brand-text-main">Dashboard Utama</h2>
-          <p className="text-xs text-brand-text-muted">Selamat datang kembali, Budi Santoso</p>
+          <p className="text-xs text-brand-text-muted">Selamat datang kembali, {adminName}</p>
         </div>
       </section>
 

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useSchool } from '../contexts/SchoolContext';
+import { db, auth } from '../lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { 
   ShieldCheck, 
   UserCheck, 
@@ -73,71 +75,93 @@ export default function Login() {
     },
   ];
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Mock authentication delay
-    setTimeout(() => {
-      setIsLoading(false);
-      
+
+    try {
       const portal = portals.find(p => p.id === selectedPortal);
-      if (portal) {
-        // Authenticate Siswa against localStorage
-        if (selectedPortal === 'siswa') {
-          const savedSiswa = localStorage.getItem('school_siswa_list');
-          const siswaList = savedSiswa ? JSON.parse(savedSiswa) : [];
-          const foundSiswa = siswaList.find((s: any) => s.nisn === formData.username && (s.password === formData.password || (!s.password && formData.password === '12345')));
-          
-          if (foundSiswa) {
-            localStorage.setItem('userRole', 'Siswa');
-            localStorage.setItem('currentUserId', foundSiswa.id);
-            localStorage.setItem('isDemoMode', 'false');
-            if (foundSiswa.mustChangePassword || !foundSiswa.password || foundSiswa.password === '12345') {
-              setIsChangingPassword(true);
-            } else {
-              navigate(`${prefix}/dashboard`);
-            }
-            return;
-          }
+      if (!portal) return;
+
+      // Handle Admin Login (Real Auth or Demo)
+      if (selectedPortal === 'admin') {
+        const isDemoAdmin = formData.username === 'demo_admin' && formData.password === 'demo123';
+        
+        if (isDemoAdmin) {
+          localStorage.setItem('userRole', 'Admin');
+          localStorage.setItem('isDemoMode', 'true');
+          localStorage.setItem('adminName', 'Admin Demo');
+          navigate(`${prefix}/dashboard`);
+          return;
         }
 
-        // Check for REAL ADMIN (from Env)
-        const isRealAdmin = selectedPortal === 'admin' && 
-                           formData.username === portal.dummy.user && 
-                           formData.password === portal.dummy.pass;
+        // Try real Firebase authentication
+        try {
+          const userCredential = await signInWithEmailAndPassword(auth, formData.username, formData.password);
+          const user = userCredential.user;
 
-        // Check for DEMO ADMIN (fixed)
-        const isDemoAdmin = selectedPortal === 'admin' && 
-                           formData.username === 'demo_admin' && 
-                           formData.password === 'demo123';
+          // If we are in a specific school context, make sure this user is the admin for THIS school
+          if (schoolSlug && school) {
+            if (user.email !== school.adminEmail && user.uid !== school.ownerUid) {
+              await auth.signOut();
+              throw new Error('Anda tidak memiliki akses ke sekolah ini.');
+            }
+          }
 
-        // Check for other portals (Guru/Siswa default)
-        const isStandardUser = formData.username === portal.dummy.user && formData.password === portal.dummy.pass;
+          localStorage.setItem('userRole', 'Admin');
+          localStorage.setItem('isDemoMode', 'false');
+          localStorage.setItem('adminName', school?.adminName || user.email?.split('@')[0] || 'Admin');
+          navigate(`${prefix}/dashboard`);
+          return;
+        } catch (authError: any) {
+          console.error('Auth error:', authError);
+          // Only throw if it's not a dummy check failure below
+          if (formData.username !== portal.dummy.user) {
+             throw new Error('Email atau password salah.');
+          }
+        }
+      }
 
-        if (isRealAdmin || isDemoAdmin || isStandardUser) {
-          // Store role for the dashboard
-          const roleMap: Record<PortalType, string> = {
-            siswa: 'Siswa',
-            guru: 'Guru',
-            admin: 'Admin'
-          };
-          
-          localStorage.setItem('userRole', roleMap[selectedPortal!]);
-          localStorage.setItem('isDemoMode', isDemoAdmin ? 'true' : 'false');
-          localStorage.setItem('adminName', isDemoAdmin ? 'Admin Demo' : 'Administrator Utama');
-
-          // Simulate "Must Change Password" for new users
-          if (formData.username.length > 5 && selectedPortal !== 'admin' && formData.password.includes('123')) {
+      // Handle Guru/Siswa portal (Current mock/localStorage implementation)
+      if (selectedPortal === 'siswa') {
+        const savedSiswa = localStorage.getItem('school_siswa_list');
+        const siswaList = savedSiswa ? JSON.parse(savedSiswa) : [];
+        const foundSiswa = siswaList.find((s: any) => s.nisn === formData.username && (s.password === formData.password || (!s.password && formData.password === '12345')));
+        
+        if (foundSiswa) {
+          localStorage.setItem('userRole', 'Siswa');
+          localStorage.setItem('currentUserId', foundSiswa.id);
+          localStorage.setItem('isDemoMode', 'false');
+          if (foundSiswa.mustChangePassword || !foundSiswa.password || foundSiswa.password === '12345') {
             setIsChangingPassword(true);
           } else {
             navigate(`${prefix}/dashboard`);
           }
-        } else {
-          alert('Username atau password salah! Gunakan akun Admin Utama Anda atau gunakan akun demo_admin untuk uji coba.');
+          return;
         }
       }
-    }, 1500);
+
+      // Standard Mock Users (Guru/Legacy Admin)
+      const isStandardUser = formData.username === portal.dummy.user && formData.password === portal.dummy.pass;
+      if (isStandardUser) {
+        const roleMap: Record<PortalType, string> = {
+          siswa: 'Siswa',
+          guru: 'Guru',
+          admin: 'Admin'
+        };
+        localStorage.setItem('userRole', roleMap[selectedPortal]);
+        localStorage.setItem('isDemoMode', 'false');
+        localStorage.setItem('adminName', 'Administrator Utama');
+        navigate(`${prefix}/dashboard`);
+        return;
+      }
+
+      alert('Login gagal. Periksa kembali email dan password Anda.');
+    } catch (error: any) {
+      alert(`Login Gagal: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleUpdatePassword = (e: React.FormEvent) => {
