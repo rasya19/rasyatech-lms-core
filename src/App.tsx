@@ -26,6 +26,7 @@ import Pengumuman from './pages/Pengumuman';
 import Site from './pages/Site';
 import Relasi from './pages/Relasi';
 import Keuangan from './pages/Keuangan';
+import Tagihan from './pages/Tagihan';
 import Diskusi from './pages/Diskusi';
 import AiAsisten from './pages/AiAsisten';
 import Purchase from './pages/Purchase';
@@ -119,6 +120,7 @@ function AppContent() {
              <Route path="pengumuman" element={<Pengumuman />} />
              <Route path="site" element={<Site />} />
              <Route path="keuangan" element={<Keuangan />} />
+             <Route path="tagihan" element={<Tagihan />} />
              <Route path="diskusi" element={<Diskusi />} />
              <Route path="ai-asisten" element={<AiAsisten />} />
              <Route path="feedback" element={<Feedback />} />
@@ -149,6 +151,7 @@ function AppContent() {
             <Route path="pengumuman" element={<Pengumuman />} />
             <Route path="site" element={<Site />} />
             <Route path="keuangan" element={<Keuangan />} />
+            <Route path="tagihan" element={<Tagihan />} />
             <Route path="diskusi" element={<Diskusi />} />
             <Route path="ai-asisten" element={<AiAsisten />} />
             <Route path="feedback" element={<Feedback />} />
@@ -175,6 +178,7 @@ function AppContent() {
         <Route path="pengumuman" element={<Pengumuman />} />
         <Route path="site" element={<Site />} />
         <Route path="keuangan" element={<Keuangan />} />
+        <Route path="tagihan" element={<Tagihan />} />
         <Route path="diskusi" element={<Diskusi />} />
         <Route path="ai-asisten" element={<AiAsisten />} />
         <Route path="feedback" element={<Feedback />} />
