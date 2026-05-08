@@ -134,6 +134,7 @@ export default function Layout() {
             icon: BookOpen,
             label: 'Akademik',
             subItems: [
+              { icon: Calendar, label: 'Jadwal Pelajaran', path: `${prefix}/dashboard/akademik` },
               { icon: Link2, label: 'Relasi Mengajar', path: `${prefix}/dashboard/relasi` },
               { icon: ArrowUpCircle, label: 'Kenaikan Kelas', path: `${prefix}/dashboard/kenaikan` },
               { icon: FileText, label: 'Cek Raport', path: `${prefix}/dashboard/raport` },

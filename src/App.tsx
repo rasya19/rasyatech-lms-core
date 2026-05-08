@@ -16,6 +16,7 @@ import BankSoal from './pages/BankSoal';
 import HasilUjian from './pages/HasilUjian';
 import Guru from './pages/Guru';
 import MataPelajaran from './pages/MataPelajaran';
+import Akademik from './pages/Akademik';
 import Alumni from './pages/Alumni';
 import Materi from './pages/Materi';
 import Ujian from './pages/Ujian';
@@ -129,6 +130,7 @@ function AppContent() {
              <Route path="hasil-ujian" element={<HasilUjian />} />
              <Route path="data-guru" element={<Guru />} />
              <Route path="mata-pelajaran" element={<MataPelajaran />} />
+             <Route path="akademik" element={<Akademik />} />
              <Route path="relasi" element={<Relasi />} />
              <Route path="alumni" element={<Alumni />} />
              <Route path="materi" element={<Materi />} />
@@ -163,6 +165,7 @@ function AppContent() {
             <Route path="hasil-ujian" element={<HasilUjian />} />
             <Route path="data-guru" element={<Guru />} />
             <Route path="mata-pelajaran" element={<MataPelajaran />} />
+            <Route path="akademik" element={<Akademik />} />
             <Route path="relasi" element={<Relasi />} />
             <Route path="alumni" element={<Alumni />} />
             <Route path="materi" element={<Materi />} />
@@ -200,6 +203,7 @@ function AppContent() {
         <Route path="hasil-ujian" element={<HasilUjian />} />
         <Route path="data-guru" element={<Guru />} />
         <Route path="mata-pelajaran" element={<MataPelajaran />} />
+        <Route path="akademik" element={<Akademik />} />
         <Route path="relasi" element={<Relasi />} />
         <Route path="alumni" element={<Alumni />} />
         <Route path="materi" element={<Materi />} />
