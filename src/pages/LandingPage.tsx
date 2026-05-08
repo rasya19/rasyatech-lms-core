@@ -15,7 +15,9 @@ import {
   Rocket,
   Zap,
   Heart,
-  MessageCircle
+  MessageCircle,
+  Award,
+  DollarSign
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
@@ -489,6 +491,46 @@ export default function LandingPage() {
                     );
                  });
                })()}
+            </div>
+         </div>
+      </section>
+
+      {/* Affiliate Card Section */}
+      <section className="py-20 px-6">
+         <div className="max-w-7xl mx-auto">
+            <div className="bg-brand-sidebar rounded-[4rem] p-12 md:p-20 relative overflow-hidden group border-4 border-brand-accent/20">
+               <div className="absolute top-0 right-0 w-1/3 h-full bg-brand-accent/10 -skew-x-12 translate-x-12" />
+               <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-brand-accent/5 rounded-full blur-[100px]" />
+               
+               <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                  <div>
+                    <div className="inline-flex items-center gap-2 bg-brand-accent/20 text-brand-accent px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest mb-6 italic">
+                       <Award className="w-4 h-4" /> Affiliate Program 2026
+                    </div>
+                    <h2 className="text-4xl md:text-6xl font-black italic text-white tracking-tighter uppercase leading-none mb-8">
+                       Jadi Mitra <span className="text-brand-accent">Afiliasi</span>
+                    </h2>
+                    <p className="text-xl text-slate-300 italic mb-10 max-w-xl font-medium">
+                       Dapatkan penghasilan tambahan dengan merekomendasikan Armilla LMS kepada rekan sekolah, PKBM, atau institusi pendidikan lainnya.
+                    </p>
+                    <Link 
+                      to="/affiliasi"
+                      className="inline-flex items-center gap-4 bg-brand-accent text-brand-sidebar px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-brand-accent/40 hover:scale-105 active:scale-95 transition-all italic"
+                    >
+                       Daftar Afiliasi <ArrowRight className="w-5 h-5" />
+                    </Link>
+                  </div>
+                  <div className="relative hidden md:block">
+                     <div className="aspect-square bg-white/5 rounded-full flex items-center justify-center p-12 border border-white/10 relative">
+                        <Users className="w-full h-full text-brand-accent opacity-20" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                           <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl rotate-3 group-hover:rotate-6 transition-transform">
+                              <DollarSign className="w-16 h-16 text-brand-sidebar" />
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
             </div>
          </div>
       </section>

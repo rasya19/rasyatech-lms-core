@@ -17,7 +17,9 @@ import {
   where, 
   getDocs, 
   onSnapshot, 
-  orderBy 
+  orderBy,
+  addDoc,
+  serverTimestamp 
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { format } from 'date-fns';
@@ -25,7 +27,14 @@ import { cn } from '../lib/utils';
 
 export default function AffiliateDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [affiliateCode, setAffiliateCode] = useState('');
+  const [regData, setRegData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    code: ''
+  });
   const [affiliateData, setAffiliateData] = useState<any>(null);
   const [commissions, setCommissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,6 +59,49 @@ export default function AffiliateDashboard() {
       }
     } catch (err) {
       setError('Terjadi kesalahan saat validasi.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      // 1. Check if code is already taken
+      const q = query(collection(db, 'affiliates'), where('code', '==', regData.code.toUpperCase()));
+      const snap = await getDocs(q);
+      
+      if (!snap.empty) {
+        setError('Kode Referal sudah digunakan. Gunakan kode lain.');
+        setLoading(false);
+        return;
+      }
+
+      // 2. Create new affiliate document
+      const newAffiliate = {
+        name: regData.name,
+        email: regData.email,
+        phone: regData.phone,
+        code: regData.code.toUpperCase(),
+        status: 'active',
+        commissionType: 'percentage',
+        commissionValue: 10, // Default 10%
+        createdAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, 'affiliates'), newAffiliate);
+      
+      // 3. Auto-login
+      setAffiliateData({ id: docRef.id, ...newAffiliate });
+      localStorage.setItem('affiliate_session', regData.code.toUpperCase());
+      setIsLoggedIn(true);
+      
+    } catch (err) {
+      console.error("Registration error:", err);
+      setError('Gagal melakukan registrasi.');
     } finally {
       setLoading(false);
     }
@@ -115,40 +167,128 @@ export default function AffiliateDashboard() {
               <Users className="w-10 h-10" />
             </div>
             <h1 className="text-2xl font-black italic uppercase tracking-tighter text-brand-sidebar leading-none">Affiliate <span className="text-brand-accent">Portal</span></h1>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-3 italic">Pantau keberhasilan referal Anda</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-3 italic">
+              {mode === 'login' ? 'Pantau keberhasilan referal Anda' : 'Bergabung sebagai Mitra Armilla'}
+            </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Kode Referal Unik</label>
-              <div className="relative">
-                <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-accent" />
+          <div className="flex bg-slate-50 p-1.5 rounded-2xl mb-8">
+            <button 
+              onClick={() => { setMode('login'); setError(''); }}
+              className={cn(
+                "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all italic",
+                mode === 'login' ? "bg-white text-brand-sidebar shadow-md" : "text-slate-400 hover:text-brand-sidebar"
+              )}
+            >
+              Masuk
+            </button>
+            <button 
+              onClick={() => { setMode('register'); setError(''); }}
+              className={cn(
+                "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all italic",
+                mode === 'register' ? "bg-white text-brand-sidebar shadow-md" : "text-slate-400 hover:text-brand-sidebar"
+              )}
+            >
+              Daftar
+            </button>
+          </div>
+
+          {mode === 'login' ? (
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Kode Referal Unik</label>
+                <div className="relative">
+                  <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-accent" />
+                  <input 
+                    type="text" 
+                    value={affiliateCode}
+                    onChange={(e) => setAffiliateCode(e.target.value.toUpperCase())}
+                    required
+                    placeholder="CONTOH: RASYA77"
+                    className="w-full bg-slate-50 border border-brand-border rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-brand-sidebar focus:ring-4 focus:ring-brand-accent/10 focus:border-brand-accent outline-none transition-all uppercase"
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <p className="text-[10px] font-black text-red-500 uppercase italic text-center animate-pulse">{error}</p>
+              )}
+
+              <button 
+                type="submit"
+                disabled={loading}
+                className="w-full bg-brand-sidebar text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl shadow-brand-sidebar/20 hover:bg-brand-accent hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 italic"
+              >
+                {loading ? 'Validasi...' : 'Masuk ke Dashboard'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Nama Lengkap</label>
                 <input 
                   type="text" 
-                  value={affiliateCode}
-                  onChange={(e) => setAffiliateCode(e.target.value.toUpperCase())}
                   required
-                  placeholder="CONTOH: RASYA77"
-                  className="w-full bg-slate-50 border border-brand-border rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-brand-sidebar focus:ring-4 focus:ring-brand-accent/10 focus:border-brand-accent outline-none transition-all uppercase"
+                  value={regData.name}
+                  onChange={(e) => setRegData({...regData, name: e.target.value})}
+                  className="w-full bg-slate-50 border border-brand-border rounded-xl p-3.5 text-xs font-bold text-brand-sidebar"
+                  placeholder="Nama sesuai KTP/Brand"
                 />
               </div>
-            </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Email (Aktif)</label>
+                  <input 
+                    type="email" 
+                    required
+                    value={regData.email}
+                    onChange={(e) => setRegData({...regData, email: e.target.value})}
+                    className="w-full bg-slate-50 border border-brand-border rounded-xl p-3.5 text-xs font-bold text-brand-sidebar"
+                    placeholder="email@anda.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">No. WhatsApp</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={regData.phone}
+                    onChange={(e) => setRegData({...regData, phone: e.target.value})}
+                    className="w-full bg-slate-50 border border-brand-border rounded-xl p-3.5 text-xs font-bold text-brand-sidebar"
+                    placeholder="08123xxx"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Ingin Kode Apa? (Max 10 Huruf)</label>
+                <input 
+                  type="text" 
+                  required
+                  maxLength={10}
+                  value={regData.code}
+                  onChange={(e) => setRegData({...regData, code: e.target.value.toUpperCase().replace(/\s/g, '')})}
+                  className="w-full bg-slate-50 border border-brand-border rounded-xl p-3.5 text-xs font-bold text-brand-sidebar uppercase"
+                  placeholder="CONTOH: SUKSES7"
+                />
+                <p className="text-[8px] text-slate-400 italic">Kode ini yang akan digunakan oleh sekolah saat mendaftar.</p>
+              </div>
 
-            {error && (
-              <p className="text-[10px] font-black text-red-500 uppercase italic text-center animate-pulse">{error}</p>
-            )}
+              {error && (
+                <p className="text-[10px] font-black text-red-500 uppercase italic text-center animate-pulse">{error}</p>
+              )}
 
-            <button 
-              type="submit"
-              disabled={loading}
-              className="w-full bg-brand-sidebar text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl shadow-brand-sidebar/20 hover:bg-brand-accent hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 italic"
-            >
-              {loading ? 'Validasi...' : 'Masuk ke Dashboard'}
-            </button>
-          </form>
+              <button 
+                type="submit"
+                disabled={loading}
+                className="w-full bg-brand-sidebar text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl shadow-brand-sidebar/20 hover:bg-brand-accent hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 italic mt-4"
+              >
+                {loading ? 'Memproses...' : 'Simpan & Masuk'}
+              </button>
+            </form>
+          )}
 
           <p className="text-[9px] text-slate-400 font-medium italic mt-10 text-center leading-relaxed px-10">
-            Belum punya kode? Hubungi Admin <span className="text-brand-sidebar font-bold">Rasyacomp</span> untuk bergabung Program Affiliate.
+            Butuh bantuan? Hubungi Admin <span className="text-brand-sidebar font-bold cursor-pointer hover:text-brand-accent underline">Rasyacomp Support</span>.
           </p>
         </motion.div>
       </div>
