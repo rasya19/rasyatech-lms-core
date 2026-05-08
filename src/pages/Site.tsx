@@ -26,7 +26,8 @@ export default function Site() {
     accreditation: school?.accreditation || 'Belum Terakreditasi',
     address: school?.address || '',
     whatsapp: school?.whatsapp || '',
-    email: school?.adminEmail || ''
+    email: school?.adminEmail || '',
+    logoUrl: school?.logoUrl || ''
   });
 
   useEffect(() => {
@@ -37,10 +38,22 @@ export default function Site() {
         accreditation: school.accreditation || 'Belum Terakreditasi',
         address: school.address || '',
         whatsapp: school.whatsapp || '',
-        email: school.adminEmail || ''
+        email: school.adminEmail || '',
+        logoUrl: school.logoUrl || ''
       });
     }
   }, [school]);
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setIdentityForm({ ...identityForm, logoUrl: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const [isSavingContact, setIsSavingContact] = useState(false);
 
@@ -480,6 +493,19 @@ export default function Site() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="space-y-1 md:col-span-2">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Logo Sekolah</label>
+                <div className="flex gap-4 items-center">
+                  {identityForm.logoUrl && (
+                    <img src={identityForm.logoUrl} className="w-16 h-16 object-contain border border-brand-border rounded-xl p-1 bg-white" />
+                  )}
+                  <label className="flex-1 bg-slate-50 border border-brand-border p-4 rounded-xl text-xs font-bold text-slate-500 cursor-pointer hover:border-brand-accent transition-all flex items-center justify-between">
+                    <span>{identityForm.logoUrl ? 'Ganti Logo...' : 'Pilih File Logo...'}</span>
+                    <Plus className="w-4 h-4" />
+                    <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+                  </label>
+                </div>
+              </div>
               <div className="space-y-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Nama Sekolah</label>
                 <input 
@@ -523,7 +549,8 @@ export default function Site() {
                   await updateDoc(schoolRef, {
                     name: identityForm.name,
                     npsn: identityForm.npsn,
-                    accreditation: identityForm.accreditation
+                    accreditation: identityForm.accreditation,
+                    logoUrl: identityForm.logoUrl
                   });
                   alert('Identitas sekolah berhasil diperbarui!');
                   window.location.reload();

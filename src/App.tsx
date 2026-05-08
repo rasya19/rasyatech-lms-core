@@ -18,6 +18,7 @@ import HasilUjian from './pages/HasilUjian';
 import Guru from './pages/Guru';
 import MataPelajaran from './pages/MataPelajaran';
 import DeteksiObjek from './pages/DeteksiObjek';
+import UjianSiswa from './pages/UjianSiswa';
 import Akademik from './pages/Akademik';
 import Alumni from './pages/Alumni';
 import Materi from './pages/Materi';
@@ -115,6 +116,7 @@ function AppContent() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/preview" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/ujian/:id" element={<UjianSiswa />} />
       <Route path="/purchase" element={<Purchase />} />
       <Route path="/super-admin" element={<SuperAdmin />} />
       <Route path="/affiliate" element={<AffiliateDashboard />} />
@@ -124,6 +126,7 @@ function AppContent() {
       {school && (
         <>
           <Route path="login" element={<Login />} />
+          <Route path="ujian/:id" element={<UjianSiswa />} />
           <Route path="dashboard" element={<Layout />}>
              <Route index element={<Dashboard />} />
              <Route path="course/:id" element={<CourseDetail />} />
@@ -160,6 +163,7 @@ function AppContent() {
       <Route path="/s/:schoolSlug" element={<SchoolLoader />}>
          <Route index element={<LandingPage />} />
          <Route path="login" element={<Login />} />
+         <Route path="ujian/:id" element={<UjianSiswa />} />
          <Route path="dashboard" element={<Layout />}>
             <Route index element={<Dashboard />} />
             {/* ... other child routes ... */}

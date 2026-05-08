@@ -53,7 +53,18 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-md border-b border-brand-border z-100 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
-             <div className="w-11 h-11 bg-brand-sidebar rounded-xl flex items-center justify-center text-brand-accent font-black italic shadow-lg shadow-brand-sidebar/20 group-hover:scale-105 transition-transform">A</div>
+             {school?.logoUrl ? (
+                <img 
+                  src={school.logoUrl} 
+                  alt={school.name} 
+                  className="w-11 h-11 object-contain bg-white rounded-xl shadow-lg shadow-brand-accent/20 p-1 group-hover:scale-105 transition-transform"
+                  referrerPolicy="no-referrer"
+                />
+             ) : (
+                <div className="w-11 h-11 bg-brand-sidebar rounded-xl flex items-center justify-center text-brand-accent font-black italic shadow-lg shadow-brand-sidebar/20 group-hover:scale-105 transition-transform">
+                   {parts.first ? parts.first[0] : 'A'}
+                </div>
+             )}
              <div className="flex flex-col">
                 <span className="font-black text-brand-sidebar uppercase italic tracking-tighter leading-none text-xl">
                   {parts.first} <span className="text-brand-accent">{parts.rest}</span>
@@ -549,7 +560,18 @@ export default function LandingPage() {
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
                <div className="md:col-span-2">
                   <div className="flex items-center gap-3 mb-6">
-                   <div className="w-10 h-10 bg-brand-sidebar rounded-xl flex items-center justify-center text-brand-accent font-black italic shadow-lg shadow-brand-sidebar/20">A</div>
+                   {school?.logoUrl ? (
+                      <img 
+                        src={school.logoUrl} 
+                        alt={school.name} 
+                        className="w-10 h-10 object-contain bg-white rounded-xl shadow-lg shadow-brand-accent/20 p-1"
+                        referrerPolicy="no-referrer"
+                      />
+                   ) : (
+                      <div className="w-10 h-10 bg-brand-sidebar rounded-xl flex items-center justify-center text-brand-accent font-black italic shadow-lg shadow-brand-sidebar/20">
+                         {parts.first ? parts.first[0] : 'A'}
+                      </div>
+                   )}
                    <div className="flex flex-col">
                       <span className="font-black text-brand-sidebar uppercase italic tracking-tighter leading-none text-lg">
                         {parts.first} <span className="text-brand-accent">{parts.rest}</span>
