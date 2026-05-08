@@ -167,6 +167,12 @@ function AppContent() {
          </Route>
       </Route>
 
+      <Route element={<Layout />}>
+        <Route path="/data-siswa" element={<DataSiswa />} />
+        <Route path="/data-guru" element={<Guru />} />
+        <Route path="/keuangan/tagihan" element={<Tagihan />} />
+      </Route>
+
       <Route path="/dashboard" element={<Layout />}>
         {/* These might be global dashboard or school dashboard if context exists */}
         <Route index element={<Dashboard />} />

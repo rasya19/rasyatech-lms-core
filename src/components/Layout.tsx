@@ -122,8 +122,8 @@ export default function Layout() {
             icon: FolderOpen, 
             label: 'Master Data', 
             subItems: [
-              { icon: Users, label: 'Data Siswa', path: `${prefix}/dashboard/data-siswa` },
-              { icon: UserCheck, label: 'Data Guru', path: `${prefix}/dashboard/data-guru` },
+              { icon: Users, label: 'Data Siswa', path: `${prefix}/data-siswa` },
+              { icon: UserCheck, label: 'Data Guru', path: `${prefix}/data-guru` },
               { icon: Book, label: 'Mata Pelajaran', path: `${prefix}/dashboard/mata-pelajaran` },
               { icon: Layers, label: 'Kelola Kelas', path: `${prefix}/dashboard/kelas` },
               { icon: GraduationCap, label: 'Data Alumni', path: `${prefix}/dashboard/alumni` },
@@ -153,7 +153,7 @@ export default function Layout() {
             label: 'Keuangan',
             subItems: [
               { icon: Wallet, label: 'Pembayaran', path: `${prefix}/dashboard/keuangan` },
-              { icon: FileText, label: 'Tagihan', path: `${prefix}/dashboard/tagihan` },
+              { icon: FileText, label: 'Tagihan', path: `${prefix}/keuangan/tagihan` },
             ]
           },
           { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },
