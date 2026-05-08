@@ -14,8 +14,9 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/src/lib/utils';
 import { db, auth } from '@/src/lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { useEffect } from 'react';
 
 const packages = [
   {
@@ -85,7 +86,28 @@ export default function Purchase() {
     phone: '',
     password: '',
   });
+  const [paymentSettings, setPaymentSettings] = useState({
+    bankName: 'BANK MANDIRI',
+    bankAccount: '123-00-0456-7890',
+    bankRecipient: 'PT ARMILLA NUSA TEKNOLOGI',
+    ewalletNumber: '0852-2502-5555',
+    vaInfo: 'Nomor Virtual Account (VA) unik akan dikirimkan otomatis ke email Anda dalam 15 menit.'
+  });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const settingsSnap = await getDoc(doc(db, 'settings', 'payment'));
+        if (settingsSnap.exists()) {
+          setPaymentSettings(settingsSnap.data() as any);
+        }
+      } catch (error) {
+        console.error('Error fetching payment settings:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const handleNext = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -512,31 +534,31 @@ export default function Purchase() {
                          <div className="space-y-2">
                             <div className="flex justify-between items-center border-b border-slate-50 pb-2">
                                <span className="text-[9px] font-black text-slate-400 uppercase">Bank</span>
-                               <span className="text-xs font-black text-brand-sidebar">BANK MANDIRI</span>
+                               <span className="text-xs font-black text-brand-sidebar">{paymentSettings.bankName}</span>
                             </div>
                             <div className="flex justify-between items-center border-b border-slate-50 pb-2">
                                <span className="text-[9px] font-black text-slate-400 uppercase">Rekening</span>
-                               <span className="text-sm font-black text-brand-accent tracking-wider">123-00-0456-7890</span>
+                               <span className="text-sm font-black text-brand-accent tracking-wider">{paymentSettings.bankAccount}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                <span className="text-[9px] font-black text-slate-400 uppercase">Penerima</span>
-                               <span className="text-xs font-black text-brand-sidebar">PT ARMILLA NUSA TEKNOLOGI</span>
+                               <span className="text-xs font-black text-brand-sidebar">{paymentSettings.bankRecipient}</span>
                             </div>
                          </div>
                       ) : paymentMethod === 'E-Wallet' ? (
                          <div className="space-y-2">
                             <div className="flex justify-between items-center border-b border-slate-50 pb-2">
-                               <span className="text-[9px] font-black text-slate-400 uppercase">Digital Wallet</span>
+                               <span className="text-[9px] font-black text-slate-400 uppercase">E-Wallet HP</span>
                                <span className="text-xs font-black text-brand-sidebar">OVO / DANA / GOPAY</span>
                             </div>
                             <div className="flex justify-between items-center">
                                <span className="text-[9px] font-black text-slate-400 uppercase">Nomor HP</span>
-                               <span className="text-sm font-black text-brand-accent tracking-wider">0852-2502-5555</span>
+                               <span className="text-sm font-black text-brand-accent tracking-wider">{paymentSettings.ewalletNumber}</span>
                             </div>
                          </div>
                       ) : (
-                         <div className="text-[10px] text-slate-500 font-bold uppercase italic p-2 bg-slate-50 rounded-lg text-center">
-                            Nomor Virtual Account (VA) unik akan dikirimkan otomatis ke email Anda dalam 15 menit.
+                         <div className="text-[10px] text-slate-500 font-bold uppercase italic p-2 bg-slate-50 rounded-lg text-center leading-relaxed">
+                            {paymentSettings.vaInfo}
                          </div>
                       )}
                    </div>

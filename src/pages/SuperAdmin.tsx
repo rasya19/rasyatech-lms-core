@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { db, auth } from '../lib/firebase';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
 import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
 import { 
   ShieldCheck, 
@@ -41,6 +41,14 @@ export default function SuperAdmin() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [paymentSettings, setPaymentSettings] = useState({
+    bankName: '',
+    bankAccount: '',
+    bankRecipient: '',
+    ewalletNumber: '',
+    vaInfo: ''
+  });
 
   const SUPER_ADMIN_EMAIL = 'ismanto095@gmail.com';
 
@@ -48,6 +56,7 @@ export default function SuperAdmin() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser?.email?.toLowerCase() === SUPER_ADMIN_EMAIL) {
+        // Fetch registrations
         const q = query(collection(db, 'schools'), orderBy('createdAt', 'desc'));
         const unsubFirestore = onSnapshot(q, (snapshot) => {
           const docs = snapshot.docs.map(doc => ({
@@ -57,6 +66,17 @@ export default function SuperAdmin() {
           setRegistrations(docs);
           setLoading(false);
         });
+
+        // Fetch Global Settings
+        const fetchSettings = async () => {
+          const settingsRef = doc(db, 'settings', 'payment');
+          const settingsSnap = await getDoc(settingsRef);
+          if (settingsSnap.exists()) {
+            setPaymentSettings(settingsSnap.data() as any);
+          }
+        };
+        fetchSettings();
+
         return () => unsubFirestore();
       } else {
         setLoading(false);
@@ -65,6 +85,19 @@ export default function SuperAdmin() {
 
     return () => unsubscribe();
   }, []);
+
+  const handleSaveSettings = async () => {
+    setIsSavingSettings(true);
+    try {
+      await setDoc(doc(db, 'settings', 'payment'), paymentSettings);
+      alert('Pengaturan pembayaran berhasil disimpan!');
+    } catch (error) {
+      console.error('Save settings error:', error);
+      alert('Gagal menyimpan pengaturan.');
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
 
   const handleLogin = async () => {
     try {
@@ -238,6 +271,88 @@ export default function SuperAdmin() {
                  <option value="active">Aktif</option>
                  <option value="suspended">Dihapus</option>
               </select>
+           </div>
+        </div>
+
+        {/* Payment Settings Section */}
+        <div className="mb-12 bg-white border border-brand-border rounded-[2.5rem] p-8 shadow-sm">
+           <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 bg-brand-accent/10 rounded-2xl flex items-center justify-center text-brand-sidebar">
+                 <CreditCard className="w-6 h-6" />
+              </div>
+              <div>
+                 <h3 className="font-black text-brand-sidebar uppercase italic tracking-widest">Pengaturan <span className="text-brand-accent">Pembayaran Global</span></h3>
+                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Kelola nomor rekening & instruksi pembayaran pendaftar</p>
+              </div>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="space-y-4 bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-brand-sidebar" /> Transfer Bank
+                 </h4>
+                 <div className="space-y-3">
+                    <input 
+                      type="text" 
+                      placeholder="Nama Bank (Contoh: BANK MANDIRI)"
+                      value={paymentSettings.bankName}
+                      onChange={(e) => setPaymentSettings({...paymentSettings, bankName: e.target.value})}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-3 text-[11px] font-bold outline-none focus:border-brand-accent"
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Nomor Rekening"
+                      value={paymentSettings.bankAccount}
+                      onChange={(e) => setPaymentSettings({...paymentSettings, bankAccount: e.target.value})}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-3 text-[11px] font-bold outline-none focus:border-brand-accent"
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Nama Penerima"
+                      value={paymentSettings.bankRecipient}
+                      onChange={(e) => setPaymentSettings({...paymentSettings, bankRecipient: e.target.value})}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-3 text-[11px] font-bold outline-none focus:border-brand-accent"
+                    />
+                 </div>
+              </div>
+
+              <div className="space-y-4 bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4 text-brand-sidebar" /> E-Wallet
+                 </h4>
+                 <div className="space-y-3">
+                    <input 
+                      type="text" 
+                      placeholder="Nomor HP E-Wallet"
+                      value={paymentSettings.ewalletNumber}
+                      onChange={(e) => setPaymentSettings({...paymentSettings, ewalletNumber: e.target.value})}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-3 text-[11px] font-bold outline-none focus:border-brand-accent"
+                    />
+                    <p className="text-[9px] text-slate-400 font-medium italic">Gunakan format 08xx-xxxx-xxxx</p>
+                 </div>
+              </div>
+
+              <div className="space-y-4 bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-brand-sidebar" /> Instruksi VA
+                 </h4>
+                 <textarea 
+                   placeholder="Instruksi Virtual Account..."
+                   value={paymentSettings.vaInfo}
+                   onChange={(e) => setPaymentSettings({...paymentSettings, vaInfo: e.target.value})}
+                   className="w-full bg-white border border-slate-200 rounded-xl p-3 text-[11px] font-bold outline-none focus:border-brand-accent h-24 resize-none"
+                 />
+              </div>
+           </div>
+
+           <div className="flex justify-end">
+              <button 
+                onClick={handleSaveSettings}
+                disabled={isSavingSettings}
+                className="bg-brand-sidebar text-white px-10 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-sidebar/20 italic disabled:opacity-50"
+              >
+                 {isSavingSettings ? 'Menyimpan...' : 'Simpan Pengaturan Pembayaran'}
+              </button>
            </div>
         </div>
 
