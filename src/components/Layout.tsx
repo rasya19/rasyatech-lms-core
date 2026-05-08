@@ -48,6 +48,7 @@ export default function Layout() {
   const [role, setRole] = useState<Role>((localStorage.getItem('userRole') as Role) || 'Siswa');
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -115,7 +116,7 @@ export default function Layout() {
           { icon: Sparkles, label: 'Asisten AI', path: `${prefix}/dashboard/ai-asisten` },
           { icon: ArrowUpCircle, label: 'Kenaikan Kelas', path: `${prefix}/dashboard/kenaikan` },
           { icon: GraduationCap, label: 'Data Alumni', path: `${prefix}/dashboard/alumni` },
-          { icon: UserPlus, label: 'PPDB Kami', path: `${prefix}/dashboard/ppdb` },
+          { icon: UserPlus, label: 'Data Pendaftar', path: `${prefix}/dashboard/ppdb` },
           { icon: Settings, label: 'Manajemen Web', path: `${prefix}/dashboard/site` },
           { icon: Globe, label: 'Web Utama', path: schoolSlug ? `/s/${schoolSlug}` : '/', isExternal: true },
         ];
@@ -171,7 +172,18 @@ export default function Layout() {
       )}>
         <div className="p-6 flex items-center justify-between lg:justify-start gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-brand-accent rounded-xl flex items-center justify-center text-white font-black italic shadow-lg shadow-brand-accent/20">A</div>
+            {school?.logoUrl ? (
+              <img 
+                src={school.logoUrl} 
+                alt={school.name} 
+                className="w-10 h-10 object-contain bg-white rounded-xl shadow-lg shadow-brand-accent/20 p-1"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-10 h-10 bg-brand-accent rounded-xl flex items-center justify-center text-white font-black italic shadow-lg shadow-brand-accent/20">
+                {schoolFirst ? schoolFirst[0] : 'A'}
+              </div>
+            )}
             <div className="flex flex-col lg:hidden xl:flex">
                <h1 className="text-lg font-black text-white tracking-tighter uppercase italic leading-none">
                  {schoolFirst} <span className="text-brand-accent">{schoolRest}</span>
@@ -268,7 +280,7 @@ export default function Layout() {
                  {adminName} <span className="text-brand-accent italic">{role}</span>
                </h2>
                <p className="text-[10px] text-brand-text-muted uppercase tracking-wider hidden md:block">
-                 {isDemoMode ? 'Sedang dalam mode uji coba publik' : (role === 'Siswa' ? 'Selamat belajar kembali' : role === 'Guru' ? 'Manajemen pembelajaran hari ini' : 'Kendali sistem pusat Armilla')}
+                 {isDemoMode ? 'Sedang dalam mode uji coba publik' : (role === 'Siswa' ? 'Selamat belajar kembali' : role === 'Guru' ? 'Manajemen pembelajaran hari ini' : 'Kendali sistem pusat Rasyatech')}
                </p>
             </div>
           </div>
@@ -292,9 +304,56 @@ export default function Layout() {
                 <Lock className="w-5 h-5" />
               </button>
             )}
-            <div className="relative p-1.5 text-brand-text-muted hover:bg-slate-50 rounded-lg transition-all cursor-pointer">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-accent rounded-full border-2 border-white"></span>
+            <div className="relative">
+              <button 
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                className="p-1.5 text-brand-text-muted hover:bg-slate-50 rounded-lg transition-all cursor-pointer relative"
+                title="Notifikasi"
+              >
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-accent rounded-full border-2 border-white"></span>
+              </button>
+
+              <AnimatePresence>
+                {isNotificationsOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    className="absolute right-0 mt-2 w-72 bg-white border border-brand-border rounded-[1.5rem] shadow-2xl z-[100] overflow-hidden"
+                  >
+                    <div className="p-4 border-b border-brand-border flex items-center justify-between bg-slate-50/50">
+                      <h3 className="text-[10px] font-black uppercase text-brand-sidebar tracking-widest italic">Notifikasi <span className="text-brand-accent">Baru</span></h3>
+                      <button onClick={() => setIsNotificationsOpen(false)} className="text-slate-400 hover:text-brand-sidebar">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {[
+                        { title: 'Tagihan Baru', desc: 'Tagihan pendaftaran telah dibuat.', time: '2 menit yang lalu', icon: Wallet, color: 'bg-blue-500' },
+                        { title: 'Update Sistem', desc: 'Pemeliharaan server selesai dilakukan.', time: '1 jam yang lalu', icon: Sparkles, color: 'bg-brand-accent' },
+                        { title: 'Pendaftar Baru', desc: 'Siswa baru telah mendaftar via PPDB.', time: '3 jam yang lalu', icon: UserPlus, color: 'bg-green-500' },
+                      ].map((n, i) => (
+                        <div key={i} className="p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group">
+                          <div className="flex gap-3">
+                            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm", n.color)}>
+                              <n.icon className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-black text-brand-sidebar truncate group-hover:text-brand-accent transition-colors">{n.title}</p>
+                              <p className="text-[10px] text-slate-500 line-clamp-2 mt-0.5">{n.desc}</p>
+                              <p className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter mt-1 italic">{n.time}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <button className="w-full py-3 bg-slate-50 text-[9px] font-black uppercase text-brand-sidebar hover:bg-brand-sidebar hover:text-white transition-all tracking-widest italic">
+                      Lihat Semua Notifikasi
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             
             {/* Role Switcher - ONLY show for Admin role to toggle between views */}

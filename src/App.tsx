@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useParams, Outlet, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useParams, Outlet, Navigate, useLocation } from 'react-router-dom';
 import { SchoolProvider, useSchool } from './contexts/SchoolContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -72,8 +72,10 @@ function SchoolLoader() {
 
 function AppContent() {
   const { school, loading } = useSchool();
+  const location = useLocation();
+  const isSubroutePath = location.pathname.startsWith('/s/') || location.pathname.startsWith('/dashboard');
 
-  if (loading) {
+  if (loading && !isSubroutePath) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
         <div className="flex flex-col items-center gap-4">

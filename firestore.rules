@@ -66,5 +66,8 @@ service cloud.firestore {
       allow read: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
       allow create: if isSignedIn();
     }
+    match /ppdb_registrations/{id} {
+      allow read, write: if isSignedIn();
+    }
   }
 }

@@ -32,6 +32,14 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   const [school, setSchool] = useState<School | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Use a ref to keep track of the current school slug to avoid unnecessary fetches
+  // and dependency loops in useEffects that use setSchoolBySlug
+  const currentSchoolSlugRef = React.useRef<string | null>(null);
+
+  useEffect(() => {
+    currentSchoolSlugRef.current = school?.slug || null;
+  }, [school]);
 
   useEffect(() => {
     const resolveByHostname = async () => {
@@ -73,6 +81,11 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
 
   const setSchoolBySlug = useCallback(async (slug: string) => {
     const normalizedSlug = slug.toLowerCase();
+    
+    // If already loaded and matches slug, do nothing. 
+    // We use the ref to check the latest value without triggering dependency changes.
+    if (currentSchoolSlugRef.current === normalizedSlug) return;
+    
     setLoading(true);
     setError(null);
     try {

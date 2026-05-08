@@ -81,20 +81,25 @@ export default function Purchase() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleDownloadInvoice = () => {
-    const amount = selectedPackage.id === 'basic' ? 450000 : selectedPackage.id === 'pro' ? 1250000 : 0;
-    const date = new Date();
-    const invoiceNumber = `INV/RC/${format(date, 'yyyy/MM')}/REG-${Math.floor(1000 + Math.random() * 9000)}`;
+    try {
+      const amount = selectedPackage.id === 'basic' ? 450000 : selectedPackage.id === 'pro' ? 1250000 : 0;
+      const date = new Date();
+      const invoiceNumber = `INV/RC/${format(date, 'yyyy/MM')}/REG-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    generateInvoicePDF({
-      invoiceNumber,
-      date,
-      schoolName: formData.schoolName,
-      packageName: selectedPackage.name || 'Subscription',
-      amount,
-      paymentMethod,
-      status: 'Pending',
-      banks: paymentSettings.banks
-    });
+      generateInvoicePDF({
+        invoiceNumber,
+        date,
+        schoolName: formData.schoolName || 'Institusi Baru',
+        packageName: selectedPackage.name || 'Pendaftaran Armilla LMS',
+        amount,
+        paymentMethod,
+        status: 'Pending',
+        banks: paymentSettings.banks
+      });
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      alert("Gagal mengunduh invoice. Silakan coba lagi atau hubungi CS.");
+    }
   };
   const [formData, setFormData] = useState({
     name: '',

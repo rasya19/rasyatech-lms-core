@@ -1,10 +1,29 @@
-import React, { useState } from 'react';
-import { UserPlus, Sparkles, MoveRight, HelpCircle, X, Check, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { UserPlus, Sparkles, X, Check, Search, Filter, Edit2, Trash2 } from 'lucide-react';
+import { collection, addDoc, onSnapshot, query, serverTimestamp, orderBy, where } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { useSchool } from '../contexts/SchoolContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { format } from 'date-fns';
+
+interface StudentRegistration {
+  id: string;
+  name: string;
+  paket: string;
+  whatsapp: string;
+  email: string;
+  jk: string;
+  nik: string;
+  createdAt: any;
+  status: 'PENDING' | 'VERIFIED' | 'REJECTED';
+}
 
 export default function PPDB() {
+  const { school } = useSchool();
+  const [registrations, setRegistrations] = useState<StudentRegistration[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,14 +51,54 @@ export default function PPDB() {
     alasan: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Fetch registrations
+  useEffect(() => {
+    if (!school?.id) return;
+    
+    const q = query(
+      collection(db, 'ppdb_registrations'),
+      where('schoolId', '==', school.id),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsub = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as StudentRegistration[];
+      setRegistrations(docs);
+    }, (error) => {
+      console.error("Error fetching registrations:", error);
+    });
+
+    return () => unsub();
+  }, [school?.id]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!school?.id) return;
+
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await addDoc(collection(db, 'ppdb_registrations'), {
+        ...formData,
+        schoolId: school.id,
+        status: 'PENDING',
+        createdAt: serverTimestamp()
+      });
       setIsSubmitted(true);
-    }, 2000);
+    } catch (error) {
+      console.error('Error submitting registration:', error);
+      alert('Gagal mengirim pendaftaran.');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const filteredRegistrations = registrations.filter(r => 
+    r.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    r.whatsapp?.includes(searchTerm)
+  );
 
   const handleClose = () => {
     setIsFormOpen(false);
@@ -69,87 +128,133 @@ export default function PPDB() {
   };
 
   return (
-    <div className="max-w-5xl space-y-8">
-       <div className="bg-brand-sidebar rounded-2xl p-8 md:p-12 text-white relative overflow-hidden group">
-          <div className="relative z-10 max-w-2xl">
-             <div className="inline-flex items-center gap-2 bg-brand-accent/20 border border-brand-accent/30 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest italic text-brand-accent mb-6">
-                <Sparkles className="w-3 h-3" /> Penerimaan Siswa Baru 2026/2027
-             </div>
-             <h1 className="text-3xl md:text-5xl font-bold tracking-tighter leading-none italic mb-6">
-                MASA DEPAN <span className="text-brand-accent">CERAH</span> DIMULAI DARI SINI.
-             </h1>
-             <p className="text-sm md:text-lg text-slate-400 font-medium italic mb-8 max-w-lg leading-relaxed">
-                Bergabunglah bersama PKBM Armilla Nusa. Menyediakan jalur pendidikan Paket A, B, dan C dengan fleksibilitas tinggi.
-             </p>
-             <div className="flex flex-wrap gap-4">
-                <button 
-                  onClick={() => setIsFormOpen(true)}
-                  className="bg-brand-accent text-white px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-[0.2em] shadow-2xl shadow-brand-accent/20 hover:scale-105 transition-all flex items-center gap-2 group/btn"
-                >
-                   Daftar Sekarang <MoveRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                </button>
-                <button className="bg-white/5 border border-white/10 hover:bg-white/10 px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-[0.2em] transition-all italic">
-                   Brosur Digital
-                </button>
-             </div>
+    <div className="max-w-6xl space-y-8">
+       {/* Header Section */}
+       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black italic uppercase text-brand-sidebar tracking-tighter">
+              Data <span className="text-brand-accent">Pendaftar</span> PPDB
+            </h1>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 italic">
+              Manajemen penerimaan siswa baru {school?.name}
+            </p>
           </div>
-          {/* Decorative background elements */}
-          <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-brand-accent/10 to-transparent pointer-none" />
-          <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-brand-accent/10 rounded-full blur-3xl" />
+          <button 
+            onClick={() => setIsFormOpen(true)}
+            className="bg-brand-sidebar text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-brand-accent transition-all italic flex items-center gap-2"
+          >
+            <UserPlus className="w-4 h-4" /> Input Pendaftar Baru
+          </button>
        </div>
 
-       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-             <h3 className="text-sm font-bold text-brand-text-main uppercase tracking-[0.2em] italic border-l-4 border-brand-accent pl-4">Kenapa Memilih Kami?</h3>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { title: 'Ijazah Resmi', desc: 'Sertifikat kelulusan sah dan diakui oleh Kemendikbudristek.' },
-                  { title: 'Belajar Fleksibel', desc: 'Cocok bagi yang bekerja maupun anak usia sekolah (Drop Out).' },
-                  { title: 'Berbasis Digital', desc: 'Akses materi dan ujian kapan saja melalui LMS Terpadu.' },
-                  { title: 'Tutor Ahli', desc: 'Dibimbing oleh pendidik profesional di bidangnya.' },
-                ].map((f, i) => (
-                  <div key={i} className="bg-white p-6 rounded-xl border border-brand-border group hover:border-brand-accent transition-all cursor-default">
-                    <h4 className="font-bold text-xs text-brand-text-main uppercase italic mb-2 group-hover:text-brand-accent">{f.title}</h4>
-                    <p className="text-[11px] text-slate-500 italic leading-relaxed">{f.desc}</p>
-                  </div>
-                ))}
+       {/* Stats Grid */}
+       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Total Pendaftar', value: registrations.length, color: 'text-brand-sidebar' },
+            { label: 'Pending', value: registrations.filter(r => r.status === 'PENDING').length, color: 'text-orange-500' },
+            { label: 'Verified', value: registrations.filter(r => r.status === 'VERIFIED').length, color: 'text-emerald-500' },
+            { label: 'Rejected', value: registrations.filter(r => r.status === 'REJECTED').length, color: 'text-red-500' },
+          ].map((stat, i) => (
+            <div key={i} className="bg-white p-6 rounded-[2rem] border border-brand-border shadow-sm">
+               <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1 italic">{stat.label}</p>
+               <h3 className={cn("text-3xl font-black italic", stat.color)}>{stat.value.toString().padStart(2, '0')}</h3>
+            </div>
+          ))}
+       </div>
+
+       {/* List View */}
+       <div className="bg-white border border-brand-border rounded-[2rem] p-8 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+             <div className="flex-1 max-w-md relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input 
+                  type="text" 
+                  placeholder="Cari nama atau nomor WhatsApp..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold outline-none focus:border-brand-accent transition-all"
+                />
+             </div>
+             <div className="flex items-center gap-3">
+                <button className="p-3 bg-slate-50 rounded-xl text-brand-sidebar hover:bg-brand-accent hover:text-white transition-all">
+                   <Filter className="w-4 h-4" />
+                </button>
              </div>
           </div>
 
-          <div className="bg-slate-50 border border-brand-border rounded-xl p-6 flex flex-col">
-             <h3 className="text-sm font-bold text-brand-text-main uppercase tracking-widest italic mb-6">Status Pendaftaran</h3>
-             <div className="space-y-4">
-                <div className="p-4 bg-white border border-brand-border rounded-xl flex items-center justify-center text-center italic">
-                   <div className="space-y-1">
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">Gelombang Saat Ini</p>
-                      <h4 className="font-bold text-brand-accent text-lg">Gelombang I</h4>
-                      <p className="text-[9px] text-emerald-500 font-bold uppercase">Terbuka s/d 30 Mei 2026</p>
-                   </div>
-                </div>
-                
-                <Link to="/" className="w-full py-4 border-2 border-dashed border-brand-border rounded-xl flex items-center justify-center gap-2 text-slate-400 hover:text-brand-accent hover:border-brand-accent transition-all group">
-                   <UserPlus className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                   <span className="text-xs font-bold uppercase tracking-widest italic">Cek Status Registrasi</span>
-                </Link>
-             </div>
-
-             <div className="mt-auto pt-8 border-t border-brand-border">
-                <div className="flex gap-4 items-center mb-4">
-                   <div className="p-3 bg-brand-accent/10 rounded-full">
-                      <HelpCircle className="w-5 h-5 text-brand-accent" />
-                   </div>
-                   <div>
-                      <p className="text-[10px] font-bold text-brand-text-main italic">Butuh Informasi?</p>
-                      <p className="text-[10px] text-brand-accent font-bold">WA: +62 852-2502-5555</p>
-                   </div>
-                </div>
-             </div>
+          <div className="overflow-x-auto overflow-y-hidden">
+             <table className="w-full min-w-[800px]">
+                <thead>
+                   <tr className="text-left border-b border-slate-100">
+                      <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Info Pendaftar</th>
+                      <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Paket & Gender</th>
+                      <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Kontak</th>
+                      <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Tgl Daftar</th>
+                      <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Status</th>
+                      <th className="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Aksi</th>
+                   </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                   {filteredRegistrations.length > 0 ? (
+                      filteredRegistrations.map((r) => (
+                         <tr key={r.id} className="group hover:bg-slate-50/50 transition-colors">
+                            <td className="py-4">
+                               <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-brand-bg rounded-xl flex items-center justify-center font-black text-brand-sidebar italic">
+                                     {r.name?.charAt(0)}
+                                  </div>
+                                  <div>
+                                     <p className="text-xs font-black text-brand-sidebar italic">{r.name}</p>
+                                     <p className="text-[10px] font-bold text-slate-400">NIK: {r.nik}</p>
+                                  </div>
+                               </div>
+                            </td>
+                            <td className="py-4">
+                               <span className="text-[10px] font-black bg-brand-accent/10 px-2 py-1 rounded text-brand-accent italic mb-1 inline-block">{r.paket}</span>
+                               <p className="text-[10px] font-bold text-slate-400">{r.jk}</p>
+                            </td>
+                            <td className="py-4">
+                               <p className="text-[10px] font-bold text-brand-sidebar">{r.whatsapp}</p>
+                               <p className="text-[10px] text-slate-400">{r.email}</p>
+                            </td>
+                            <td className="py-4 text-[10px] font-bold text-slate-400">
+                               {r.createdAt && typeof r.createdAt.toDate === 'function' ? format(r.createdAt.toDate(), 'dd/MM/yyyy') : '-'}
+                            </td>
+                            <td className="py-4">
+                               <span className={cn(
+                                 "text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full italic",
+                                 r.status === 'PENDING' ? "bg-orange-100 text-orange-600" :
+                                 r.status === 'VERIFIED' ? "bg-emerald-100 text-emerald-600" : "bg-red-100 text-red-600"
+                               )}>
+                                  {r.status || 'PENDING'}
+                               </span>
+                            </td>
+                            <td className="py-4">
+                               <div className="flex items-center gap-2">
+                                  <button title="Edit" className="p-2 text-slate-400 hover:text-brand-accent transition-colors"><Edit2 className="w-4 h-4" /></button>
+                                  <button title="Hapus" className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                               </div>
+                            </td>
+                         </tr>
+                      ))
+                   ) : (
+                      <tr>
+                         <td colSpan={6} className="py-20 text-center">
+                            <div className="flex flex-col items-center gap-4 text-slate-300">
+                               <UserPlus className="w-12 h-12" />
+                               <p className="text-xs font-black uppercase tracking-widest italic">Belum ada data pendaftar</p>
+                            </div>
+                         </td>
+                      </tr>
+                   )}
+                </tbody>
+             </table>
           </div>
        </div>
 
        <AnimatePresence>
         {isFormOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -169,7 +274,7 @@ export default function PPDB() {
                   <div className="flex justify-between items-start mb-8">
                     <div>
                       <h3 className="text-xl font-black text-brand-sidebar uppercase italic tracking-widest leading-none">FORMULIR <span className="text-brand-accent">PENDAFTARAN</span></h3>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-2">Lengkapi data untuk bergabung bersama kami</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-2">Input manual data calon siswa baru</p>
                     </div>
                     <button onClick={handleClose} className="p-2 hover:bg-slate-100 rounded-2xl transition-colors">
                       <X className="w-5 h-5 text-slate-400" />
@@ -268,65 +373,13 @@ export default function PPDB() {
                       </div>
                     </div>
 
-                    {/* Data Orang Tua */}
-                    <div className="space-y-4">
-                      <h4 className="text-[11px] font-black text-brand-sidebar uppercase tracking-[0.2em] italic flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 bg-brand-accent rounded-full" /> 3. Data Orang Tua
-                        <div className="h-[1px] bg-brand-border flex-1" />
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-4 p-4 border border-brand-border rounded-2xl bg-slate-50/50">
-                           <h5 className="text-[9px] font-black text-brand-accent uppercase tracking-widest italic border-b border-brand-border pb-1">Data Ayah</h5>
-                           <div className="space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Nama Ayah</label>
-                              <input type="text" value={formData.namaAyah} onChange={(e) => setFormData({...formData, namaAyah: e.target.value})} placeholder="Nama lengkap ayah..." className="w-full bg-white border border-brand-border rounded-xl p-3 text-xs font-bold outline-none focus:border-brand-accent" />
-                           </div>
-                           <div className="space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Pekerjaan Ayah</label>
-                              <input type="text" value={formData.pekerjaanAyah} onChange={(e) => setFormData({...formData, pekerjaanAyah: e.target.value})} placeholder="Pekerjaan..." className="w-full bg-white border border-brand-border rounded-xl p-3 text-xs font-bold outline-none focus:border-brand-accent" />
-                           </div>
-                           <div className="space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Penghasilan Ayah</label>
-                              <select value={formData.penghasilanAyah} onChange={(e) => setFormData({...formData, penghasilanAyah: e.target.value})} className="w-full bg-white border border-brand-border rounded-xl p-3 text-xs font-bold outline-none">
-                                <option value="0 - 500.000">Rp 0 - Rp 500.000</option>
-                                <option value="500.000 - 1.000.000">Rp 500.000 - Rp 1.000.000</option>
-                                <option value="1.000.000 - 2.000.000">Rp 1.000.000 - Rp 2.000.000</option>
-                                <option value="2.000.000 - 5.000.000">Rp 2.000.000 - Rp 5.000.000</option>
-                                <option value="> 5.000.000">&gt; Rp 5.000.000</option>
-                              </select>
-                           </div>
-                        </div>
-                        <div className="space-y-4 p-4 border border-brand-border rounded-2xl bg-slate-50/50">
-                           <h5 className="text-[9px] font-black text-brand-accent uppercase tracking-widest italic border-b border-brand-border pb-1">Data Ibu</h5>
-                           <div className="space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Nama Ibu</label>
-                              <input type="text" value={formData.namaIbu} onChange={(e) => setFormData({...formData, namaIbu: e.target.value})} placeholder="Nama lengkap ibu..." className="w-full bg-white border border-brand-border rounded-xl p-3 text-xs font-bold outline-none focus:border-brand-accent" />
-                           </div>
-                           <div className="space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Pekerjaan Ibu</label>
-                              <input type="text" value={formData.pekerjaanIbu} onChange={(e) => setFormData({...formData, pekerjaanIbu: e.target.value})} placeholder="Pekerjaan..." className="w-full bg-white border border-brand-border rounded-xl p-3 text-xs font-bold outline-none focus:border-brand-accent" />
-                           </div>
-                           <div className="space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Penghasilan Ibu</label>
-                              <select value={formData.penghasilanIbu} onChange={(e) => setFormData({...formData, penghasilanIbu: e.target.value})} className="w-full bg-white border border-brand-border rounded-xl p-3 text-xs font-bold outline-none">
-                                <option value="0 - 500.000">Rp 0 - Rp 500.000</option>
-                                <option value="500.000 - 1.000.000">Rp 500.000 - Rp 1.000.000</option>
-                                <option value="1.000.000 - 2.000.000">Rp 1.000.000 - Rp 2.000.000</option>
-                                <option value="2.000.000 - 5.000.000">Rp 2.000.000 - Rp 5.000.000</option>
-                                <option value="> 5.000.000">&gt; Rp 5.000.000</option>
-                              </select>
-                           </div>
-                        </div>
-                      </div>
-                    </div>
-
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Alasan Mendaftar / Catatan Tambahan</label>
                       <textarea value={formData.alasan} onChange={(e) => setFormData({...formData, alasan: e.target.value})} placeholder="Berikan alasan singkat..." className="w-full bg-slate-50 border border-brand-border rounded-2xl p-4 text-xs font-bold focus:border-brand-accent outline-none h-24 resize-none" />
                     </div>
 
                     <button type="submit" disabled={isLoading} className="w-full bg-brand-sidebar text-white py-5 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-brand-sidebar/20 italic">
-                      {isLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Kirim Pendaftaran <Check className="w-4 h-4" /></>}
+                      {isLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Simpan Pendaftaran <Check className="w-4 h-4" /></>}
                     </button>
                   </form>
                 </div>
@@ -335,9 +388,9 @@ export default function PPDB() {
                   <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6">
                     <Check className="w-10 h-10 text-emerald-500" />
                   </div>
-                  <h3 className="text-2xl font-black text-brand-sidebar mb-2 italic uppercase">Pendaftaran Terkirim!</h3>
+                  <h3 className="text-2xl font-black text-brand-sidebar mb-2 italic uppercase">Pendaftaran Tersimpan!</h3>
                   <p className="text-xs text-slate-500 italic max-w-sm mx-auto mb-8">
-                    Terima kasih telah mendaftar di PKBM Armilla Nusa. Administrasi kami akan segera menghubungi Anda melalui WhatsApp untuk proses verifikasi.
+                    Data pendaftaran telah berhasil disimpan ke sistem dan muncul di daftar pendaftar.
                   </p>
                   <button 
                     onClick={handleClose}
@@ -354,4 +407,3 @@ export default function PPDB() {
     </div>
   );
 }
-
