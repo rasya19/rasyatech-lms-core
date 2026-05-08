@@ -573,20 +573,20 @@ export default function Purchase() {
                 </p>
                 <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2rem] space-y-4 text-left">
                     <div className="bg-white border border-brand-accent/20 p-6 rounded-3xl mb-6 shadow-sm">
-                       <h5 className="text-[10px] font-black text-brand-sidebar uppercase tracking-widest mb-5 flex items-center gap-2">
+                       <h5 className="text-[10px] font-black text-brand-sidebar uppercase tracking-widest mb-5 flex items-center gap-2 border-b border-slate-50 pb-3">
                           <CreditCard className="w-4 h-4 text-brand-accent" /> Pilih Rekening Pembayaran ({paymentMethod})
                        </h5>
                        {paymentMethod === 'Transfer Bank' ? (
                           <div className="space-y-4">
                              {paymentSettings.banks.map((bank) => (
-                                <div key={bank.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-2 group hover:border-brand-accent transition-colors">
-                                   <div className="flex justify-between items-center border-b border-white pb-1.5">
-                                      <span className="text-[8px] font-black text-slate-400 uppercase">{bank.name}</span>
-                                      <span className="text-[10px] font-black text-brand-sidebar italic">{bank.recipient}</span>
+                                <div key={bank.id} className="p-5 bg-slate-50 border border-slate-100 rounded-2xl space-y-3 group hover:border-brand-accent transition-all">
+                                   <div className="flex justify-between items-center border-b border-brand-accent/10 pb-2">
+                                      <span className="text-[12px] font-black text-brand-sidebar uppercase italic">{bank.name}</span>
+                                      <span className="text-[10px] font-black text-slate-500 italic uppercase">{bank.recipient}</span>
                                    </div>
                                    <div className="flex justify-between items-center">
-                                      <span className="text-[9px] font-black text-slate-400 uppercase">No. Rekening</span>
-                                      <span className="text-sm font-black text-brand-accent tracking-widest font-mono">{bank.account}</span>
+                                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No. Rekening</span>
+                                      <span className="text-lg font-black text-brand-accent tracking-[0.2em] font-mono">{bank.account}</span>
                                    </div>
                                 </div>
                              ))}
@@ -597,9 +597,9 @@ export default function Purchase() {
                        ) : paymentMethod === 'E-Wallet' ? (
                           <div className="space-y-3">
                              {paymentSettings.ewallets.map((wallet) => (
-                                <div key={wallet.id} className="flex justify-between items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl group hover:border-brand-accent transition-colors">
-                                   <span className="text-[9px] font-black text-slate-400 uppercase">{wallet.name}</span>
-                                   <span className="text-sm font-black text-brand-accent tracking-widest font-mono">{wallet.number}</span>
+                                <div key={wallet.id} className="flex justify-between items-center p-5 bg-slate-50 border border-slate-100 rounded-2xl group hover:border-brand-accent transition-all">
+                                   <span className="text-[11px] font-black text-brand-sidebar uppercase italic">{wallet.name}</span>
+                                   <span className="text-lg font-black text-brand-accent tracking-widest font-mono">{wallet.number}</span>
                                 </div>
                              ))}
                              {paymentSettings.ewallets.length === 0 && (
@@ -607,7 +607,7 @@ export default function Purchase() {
                              )}
                           </div>
                        ) : (
-                          <div className="text-[10px] text-slate-500 font-bold uppercase italic p-6 bg-slate-50 rounded-2xl text-center leading-relaxed whitespace-pre-line border border-slate-100">
+                          <div className="text-[11px] text-slate-600 font-bold uppercase italic p-6 bg-slate-50 rounded-2xl text-center leading-relaxed whitespace-pre-line border border-slate-100">
                              {paymentSettings.vaInfo || 'Instruksi Virtual Account akan dikirimkan menyusul setelah pendaftaran divalidasi.'}
                           </div>
                        )}

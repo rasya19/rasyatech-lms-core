@@ -122,5 +122,6 @@ export const generateInvoicePDF = (data: InvoiceData) => {
   const footerX = (210 - doc.getTextWidth(footerText)) / 2;
   doc.text(footerText, footerX, 280);
 
-  doc.save(`${data.invoiceNumber}.pdf`);
+  const safeFileName = data.invoiceNumber.replace(/\//g, '-');
+  doc.save(`${safeFileName}.pdf`);
 };
