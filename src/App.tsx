@@ -31,6 +31,7 @@ import AiAsisten from './pages/AiAsisten';
 import Purchase from './pages/Purchase';
 import AffiliateDashboard from './pages/AffiliateDashboard';
 import SuperAdmin from './pages/SuperAdmin';
+import Feedback from './pages/Feedback';
 
 function SchoolLoader() {
   const { schoolSlug } = useParams();
@@ -118,6 +119,7 @@ function AppContent() {
              <Route path="keuangan" element={<Keuangan />} />
              <Route path="diskusi" element={<Diskusi />} />
              <Route path="ai-asisten" element={<AiAsisten />} />
+             <Route path="feedback" element={<Feedback />} />
           </Route>
         </>
       )}
@@ -147,6 +149,7 @@ function AppContent() {
             <Route path="keuangan" element={<Keuangan />} />
             <Route path="diskusi" element={<Diskusi />} />
             <Route path="ai-asisten" element={<AiAsisten />} />
+            <Route path="feedback" element={<Feedback />} />
          </Route>
       </Route>
 
@@ -172,6 +175,7 @@ function AppContent() {
         <Route path="keuangan" element={<Keuangan />} />
         <Route path="diskusi" element={<Diskusi />} />
         <Route path="ai-asisten" element={<AiAsisten />} />
+        <Route path="feedback" element={<Feedback />} />
       </Route>
     </Routes>
   );

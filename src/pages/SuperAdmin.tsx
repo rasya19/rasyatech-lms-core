@@ -81,17 +81,33 @@ interface PaymentRecord {
   category: 'Subscription' | 'Setup' | 'Extra' | 'Other';
 }
 
+interface FeedbackRecord {
+  id: string;
+  schoolId: string;
+  schoolName: string;
+  name: string;
+  role: string;
+  feedback: string;
+  ratings: {
+    kemudahan: number;
+    fitur: number;
+    pelayanan: number;
+  };
+  createdAt: any;
+}
+
 export default function SuperAdmin() {
   const [user, setUser] = useState<User | null>(null);
   const [registrations, setRegistrations] = useState<SchoolRegistration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'institutions' | 'finance' | 'affiliates' | 'settings'>('institutions');
+  const [activeTab, setActiveTab] = useState<'institutions' | 'finance' | 'affiliates' | 'settings' | 'feedbacks'>('institutions');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
   const [commissions, setCommissions] = useState<any[]>([]);
+  const [feedbacks, setFeedbacks] = useState<FeedbackRecord[]>([]);
   const [isAddingPayment, setIsAddingPayment] = useState(false);
   const [isAddingAffiliate, setIsAddingAffiliate] = useState(false);
   const [isVerifying, setIsVerifying] = useState<string | null>(null);
@@ -226,6 +242,16 @@ export default function SuperAdmin() {
           setCommissions(docs);
         });
 
+        // Fetch Feedbacks
+        const qFeedback = query(collection(db, 'feedbacks'), orderBy('createdAt', 'desc'));
+        const unsubFeedback = onSnapshot(qFeedback, (snapshot) => {
+          const docs = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as FeedbackRecord[];
+          setFeedbacks(docs);
+        });
+
         // Fetch Global Settings
         const fetchSettings = async () => {
           const settingsRef = doc(db, 'settings', 'payment');
@@ -256,6 +282,7 @@ export default function SuperAdmin() {
           unsubPay();
           unsubAff();
           unsubComm();
+          unsubFeedback();
         };
       } else {
         setLoading(false);
@@ -596,6 +623,15 @@ export default function SuperAdmin() {
              )}
            >
               <Settings className="w-4 h-4" /> Global Settings
+           </button>
+           <button 
+             onClick={() => setActiveTab('feedbacks')}
+             className={cn(
+               "px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 italic",
+               activeTab === 'feedbacks' ? "bg-brand-sidebar text-white shadow-lg shadow-brand-sidebar/20" : "text-slate-400 hover:bg-slate-50"
+             )}
+           >
+              <MessageCircle className="w-4 h-4" /> Feedback & Survey
            </button>
         </div>
 
@@ -1254,6 +1290,82 @@ export default function SuperAdmin() {
                </div>
             </div>
           </>
+        )}
+
+        {activeTab === 'feedbacks' && (
+          <div className="space-y-8">
+             <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                   <div className="w-14 h-14 bg-brand-accent/10 rounded-2xl flex items-center justify-center text-brand-sidebar">
+                      <MessageCircle className="w-8 h-8" />
+                   </div>
+                   <div>
+                     <h3 className="text-2xl font-black italic uppercase tracking-tighter text-brand-sidebar">Feedback & <span className="text-brand-accent">Survey</span></h3>
+                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 italic">Monitor kritik, saran & tingkat kepuasan sekolah</p>
+                   </div>
+                </div>
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                  { label: "Kemudahan Penggunaan", key: "kemudahan" },
+                  { label: "Kelengkapan Fitur", key: "fitur" },
+                  { label: "Kualitas Pelayanan", key: "pelayanan" }
+                ].map(metric => {
+                  const avg = feedbacks.length > 0 
+                    ? feedbacks.reduce((acc, curr) => acc + (curr.ratings?.[metric.key as keyof typeof curr.ratings] || 0), 0) / feedbacks.length
+                    : 0;
+                  
+                  return (
+                    <div key={metric.key} className="bg-white p-6 rounded-3xl border border-brand-border shadow-sm flex items-center justify-between">
+                       <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">{metric.label}</p>
+                          <p className="text-2xl font-black text-brand-sidebar italic">{avg.toFixed(1)} <span className="text-sm text-slate-400">/ 5.0</span></p>
+                       </div>
+                       <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-brand-sidebar">
+                          <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>
+                       </div>
+                    </div>
+                  );
+                })}
+             </div>
+
+             <div className="bg-white border border-brand-border rounded-[2rem] p-8 shadow-sm">
+               <h3 className="text-lg font-black italic uppercase text-brand-sidebar tracking-tighter mb-6 border-b border-slate-100 pb-4">
+                  Daftar M<span className="text-brand-accent">asukan</span>
+               </h3>
+               <div className="space-y-6">
+                 {feedbacks.length === 0 ? (
+                    <div className="text-center py-10">
+                      <MessageCircle className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                      <p className="text-xs font-black uppercase text-slate-300 tracking-widest italic">Belum ada feedback masuk</p>
+                    </div>
+                 ) : (
+                    feedbacks.map(f => (
+                      <div key={f.id} className="border-b border-slate-100 pb-6 mb-6 last:border-0 last:pb-0 last:mb-0">
+                         <div className="flex justify-between items-start mb-3">
+                           <div>
+                             <h4 className="font-black text-brand-sidebar italic">{f.schoolName}</h4>
+                             <p className="text-[10px] font-bold text-slate-400">Oleh: {f.name} ({f.role})</p>
+                           </div>
+                           <span className="text-[10px] font-bold text-brand-accent bg-brand-accent/10 px-2 py-1 rounded">
+                             {f.createdAt ? format(f.createdAt.toDate(), 'dd/MM/yyyy HH:mm') : '-'}
+                           </span>
+                         </div>
+                         <div className="flex gap-4 mb-3">
+                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 flex items-center gap-1 rounded"><svg className="w-3 h-3 fill-yellow-400 text-yellow-400" viewBox="0 0 24 24"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg> UI: {f.ratings?.kemudahan || 0}</span>
+                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 flex items-center gap-1 rounded"><svg className="w-3 h-3 fill-yellow-400 text-yellow-400" viewBox="0 0 24 24"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg> Fitur: {f.ratings?.fitur || 0}</span>
+                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 flex items-center gap-1 rounded"><svg className="w-3 h-3 fill-yellow-400 text-yellow-400" viewBox="0 0 24 24"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg> CS: {f.ratings?.pelayanan || 0}</span>
+                         </div>
+                         <p className="text-[11px] font-medium text-slate-600 bg-slate-50 p-4 rounded-xl italic">
+                           "{f.feedback}"
+                         </p>
+                      </div>
+                    ))
+                 )}
+               </div>
+             </div>
+          </div>
         )}
 
         {/* Payment Modal */}

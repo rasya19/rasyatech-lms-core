@@ -157,6 +157,13 @@ export default function AffiliateDashboard() {
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-brand-accent/5 via-transparent to-transparent">
+        <button 
+          onClick={() => window.location.href = '/'}
+          className="absolute top-6 left-6 flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 hover:text-brand-sidebar tracking-widest transition-colors italic group"
+        >
+          <ChevronRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
+          Kembali ke Beranda
+        </button>
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -303,6 +310,13 @@ export default function AffiliateDashboard() {
       <nav className="bg-white border-b border-brand-border sticky top-0 z-50 px-6 sm:px-12 py-6">
          <div className="max-w-7xl mx-auto flex justify-between items-center">
             <div className="flex items-center gap-4">
+               <button 
+                 onClick={() => window.location.href = '/'}
+                 className="w-10 h-10 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 transition-colors mr-2 group"
+                 title="Kembali ke Beranda"
+               >
+                 <ChevronRight className="w-5 h-5 text-slate-400 rotate-180 group-hover:-translate-x-0.5 transition-transform" />
+               </button>
                <div className="w-10 h-10 bg-brand-sidebar text-brand-accent rounded-xl flex items-center justify-center">
                   <Users className="w-6 h-6" />
                </div>

@@ -146,6 +146,7 @@ export default function Layout() {
 
   const secondaryItems = [
     { icon: Megaphone, label: 'Pengumuman', path: `${schoolSlug ? '/s/' + schoolSlug : ''}/dashboard/pengumuman` },
+    { icon: MessageSquare, label: 'Kritik & Saran', path: `${schoolSlug ? '/s/' + schoolSlug : ''}/dashboard/feedback` },
   ];
 
   return (
