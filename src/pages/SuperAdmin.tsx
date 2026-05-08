@@ -20,8 +20,10 @@ import {
   Plus,
   Users,
   Calendar,
-  DollarSign
+  DollarSign,
+  FileDown
 } from 'lucide-react';
+import { generateInvoicePDF } from '../services/pdfService';
 import { cn } from '@/src/lib/utils';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -107,6 +109,34 @@ export default function SuperAdmin() {
     ewallets: [] as EWalletAccount[],
     vaInfo: ''
   });
+
+  const handleDownloadInvoice = (p: PaymentRecord) => {
+    const rawDate = p.date;
+    let dateObj: Date;
+    
+    if (rawDate?.toDate) {
+      dateObj = rawDate.toDate();
+    } else if (rawDate instanceof Date) {
+      dateObj = rawDate;
+    } else if (typeof rawDate === 'string' || typeof rawDate === 'number') {
+      dateObj = new Date(rawDate);
+    } else {
+      dateObj = new Date();
+    }
+
+    const invoiceNumber = `INV/RC/${format(dateObj, 'yyyy/MM')}/${p.transactionId || p.id.slice(0,8).toUpperCase()}`;
+
+    generateInvoicePDF({
+      invoiceNumber,
+      date: dateObj,
+      schoolName: p.schoolName,
+      packageName: p.packageId || (p.category === 'Subscription' ? 'Standard Subscription' : p.category),
+      amount: p.amount,
+      paymentMethod: p.method,
+      status: p.status,
+      banks: paymentSettings.banks
+    });
+  };
 
   const SUPER_ADMIN_EMAIL = 'ismanto095@gmail.com';
 
@@ -711,6 +741,13 @@ export default function SuperAdmin() {
                                </td>
                                <td className="px-6 py-4">
                                   <div className="flex items-center justify-center gap-2">
+                                     <button 
+                                       onClick={() => handleDownloadInvoice(p)}
+                                       className="p-2 text-navy-600 hover:bg-slate-100 rounded-lg transition-all"
+                                       title="Download Invoice"
+                                     >
+                                        <FileDown className="w-4 h-4" />
+                                     </button>
                                      {p.proofUrl && (
                                         <button 
                                           onClick={() => window.open(p.proofUrl, '_blank')}

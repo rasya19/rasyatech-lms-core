@@ -9,8 +9,11 @@ import {
   Users, 
   CreditCard,
   Building,
-  Rocket
+  Rocket,
+  FileDown
 } from 'lucide-react';
+import { generateInvoicePDF } from '../services/pdfService';
+import { format } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/src/lib/utils';
 import { db, auth } from '@/src/lib/firebase';
@@ -76,6 +79,23 @@ export default function Purchase() {
   const [paymentMethod, setPaymentMethod] = useState('Transfer Bank');
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleDownloadInvoice = () => {
+    const amount = selectedPackage.id === 'basic' ? 450000 : selectedPackage.id === 'pro' ? 1250000 : 0;
+    const date = new Date();
+    const invoiceNumber = `INV/RC/${format(date, 'yyyy/MM')}/REG-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    generateInvoicePDF({
+      invoiceNumber,
+      date,
+      schoolName: formData.schoolName,
+      packageName: selectedPackage.name || 'Subscription',
+      amount,
+      paymentMethod,
+      status: 'Pending',
+      banks: paymentSettings.banks
+    });
+  };
   const [formData, setFormData] = useState({
     name: '',
     schoolName: '',
@@ -609,17 +629,24 @@ export default function Purchase() {
              </div>
 
              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button 
+                  onClick={handleDownloadInvoice}
+                  className="bg-brand-sidebar text-white px-10 py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-sidebar/20 flex items-center justify-center gap-2 italic"
+                >
+                  <FileDown className="w-4 h-4 text-brand-accent" /> Download Invoice
+                </button>
                 <Link 
                   to="/"
-                  className="bg-brand-sidebar text-white px-10 py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-sidebar/20 italic"
+                  className="bg-slate-100 text-slate-500 px-10 py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all italic border border-slate-200"
                 >
-                  Kembali ke Beranda
+                  Beranda
                 </Link>
                 <a 
-                  href="#"
+                  href={`https://wa.me/6285225025555?text=Halo%20Admin%20Rasyacomp,%20saya%20ingin%20konfirmasi%20pendaftaran%20sekolah%20${encodeURIComponent(formData.schoolName)}`}
+                  target="_blank"
                   className="bg-green-500 text-white px-10 py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-green-500/20 flex items-center justify-center gap-2 italic"
                 >
-                  Konfirmasi via WhatsApp
+                  WhatsApp Konfirmasi
                 </a>
              </div>
           </motion.div>
