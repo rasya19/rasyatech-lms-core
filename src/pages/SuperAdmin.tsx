@@ -27,6 +27,7 @@ import { generateInvoicePDF } from '../services/pdfService';
 import { cn } from '@/src/lib/utils';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface SchoolRegistration {
   id: string;
@@ -43,7 +44,26 @@ interface SchoolRegistration {
   expiryDate?: string;
   studentLimit?: number;
   custom_domain?: string;
+  referralCode?: string;
   createdAt: any;
+}
+
+interface Affiliate {
+  id: string;
+  name: string;
+  code: string;
+  commissionType: 'fixed' | 'percentage';
+  commissionValue: number; // e.g., 100000 for fixed or 10 for percentage
+  createdAt: any;
+}
+
+interface CommissionRecord {
+  id: string;
+  affiliateCode: string;
+  schoolId: string;
+  schoolName: string;
+  amount: number;
+  date: any;
 }
 
 interface PaymentRecord {
@@ -65,15 +85,25 @@ export default function SuperAdmin() {
   const [user, setUser] = useState<User | null>(null);
   const [registrations, setRegistrations] = useState<SchoolRegistration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'institutions' | 'finance' | 'settings'>('institutions');
+  const [activeTab, setActiveTab] = useState<'institutions' | 'finance' | 'affiliates' | 'settings'>('institutions');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
+  const [commissions, setCommissions] = useState<any[]>([]);
   const [isAddingPayment, setIsAddingPayment] = useState(false);
+  const [isAddingAffiliate, setIsAddingAffiliate] = useState(false);
   const [isVerifying, setIsVerifying] = useState<string | null>(null);
   const [selectedSchoolForConfig, setSelectedSchoolForConfig] = useState<SchoolRegistration | null>(null);
   
+  const [newAffiliate, setNewAffiliate] = useState({
+    name: '',
+    code: '',
+    commissionType: 'percentage' as 'fixed' | 'percentage',
+    commissionValue: 10
+  });
+
   const [newPayment, setNewPayment] = useState({
     schoolId: '',
     amount: '',
@@ -167,6 +197,26 @@ export default function SuperAdmin() {
           setPayments(docs);
         });
 
+        // Fetch Affiliates
+        const qAff = query(collection(db, 'affiliates'), orderBy('createdAt', 'desc'));
+        const unsubAff = onSnapshot(qAff, (snapshot) => {
+          const docs = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Affiliate[];
+          setAffiliates(docs);
+        });
+
+        // Fetch Commissions
+        const qComm = query(collection(db, 'commissions'), orderBy('createdAt', 'desc'));
+        const unsubComm = onSnapshot(qComm, (snapshot) => {
+          const docs = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setCommissions(docs);
+        });
+
         // Fetch Global Settings
         const fetchSettings = async () => {
           const settingsRef = doc(db, 'settings', 'payment');
@@ -246,6 +296,30 @@ export default function SuperAdmin() {
           updatedAt: serverTimestamp()
         });
 
+        // 4. Check for Referral Code and Record Commission
+        if (schoolData.referralCode) {
+          const aff = affiliates.find(a => a.code === schoolData.referralCode);
+          if (aff) {
+            const commissionAmount = aff.commissionType === 'percentage' 
+              ? (payment.amount * (aff.commissionValue / 100))
+              : aff.commissionValue;
+
+            await setDoc(doc(collection(db, 'commissions')), {
+              affiliateId: aff.id,
+              affiliateCode: aff.code,
+              schoolId: payment.schoolId,
+              schoolName: payment.schoolName,
+              packageName: schoolData.packageId || 'Standard',
+              paymentAmount: payment.amount,
+              amount: commissionAmount,
+              date: serverTimestamp(),
+              paymentId: payment.id,
+              createdAt: serverTimestamp()
+            });
+            console.log(`Commission of Rp ${commissionAmount} recorded for ${aff.code}`);
+          }
+        }
+
         alert(`Verifikasi Berhasil! Sekolah ${payment.schoolName} kini Aktif hingga ${format(newExpiry, 'dd MMM yyyy')}.`);
       }
     } catch (error) {
@@ -285,6 +359,33 @@ export default function SuperAdmin() {
       alert('Gagal mencatat pembayaran.');
     } finally {
       setIsAddingPayment(false);
+    }
+  };
+
+  const handleAddAffiliate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAffiliate.name || !newAffiliate.code) return;
+
+    setIsAddingAffiliate(true);
+    try {
+      await setDoc(doc(collection(db, 'affiliates')), {
+        ...newAffiliate,
+        code: newAffiliate.code.toUpperCase(),
+        commissionPerSchool: Number(newAffiliate.commissionPerSchool),
+        createdAt: serverTimestamp()
+      });
+      alert('Influencer berhasil ditambahkan!');
+      setIsAddingAffiliate(false);
+      setNewAffiliate({
+        name: '',
+        code: '',
+        commissionPerSchool: 100000
+      });
+    } catch (error) {
+      console.error('Add affiliate error:', error);
+      alert('Gagal menambahkan influencer.');
+    } finally {
+      setIsAddingAffiliate(false);
     }
   };
 
@@ -462,6 +563,15 @@ export default function SuperAdmin() {
              )}
            >
               <DollarSign className="w-4 h-4" /> Finance & Billing
+           </button>
+           <button 
+             onClick={() => setActiveTab('affiliates')}
+             className={cn(
+               "px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 italic",
+               activeTab === 'affiliates' ? "bg-brand-sidebar text-white shadow-lg shadow-brand-sidebar/20" : "text-slate-400 hover:bg-slate-50"
+             )}
+           >
+              <Users className="w-4 h-4" /> Affiliate Manager
            </button>
            <button 
              onClick={() => setActiveTab('settings')}
@@ -788,6 +898,153 @@ export default function SuperAdmin() {
                    )}
                 </div>
              </div>
+          </div>
+        )}
+
+        {activeTab === 'affiliates' && (
+          <div className="space-y-10">
+             <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                   <div className="w-14 h-14 bg-brand-accent/10 rounded-2xl flex items-center justify-center text-brand-sidebar">
+                      <Users className="w-8 h-8" />
+                   </div>
+                   <div>
+                     <h3 className="text-2xl font-black italic uppercase tracking-tighter text-brand-sidebar">Affiliate <span className="text-brand-accent">Manager</span></h3>
+                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 italic">Kelola Influencer & Pantau Komisi Referal</p>
+                   </div>
+                </div>
+                <button 
+                  onClick={() => setIsAddingAffiliate(true)}
+                  className="bg-brand-sidebar text-white px-6 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-sidebar/20 flex items-center gap-2 italic"
+                >
+                   <Plus className="w-4 h-4 text-brand-accent" /> Tambah Influencer
+                </button>
+             </div>
+
+             {isAddingAffiliate && (
+               <motion.div 
+                 initial={{ opacity: 0, y: -20 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 className="bg-white border-2 border-brand-accent/20 rounded-[2.5rem] p-8 shadow-xl"
+               >
+                  <h4 className="text-xs font-black uppercase text-brand-sidebar italic mb-6 tracking-widest">Informasi Influencer Baru</h4>
+                  <form onSubmit={handleAddAffiliate} className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                     <div className="space-y-2">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Nama Influencer</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={newAffiliate.name}
+                          onChange={(e) => setNewAffiliate({...newAffiliate, name: e.target.value})}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs font-bold text-brand-sidebar"
+                          placeholder="Budi Selebtok"
+                        />
+                     </div>
+                     <div className="space-y-2">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Kode Referal unik</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={newAffiliate.code}
+                          onChange={(e) => setNewAffiliate({...newAffiliate, code: e.target.value.toUpperCase()})}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs font-bold text-brand-sidebar"
+                          placeholder="BUDI123"
+                        />
+                     </div>
+                     <div className="space-y-2">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Tipe Komisi</label>
+                        <select 
+                          value={newAffiliate.commissionType}
+                          onChange={(e) => setNewAffiliate({...newAffiliate, commissionType: e.target.value as 'fixed' | 'percentage'})}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs font-bold text-brand-sidebar"
+                        >
+                           <option value="percentage">PERSENTASE (%)</option>
+                           <option value="fixed">FIXED (Rp)</option>
+                        </select>
+                     </div>
+                     <div className="space-y-2">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">
+                          {newAffiliate.commissionType === 'percentage' ? 'Nilai %' : 'Nilai (Rp)'}
+                        </label>
+                        <input 
+                          type="number" 
+                          required
+                          value={newAffiliate.commissionValue}
+                          onChange={(e) => setNewAffiliate({...newAffiliate, commissionValue: Number(e.target.value)})}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs font-bold text-brand-sidebar"
+                        />
+                     </div>
+                     <div className="flex gap-2">
+                        <button 
+                          type="submit"
+                          className="flex-1 bg-brand-sidebar text-white py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-accent transition-all"
+                        >
+                           Simpan
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => setIsAddingAffiliate(false)}
+                          className="px-4 bg-slate-100 text-slate-400 rounded-xl text-[10px] font-black uppercase"
+                        >
+                           Batal
+                        </button>
+                     </div>
+                  </form>
+               </motion.div>
+             )}
+
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {affiliates.map((aff) => {
+                  const affiliateCommissions = commissions.filter(c => c.affiliateId === aff.id);
+                  const totalCommission = affiliateCommissions.reduce((acc, curr) => acc + curr.amount, 0);
+                  
+                  return (
+                    <div key={aff.id} className="bg-white border border-brand-border rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition-all group">
+                       <div className="flex justify-between items-start mb-6">
+                          <div>
+                             <h4 className="text-lg font-black italic uppercase text-brand-sidebar group-hover:text-brand-accent transition-colors">{aff.name}</h4>
+                             <span className="text-[10px] font-black bg-brand-sidebar text-brand-accent px-3 py-1 rounded-full uppercase tracking-tighter italic">#{aff.code}</span>
+                          </div>
+                          <button 
+                            onClick={async () => {
+                              if (confirm(`Hapus influencer ${aff.name}?`)) {
+                                await deleteDoc(doc(db, 'affiliates', aff.id));
+                              }
+                            }}
+                            className="p-2 text-slate-200 hover:text-red-500 transition-colors"
+                          >
+                             <XCircle className="w-5 h-5" />
+                          </button>
+                       </div>
+
+                       <div className="grid grid-cols-2 gap-4 mb-6">
+                          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Referensi</p>
+                             <p className="text-xl font-black text-brand-sidebar italic">{affiliateCommissions.length} <span className="text-[10px] uppercase NOT-italic">Sekolah</span></p>
+                          </div>
+                          <div className="bg-brand-accent/10 p-4 rounded-2xl border border-brand-accent/20">
+                             <p className="text-[8px] font-black text-brand-sidebar uppercase tracking-widest mb-1">Skema Komisi</p>
+                             <p className="text-[10px] font-black text-brand-sidebar italic">
+                                {aff.commissionType === 'percentage' ? `${aff.commissionValue}% / Transaksi` : `Rp ${aff.commissionValue.toLocaleString()} / Sekolah`}
+                             </p>
+                          </div>
+                       </div>
+
+                       <div className="bg-brand-sidebar text-white p-6 rounded-[2rem] relative overflow-hidden">
+                          <DollarSign className="absolute -right-4 -bottom-4 w-20 h-20 text-white/5" />
+                          <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-1">Akumulasi Komisi Anda</p>
+                          <p className="text-2xl font-black text-brand-accent italic">Rp {totalCommission.toLocaleString()}</p>
+                       </div>
+                    </div>
+                  );
+                })}
+             </div>
+
+             {affiliates.length === 0 && !isAddingAffiliate && (
+               <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] p-24 text-center">
+                  <p className="text-xs font-black uppercase text-slate-300 tracking-widest italic">Belum ada influencer terdaftar</p>
+               </div>
+             )}
           </div>
         )}
 

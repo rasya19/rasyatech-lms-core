@@ -105,6 +105,7 @@ export default function Purchase() {
     email: '',
     phone: '',
     password: '',
+    referralCode: '',
   });
   interface BankAccount {
     id: string;
@@ -187,6 +188,7 @@ export default function Purchase() {
         whatsapp: formData.phone,
         packageId: selectedPackage.id,
         paymentMethod: paymentMethod,
+        referralCode: formData.referralCode,
         slug: slug,
         status: 'pending',
         createdAt: serverTimestamp(),
@@ -501,6 +503,17 @@ export default function Purchase() {
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
                     className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
                     placeholder="0812XXXXXXXX"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Kode Referal (Opsional)</label>
+                  <input 
+                    type="text" 
+                    value={formData.referralCode}
+                    onChange={(e) => setFormData({...formData, referralCode: e.target.value.toUpperCase()})}
+                    className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
+                    placeholder="Contoh: INFLUENCER123"
                   />
                 </div>
 

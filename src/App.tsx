@@ -29,6 +29,7 @@ import Keuangan from './pages/Keuangan';
 import Diskusi from './pages/Diskusi';
 import AiAsisten from './pages/AiAsisten';
 import Purchase from './pages/Purchase';
+import AffiliateDashboard from './pages/AffiliateDashboard';
 import SuperAdmin from './pages/SuperAdmin';
 
 function SchoolLoader() {
@@ -90,6 +91,7 @@ function AppContent() {
       <Route path="/login" element={<Login />} />
       <Route path="/purchase" element={<Purchase />} />
       <Route path="/super-admin" element={<SuperAdmin />} />
+      <Route path="/affiliate" element={<AffiliateDashboard />} />
       
       {/* If subdomain/custom domain is detected, allow accessing dashboard routes at root */}
       {school && (
