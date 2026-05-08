@@ -13,6 +13,7 @@ interface BankSoalModel {
   id: string;
   nama_ujian: string;
   mapel_id?: string;
+  jenjang?: string;
   jumlah_soal?: number;
   durasi?: number; // in minutes
   is_aktif?: boolean;
@@ -28,6 +29,7 @@ export default function BankSoal() {
   const [formData, setFormData] = useState<Partial<BankSoalModel>>({
     nama_ujian: '',
     mapel_id: '',
+    jenjang: 'SMA',
     jumlah_soal: 0,
     durasi: 60,
     is_aktif: false
@@ -67,6 +69,7 @@ export default function BankSoal() {
       setFormData({
         nama_ujian: '',
         mapel_id: '',
+        jenjang: 'SMA',
         jumlah_soal: 0,
         durasi: 60,
         is_aktif: false
@@ -95,6 +98,7 @@ export default function BankSoal() {
          const { error } = await supabase.from('bank_soal').update({
             nama_ujian: formData.nama_ujian,
             mapel_id: formData.mapel_id,
+            jenjang: formData.jenjang,
             jumlah_soal: formData.jumlah_soal,
             durasi: formData.durasi,
             is_aktif: formData.is_aktif
@@ -104,6 +108,7 @@ export default function BankSoal() {
          const { error } = await supabase.from('bank_soal').insert([{
             nama_ujian: formData.nama_ujian,
             mapel_id: formData.mapel_id,
+            jenjang: formData.jenjang,
             jumlah_soal: formData.jumlah_soal,
             durasi: formData.durasi,
             is_aktif: formData.is_aktif
@@ -327,6 +332,19 @@ export default function BankSoal() {
                          {DUMMY_MAPEL.map((m) => (
                             <option key={m.id} value={m.id}>{m.nama} ({m.jenjang})</option>
                          ))}
+                       </select>
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Jenjang</label>
+                       <select
+                         required
+                         value={formData.jenjang}
+                         onChange={e => setFormData({...formData, jenjang: e.target.value})}
+                         className="w-full appearance-none bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all cursor-pointer"
+                       >
+                         <option value="SD">SD/MI</option>
+                         <option value="SMP">SMP/MTs</option>
+                         <option value="SMA">SMA/SMK/MA</option>
                        </select>
                     </div>
 

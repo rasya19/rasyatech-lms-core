@@ -304,7 +304,7 @@ export default function ButirSoal() {
             className="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-            {isLoadingExcel ? 'Memproses...' : 'Import Excel'}
+            {isLoadingExcel ? 'Memproses...' : 'Unggah File Excel'}
           </button>
         </div>
       </div>
