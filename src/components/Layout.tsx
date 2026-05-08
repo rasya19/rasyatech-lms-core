@@ -35,7 +35,8 @@ import {
   Eye,
   EyeOff,
   ShieldAlert,
-  ArrowRight
+  ArrowRight,
+  FolderOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
@@ -57,6 +58,16 @@ export default function Layout() {
     new: '',
     confirm: ''
   });
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+    'Master Data': false,
+    'Akademik': false,
+    'Ujian Online': false,
+    'Keuangan': false
+  });
+
+  const toggleMenu = (label: string) => {
+    setOpenMenus(prev => ({ ...prev, [label]: !prev[label] }));
+  };
 
   // Use school data from context if available, fallback to constants
   // @ts-ignore
@@ -106,17 +117,45 @@ export default function Layout() {
       case 'Admin':
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
-          { icon: Users, label: 'Data Siswa', path: `${prefix}/dashboard/siswa` },
-          { icon: UserCheck, label: 'Data Guru', path: `${prefix}/dashboard/guru` },
-          { icon: Link2, label: 'Relasi Mengajar', path: `${prefix}/dashboard/relasi` },
-          { icon: Layers, label: 'Kelola Kelas', path: `${prefix}/dashboard/kelas` },
-          { icon: FileText, label: 'Cek Raport', path: `${prefix}/dashboard/raport` },
-          { icon: Wallet, label: 'Keuangan', path: `${prefix}/dashboard/keuangan` },
+          { 
+            icon: FolderOpen, 
+            label: 'Master Data', 
+            subItems: [
+              { icon: Users, label: 'Data Siswa', path: `${prefix}/dashboard/siswa` },
+              { icon: UserCheck, label: 'Data Guru', path: `${prefix}/dashboard/guru` },
+              { icon: Layers, label: 'Kelola Kelas', path: `${prefix}/dashboard/kelas` },
+              { icon: GraduationCap, label: 'Data Alumni', path: `${prefix}/dashboard/alumni` },
+              { icon: UserPlus, label: 'Data Pendaftar', path: `${prefix}/dashboard/ppdb` },
+            ]
+          },
+          {
+            icon: BookOpen,
+            label: 'Akademik',
+            subItems: [
+              { icon: Link2, label: 'Relasi Mengajar', path: `${prefix}/dashboard/relasi` },
+              { icon: ArrowUpCircle, label: 'Kenaikan Kelas', path: `${prefix}/dashboard/kenaikan` },
+              { icon: FileText, label: 'Cek Raport', path: `${prefix}/dashboard/raport` },
+            ]
+          },
+          {
+            icon: ClipboardCheck,
+            label: 'Ujian Online',
+            subItems: [
+              { icon: FileBarChart, label: 'Bank Soal', path: `${prefix}/dashboard/soal` },
+              { icon: ClipboardCheck, label: 'Kelola Ujian', path: `${prefix}/dashboard/ujian` },
+              { icon: Check, label: 'Hasil Ujian', path: `${prefix}/dashboard/hasil-ujian` },
+            ]
+          },
+          {
+            icon: Wallet,
+            label: 'Keuangan',
+            subItems: [
+              { icon: Wallet, label: 'Pembayaran', path: `${prefix}/dashboard/keuangan` },
+              { icon: FileText, label: 'Tagihan', path: `${prefix}/dashboard/tagihan` },
+            ]
+          },
           { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },
           { icon: Sparkles, label: 'Asisten AI', path: `${prefix}/dashboard/ai-asisten` },
-          { icon: ArrowUpCircle, label: 'Kenaikan Kelas', path: `${prefix}/dashboard/kenaikan` },
-          { icon: GraduationCap, label: 'Data Alumni', path: `${prefix}/dashboard/alumni` },
-          { icon: UserPlus, label: 'Data Pendaftar', path: `${prefix}/dashboard/ppdb` },
           { icon: Settings, label: 'Manajemen Web', path: `${prefix}/dashboard/site` },
           { icon: Globe, label: 'Web Utama', path: schoolSlug ? `/s/${schoolSlug}` : '/', isExternal: true },
         ];
@@ -198,8 +237,57 @@ export default function Layout() {
         
         <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto custom-scrollbar">
           <p className="text-[10px] font-bold text-slate-500 px-3 py-2 uppercase tracking-widest lg:hidden xl:block">Utama</p>
-          {navItems.map((item) => (
-            item.isExternal ? (
+          {navItems.map((item) => {
+            if (item.subItems) {
+              const isOpen = openMenus[item.label];
+              return (
+                <div key={item.label} className="space-y-1">
+                  <button
+                    onClick={() => toggleMenu(item.label)}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 group text-slate-400 hover:bg-white/10 hover:text-white"
+                  >
+                    <div className="flex items-center gap-3">
+                      <item.icon className="w-5 h-5 shrink-0" />
+                      <span className="font-medium text-sm lg:hidden xl:block">{item.label}</span>
+                    </div>
+                    <ChevronDown className={cn("w-4 h-4 transition-transform lg:hidden xl:block", isOpen && "rotate-180")} />
+                  </button>
+                  <AnimatePresence>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="pl-2 lg:pl-0 xl:pl-4 space-y-1">
+                          {item.subItems.map((sub: any) => (
+                            <NavLink
+                              key={sub.path}
+                              to={sub.path}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className={({ isActive }) => cn(
+                                "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group",
+                                isActive 
+                                  ? "bg-brand-accent text-white" 
+                                  : "text-slate-400 hover:text-white hover:bg-white/5"
+                              )}
+                            >
+                              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                                {sub.icon && <sub.icon className="w-4 h-4 transition-transform group-hover:scale-110" />}
+                              </div>
+                              <span className="font-medium text-xs lg:hidden xl:block">{sub.label}</span>
+                            </NavLink>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            }
+
+            return item.isExternal ? (
               <a
                 key={item.path}
                 href={item.path}
@@ -225,8 +313,8 @@ export default function Layout() {
                 <item.icon className="w-5 h-5 shrink-0" />
                 <span className="font-medium text-sm lg:hidden xl:block">{item.label}</span>
               </NavLink>
-            )
-          ))}
+            );
+          })}
 
           <div className="pt-4 mt-4 border-t border-white/5">
             <p className="text-[10px] font-bold text-slate-500 px-3 py-2 uppercase tracking-widest lg:hidden xl:block">Informasi</p>
