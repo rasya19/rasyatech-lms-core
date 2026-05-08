@@ -16,6 +16,7 @@ interface ButirSoalModel {
   pertanyaan: string;
   opsi: OpsiJawaban[];
   kunciJawabanId: string;
+  tingkatKesulitan: 'Mudah' | 'Sedang' | 'Sulit';
 }
 
 const DUMMY_BUTIR_SOAL: ButirSoalModel[] = [
@@ -29,7 +30,8 @@ const DUMMY_BUTIR_SOAL: ButirSoalModel[] = [
       { id: 'D', teks: 'Megawati Sukarnoputri' },
       { id: 'E', teks: 'Joko Widodo' }
     ],
-    kunciJawabanId: 'B'
+    kunciJawabanId: 'B',
+    tingkatKesulitan: 'Mudah'
   },
   {
     id: 'Q-002',
@@ -41,7 +43,8 @@ const DUMMY_BUTIR_SOAL: ButirSoalModel[] = [
       { id: 'D', teks: 'Kerakyatan yang Dipimpin oleh Hikmat Kebijaksanaan dalam Permusyawaratan/Perwakilan' },
       { id: 'E', teks: 'Keadilan Sosial bagi Seluruh Rakyat Indonesia' }
     ],
-    kunciJawabanId: 'C'
+    kunciJawabanId: 'C',
+    tingkatKesulitan: 'Sedang'
   }
 ];
 
@@ -64,6 +67,7 @@ export default function ButirSoal() {
     { id: 'E', teks: '' }
   ]);
   const [kunciJawaban, setKunciJawaban] = useState<string>('A');
+  const [tingkatKesulitan, setTingkatKesulitan] = useState<'Mudah' | 'Sedang' | 'Sulit'>('Sedang');
 
   const resetForm = () => {
     setPertanyaan('');
@@ -75,6 +79,7 @@ export default function ButirSoal() {
       { id: 'E', teks: '' }
     ]);
     setKunciJawaban('A');
+    setTingkatKesulitan('Sedang');
     setIsEditing(false);
     setEditId(null);
   };
@@ -85,13 +90,14 @@ export default function ButirSoal() {
     if (opsi.some(o => !o.teks.trim())) return alert('Semua opsi jawaban harus diisi.');
 
     if (isEditing && editId) {
-      setSoals(soals.map(s => s.id === editId ? { id: editId, pertanyaan, opsi, kunciJawabanId: kunciJawaban } : s));
+      setSoals(soals.map(s => s.id === editId ? { id: editId, pertanyaan, opsi, kunciJawabanId: kunciJawaban, tingkatKesulitan } : s));
     } else {
       const newSoal: ButirSoalModel = {
         id: `Q-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
         pertanyaan,
         opsi,
-        kunciJawabanId: kunciJawaban
+        kunciJawabanId: kunciJawaban,
+        tingkatKesulitan
       };
       setSoals([newSoal, ...soals]);
     }
@@ -102,6 +108,7 @@ export default function ButirSoal() {
     setPertanyaan(soal.pertanyaan);
     setOpsi(soal.opsi);
     setKunciJawaban(soal.kunciJawabanId);
+    setTingkatKesulitan(soal.tingkatKesulitan);
     setIsEditing(true);
     setEditId(soal.id);
     setExpandedId(null);
@@ -172,6 +179,20 @@ export default function ButirSoal() {
               placeholder="Tuliskan pertanyaan soal di sini..."
               className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all resize-y custom-scrollbar"
             />
+          </div>
+
+          {/* Tingkat Kesulitan */}
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tingkat Kesulitan</label>
+            <select
+              value={tingkatKesulitan}
+              onChange={e => setTingkatKesulitan(e.target.value as 'Mudah' | 'Sedang' | 'Sulit')}
+              className="w-full appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all cursor-pointer"
+            >
+              <option value="Mudah">Mudah</option>
+              <option value="Sedang">Sedang</option>
+              <option value="Sulit">Sulit</option>
+            </select>
           </div>
 
           {/* Opsi Jawaban */}
@@ -279,10 +300,18 @@ export default function ButirSoal() {
                   <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/20 text-emerald-400 font-black text-xs">
                     {soals.length - idx}
                   </div>
-                  <div className="flex-1 min-w-0 pt-1.5">
+                  <div className="flex-1 min-w-0 pt-1.5 flex flex-col items-start gap-1">
                     <p className="text-sm font-bold text-slate-200 line-clamp-2 leading-snug">
                       {soal.pertanyaan}
                     </p>
+                    <span className={cn(
+                      "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border",
+                      soal.tingkatKesulitan === 'Mudah' ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
+                      soal.tingkatKesulitan === 'Sedang' ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
+                      "bg-red-500/10 text-red-400 border-red-500/20"
+                    )}>
+                      {soal.tingkatKesulitan}
+                    </span>
                   </div>
                   <div className="shrink-0 pt-1.5 text-slate-500">
                     {expandedId === soal.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
