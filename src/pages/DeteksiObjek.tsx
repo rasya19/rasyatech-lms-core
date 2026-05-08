@@ -4,8 +4,19 @@ import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { cn } from '../lib/utils';
 
-// Access the Gemini API Key
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiClient: GoogleGenAI | null = null;
+
+function getAi(): GoogleGenAI {
+  if (!aiClient) {
+    // Check if process is defined to avoid reference errors on Vercel
+    const key = typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '';
+    if (!key) {
+      throw new Error('Konfigurasi API Key tidak ditemukan. Pastikan environment variable sudah diatur.');
+    }
+    aiClient = new GoogleGenAI({ apiKey: key });
+  }
+  return aiClient;
+}
 
 interface DeteksiResult {
   nama: string;
@@ -58,6 +69,7 @@ export default function DeteksiObjek() {
     setErrorPrompt(null);
     
     try {
+      const ai = getAi();
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: [

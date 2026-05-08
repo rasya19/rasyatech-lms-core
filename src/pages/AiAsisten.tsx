@@ -8,7 +8,8 @@ type Mode = 'RPP' | 'RAPORT';
 
 export default function AiAsisten() {
   const getAiClient = () => {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
+    const processApiKey = typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '';
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || processApiKey || '';
     if (!isValidGeminiKey(apiKey)) {
       throw new Error("API Key Gemini tidak valid atau belum diatur. Silakan dapatkan API Key di aistudio.google.com dan pastikan di awali dengan 'AIza'.");
     }

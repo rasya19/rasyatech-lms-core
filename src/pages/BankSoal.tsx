@@ -12,8 +12,8 @@ interface BankSoalModel {
   id: string;
   namaUjian: string;
   mapelId: string;
-  jumlahSoal: parseInt;
-  durasi: parseInt; // in minutes
+  jumlahSoal: number;
+  durasi: number; // in minutes
   isAktif: boolean;
 }
 

@@ -2,7 +2,8 @@ import { GoogleGenAI } from "@google/genai";
 import { isValidGeminiKey } from "../lib/utils";
 
 const getApiKey = () => {
-  return import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
+  const processApiKey = typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '';
+  return import.meta.env.VITE_GEMINI_API_KEY || processApiKey || '';
 };
 
 const getAiClient = () => {
