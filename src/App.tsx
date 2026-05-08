@@ -17,6 +17,7 @@ import ButirSoal from './pages/ButirSoal';
 import HasilUjian from './pages/HasilUjian';
 import Guru from './pages/Guru';
 import MataPelajaran from './pages/MataPelajaran';
+import DeteksiObjek from './pages/DeteksiObjek';
 import Akademik from './pages/Akademik';
 import Alumni from './pages/Alumni';
 import Materi from './pages/Materi';
@@ -133,6 +134,7 @@ function AppContent() {
              <Route path="data-guru" element={<Guru />} />
              <Route path="mata-pelajaran" element={<MataPelajaran />} />
              <Route path="akademik" element={<Akademik />} />
+             <Route path="deteksi-objek" element={<DeteksiObjek />} />
              <Route path="relasi" element={<Relasi />} />
              <Route path="alumni" element={<Alumni />} />
              <Route path="materi" element={<Materi />} />

@@ -37,6 +37,7 @@ import {
   EyeOff,
   ShieldAlert,
   ArrowRight,
+  ScanFace,
   FolderOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -138,6 +139,7 @@ export default function Layout() {
               { icon: Link2, label: 'Relasi Mengajar', path: `${prefix}/dashboard/relasi` },
               { icon: ArrowUpCircle, label: 'Kenaikan Kelas', path: `${prefix}/dashboard/kenaikan` },
               { icon: FileText, label: 'Cek Raport', path: `${prefix}/dashboard/raport` },
+              { icon: ScanFace, label: 'Deteksi Objek AI', path: `${prefix}/dashboard/deteksi-objek` },
             ]
           },
           {
