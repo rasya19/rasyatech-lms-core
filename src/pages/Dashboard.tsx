@@ -1,4 +1,4 @@
-import { TrendingUp, Award, BookOpen, PlayCircle, Clock, ChevronRight, AlertCircle } from 'lucide-react';
+import { TrendingUp, Award, BookOpen, PlayCircle, Clock, ChevronRight, AlertCircle, XCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/src/lib/utils';
@@ -33,8 +33,38 @@ export default function Dashboard() {
   const { school } = useSchool();
   const adminName = localStorage.getItem('adminName') || 'Administrator';
 
+  const isExpired = school?.expiryDate ? new Date(school.expiryDate) < new Date() : false;
+  const isExpiringSoon = school?.expiryDate ? (new Date(school.expiryDate).getTime() - new Date().getTime()) < (7 * 24 * 60 * 60 * 1000) : false;
+
   return (
     <div className="space-y-6 max-w-5xl">
+      {/* Expiry Warning */}
+      {isExpired ? (
+        <div className="bg-red-600 text-white p-6 rounded-[2rem] shadow-xl shadow-red-600/20 flex items-center justify-between gap-6 border-4 border-red-400">
+           <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 rounded-2xl">
+                 <XCircle className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                 <h3 className="text-lg font-black uppercase italic italic leading-tight">Masa Aktif Berakhir!</h3>
+                 <p className="text-xs font-bold text-white/80 italic">Akses dashboard Anda telah dibatasi. Segera hubungi pusat untuk perpanjangan.</p>
+              </div>
+           </div>
+           <a href="https://wa.me/6285225025555" target="_blank" className="bg-white text-red-600 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-all italic">Layanan Pusat</a>
+        </div>
+      ) : isExpiringSoon ? (
+        <div className="bg-orange-500 text-white p-5 rounded-2xl shadow-xl shadow-orange-500/20 flex items-center justify-between gap-4 border-2 border-orange-300">
+           <div className="flex items-center gap-4">
+              <Clock className="w-6 h-6 animate-pulse" />
+              <div>
+                 <h3 className="text-xs font-black uppercase italic italic leading-none">Peringatan Masa Aktif</h3>
+                 <p className="text-[10px] font-bold text-white/80 italic mt-1">Masa aktif sekolah akan berakhir pada {school?.expiryDate}. Segera perpanjang layanan Anda.</p>
+              </div>
+           </div>
+           <a href="https://wa.me/6285225025555" target="_blank" className="bg-white text-orange-600 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest italic shrink-0">Beli Paket</a>
+        </div>
+      ) : null}
+
       {/* Welcome Section */}
       <section className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-2">
         <div>

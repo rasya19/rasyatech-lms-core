@@ -48,5 +48,9 @@ service cloud.firestore {
       allow get: if true;
       allow write: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
     }
+
+    match /payments/{paymentId} {
+      allow read, write: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
+    }
   }
 }

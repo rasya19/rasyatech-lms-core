@@ -86,12 +86,23 @@ export default function Purchase() {
     phone: '',
     password: '',
   });
+  interface BankAccount {
+    id: string;
+    name: string;
+    account: string;
+    recipient: string;
+  }
+
+  interface EWalletAccount {
+    id: string;
+    name: string;
+    number: string;
+  }
+
   const [paymentSettings, setPaymentSettings] = useState({
-    bankName: 'BANK MANDIRI',
-    bankAccount: '123-00-0456-7890',
-    bankRecipient: 'PT ARMILLA NUSA TEKNOLOGI',
-    ewalletNumber: '0852-2502-5555',
-    vaInfo: 'Nomor Virtual Account (VA) unik akan dikirimkan otomatis ke email Anda dalam 15 menit.'
+    banks: [] as BankAccount[],
+    ewallets: [] as EWalletAccount[],
+    vaInfo: ''
   });
   const navigate = useNavigate();
 
@@ -100,7 +111,22 @@ export default function Purchase() {
       try {
         const settingsSnap = await getDoc(doc(db, 'settings', 'payment'));
         if (settingsSnap.exists()) {
-          setPaymentSettings(settingsSnap.data() as any);
+          const data = settingsSnap.data();
+          // Migration/Normalization
+          setPaymentSettings({
+            banks: data.banks || (data.bankName ? [{
+              id: 'legacy-bank',
+              name: data.bankName,
+              account: data.bankAccount,
+              recipient: data.bankRecipient
+            }] : []),
+            ewallets: data.ewallets || (data.ewalletNumber ? [{
+              id: 'legacy-ewallet',
+              name: 'E-Wallet',
+              number: data.ewalletNumber
+            }] : []),
+            vaInfo: data.vaInfo || ''
+          });
         }
       } catch (error) {
         console.error('Error fetching payment settings:', error);
@@ -526,42 +552,46 @@ export default function Purchase() {
                    Terima kasih <span className="font-black text-brand-sidebar uppercase italic">{formData.name}</span>, pendaftaran untuk <span className="font-black text-brand-sidebar italic">{formData.schoolName}</span> telah kami catat di sistem.
                 </p>
                 <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2rem] space-y-4 text-left">
-                   <div className="bg-white border border-brand-accent/20 p-5 rounded-2xl mb-2 shadow-sm">
-                      <h5 className="text-[10px] font-black text-brand-sidebar uppercase tracking-widest mb-4 flex items-center gap-2">
-                         <CreditCard className="w-4 h-4 text-brand-accent" /> Rekening Pembayaran ({paymentMethod})
-                      </h5>
-                      {paymentMethod === 'Transfer Bank' ? (
-                         <div className="space-y-2">
-                            <div className="flex justify-between items-center border-b border-slate-50 pb-2">
-                               <span className="text-[9px] font-black text-slate-400 uppercase">Bank</span>
-                               <span className="text-xs font-black text-brand-sidebar">{paymentSettings.bankName}</span>
-                            </div>
-                            <div className="flex justify-between items-center border-b border-slate-50 pb-2">
-                               <span className="text-[9px] font-black text-slate-400 uppercase">Rekening</span>
-                               <span className="text-sm font-black text-brand-accent tracking-wider">{paymentSettings.bankAccount}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                               <span className="text-[9px] font-black text-slate-400 uppercase">Penerima</span>
-                               <span className="text-xs font-black text-brand-sidebar">{paymentSettings.bankRecipient}</span>
-                            </div>
-                         </div>
-                      ) : paymentMethod === 'E-Wallet' ? (
-                         <div className="space-y-2">
-                            <div className="flex justify-between items-center border-b border-slate-50 pb-2">
-                               <span className="text-[9px] font-black text-slate-400 uppercase">E-Wallet HP</span>
-                               <span className="text-xs font-black text-brand-sidebar">OVO / DANA / GOPAY</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                               <span className="text-[9px] font-black text-slate-400 uppercase">Nomor HP</span>
-                               <span className="text-sm font-black text-brand-accent tracking-wider">{paymentSettings.ewalletNumber}</span>
-                            </div>
-                         </div>
-                      ) : (
-                         <div className="text-[10px] text-slate-500 font-bold uppercase italic p-2 bg-slate-50 rounded-lg text-center leading-relaxed">
-                            {paymentSettings.vaInfo}
-                         </div>
-                      )}
-                   </div>
+                    <div className="bg-white border border-brand-accent/20 p-6 rounded-3xl mb-6 shadow-sm">
+                       <h5 className="text-[10px] font-black text-brand-sidebar uppercase tracking-widest mb-5 flex items-center gap-2">
+                          <CreditCard className="w-4 h-4 text-brand-accent" /> Pilih Rekening Pembayaran ({paymentMethod})
+                       </h5>
+                       {paymentMethod === 'Transfer Bank' ? (
+                          <div className="space-y-4">
+                             {paymentSettings.banks.map((bank) => (
+                                <div key={bank.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-2 group hover:border-brand-accent transition-colors">
+                                   <div className="flex justify-between items-center border-b border-white pb-1.5">
+                                      <span className="text-[8px] font-black text-slate-400 uppercase">{bank.name}</span>
+                                      <span className="text-[10px] font-black text-brand-sidebar italic">{bank.recipient}</span>
+                                   </div>
+                                   <div className="flex justify-between items-center">
+                                      <span className="text-[9px] font-black text-slate-400 uppercase">No. Rekening</span>
+                                      <span className="text-sm font-black text-brand-accent tracking-widest font-mono">{bank.account}</span>
+                                   </div>
+                                </div>
+                             ))}
+                             {paymentSettings.banks.length === 0 && (
+                                <p className="text-[10px] text-slate-400 italic text-center p-4">Hubungi Admin untuk info rekening.</p>
+                             )}
+                          </div>
+                       ) : paymentMethod === 'E-Wallet' ? (
+                          <div className="space-y-3">
+                             {paymentSettings.ewallets.map((wallet) => (
+                                <div key={wallet.id} className="flex justify-between items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl group hover:border-brand-accent transition-colors">
+                                   <span className="text-[9px] font-black text-slate-400 uppercase">{wallet.name}</span>
+                                   <span className="text-sm font-black text-brand-accent tracking-widest font-mono">{wallet.number}</span>
+                                </div>
+                             ))}
+                             {paymentSettings.ewallets.length === 0 && (
+                                <p className="text-[10px] text-slate-400 italic text-center p-4">Hubungi Admin untuk info e-wallet.</p>
+                             )}
+                          </div>
+                       ) : (
+                          <div className="text-[10px] text-slate-500 font-bold uppercase italic p-6 bg-slate-50 rounded-2xl text-center leading-relaxed whitespace-pre-line border border-slate-100">
+                             {paymentSettings.vaInfo || 'Instruksi Virtual Account akan dikirimkan menyusul setelah pendaftaran divalidasi.'}
+                          </div>
+                       )}
+                    </div>
 
                    <div className="flex items-start gap-4">
                       <div className="w-6 h-6 rounded-full bg-brand-sidebar text-brand-accent flex items-center justify-center text-[10px] font-black shrink-0 mt-1">1</div>

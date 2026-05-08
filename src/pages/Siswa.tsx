@@ -54,7 +54,10 @@ const MOCK_PPDB_APPLICANTS = [
 
 import { fetchSpreadsheetData, pushDataToSheet } from '../services/apiService';
 
+import { useSchool } from '../contexts/SchoolContext';
+
 export default function Siswa() {
+  const { school } = useSchool();
   const [siswaList, setSiswaList] = useState<Student[]>(() => {
     const saved = localStorage.getItem('school_siswa_list');
     if (saved) return JSON.parse(saved);
@@ -185,6 +188,11 @@ export default function Siswa() {
   };
 
   const convertPPDBToSiswa = (applicant: any) => {
+    if (school?.studentLimit && siswaList.length >= school.studentLimit) {
+      alert(`Limit siswa tercapai (${school.studentLimit}). Silakan hubungi pusat untuk upgrade kuota.`);
+      return;
+    }
+
     const newStudent: Student = {
       id: `std-${Date.now()}`,
       name: applicant.name,
@@ -308,6 +316,11 @@ export default function Siswa() {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!editingSiswa && school?.studentLimit && siswaList.length >= school.studentLimit) {
+      alert(`Limit siswa tercapai (${school.studentLimit}). Silakan hubungi pusat untuk upgrade kuota.`);
+      return;
+    }
+
     const isAlumniStatus = formData.status === 'Lulus' || formData.status === 'Keluar';
 
     if (isAlumniStatus) {
@@ -425,6 +438,11 @@ export default function Siswa() {
       const wsname = wb.SheetNames[0];
       const ws = wb.Sheets[wsname];
       const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+      if (school?.studentLimit && (siswaList.length + data.length) > school.studentLimit) {
+        alert(`Gagal import. Total siswa akan melebihi limit (${school.studentLimit}). Sisa kuota: ${school.studentLimit - siswaList.length}`);
+        return;
+      }
 
       const importedSiswa: Student[] = data.map((item, index) => ({
         id: `imported-${Date.now()}-${index}`,

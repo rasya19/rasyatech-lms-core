@@ -14,6 +14,8 @@ interface School {
   logoUrl?: string;
   themeColor?: string;
   status: string;
+  expiryDate?: string;
+  studentLimit?: number;
 }
 
 interface SchoolContextType {
