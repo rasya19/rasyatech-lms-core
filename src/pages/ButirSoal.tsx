@@ -90,18 +90,25 @@ export default function ButirSoal() {
         const newSoals: ButirSoalModel[] = [];
 
         for (const row of data) {
-          const rowPertanyaan = row['Pertanyaan'] || row['pertanyaan'];
-          const rowKunci = row['Kunci_Jawaban'] || row['Kunci Jawaban'] || row['kunci_jawaban'] || row['kunci jawaban'];
+          const rowPertanyaan = row['Pertanyaan'] || row['pertanyaan'] || row['PERTANYAAN'];
+          const rowKunci = row['Kunci_Jawaban'] || row['Kunci Jawaban'] || row['kunci_jawaban'] || row['kunci jawaban'] || row['KUNCI_JAWABAN'];
           
           if (!rowPertanyaan || !rowKunci) {
-             alert('Format Excel tidak valid: Kolom "Pertanyaan" atau "Kunci_Jawaban" tidak boleh kosong.');
+             alert('Format Excel tidak valid: Kolom "Pertanyaan" atau "Kunci_Jawaban" tidak boleh kosong pada salah satu baris.');
+             setIsLoadingExcel(false);
+             if (fileInputRef.current) fileInputRef.current.value = '';
              return;
           }
 
-          const getOpsi = (key: string, id: string) => ({
-             id,
-             teks: String(row[key] || row[key.toLowerCase()] || '')
-          });
+          const getOpsi = (key: string, id: string) => {
+             const val = row[key] || row[key.toLowerCase()] || row[key.toUpperCase()] || row[key.replace('_', ' ')] || '';
+             return { id, teks: String(val) };
+          };
+
+          const diffK = row['Tingkat_Kesulitan'] || row['Tingkat Kesulitan'] || row['tingkat_kesulitan'] || 'Sedang';
+          let normalizedDiff: 'Mudah' | 'Sedang' | 'Sulit' = 'Sedang';
+          if (String(diffK).toLowerCase().includes('mudah')) normalizedDiff = 'Mudah';
+          if (String(diffK).toLowerCase().includes('sulit')) normalizedDiff = 'Sulit';
 
           newSoals.push({
             id: `Q-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
@@ -114,11 +121,12 @@ export default function ButirSoal() {
               getOpsi('Opsi_E', 'E'),
             ],
             kunciJawabanId: String(rowKunci).toUpperCase().charAt(0) || 'A',
-            tingkatKesulitan: (row['Tingkat_Kesulitan'] || row['tingkat kesulitan'] || 'Sedang') as any
+            tingkatKesulitan: normalizedDiff
           });
         }
 
         setSoals([...newSoals, ...soals]);
+        alert(`Berhasil mengimpor ${newSoals.length} butir soal!`);
       } catch (error) {
          console.error('Error parsing excel:', error);
          alert('Gagal membaca file Excel. Pastikan format sudah benar.');
@@ -132,6 +140,34 @@ export default function ButirSoal() {
       setIsLoadingExcel(false);
     };
     reader.readAsBinaryString(file);
+  };
+
+  const handleDownloadTemplate = () => {
+    const ws = XLSX.utils.json_to_sheet([
+      {
+        Pertanyaan: 'Apa ibukota negara Indonesia?',
+        Opsi_A: 'Jakarta',
+        Opsi_B: 'Bandung',
+        Opsi_C: 'Surabaya',
+        Opsi_D: 'Medan',
+        Opsi_E: 'Makassar',
+        Kunci_Jawaban: 'A',
+        Tingkat_Kesulitan: 'Mudah'
+      },
+      {
+        Pertanyaan: 'Berapakah hasil dari 5 + 7?',
+        Opsi_A: '10',
+        Opsi_B: '11',
+        Opsi_C: '12',
+        Opsi_D: '13',
+        Opsi_E: '14',
+        Kunci_Jawaban: 'C',
+        Tingkat_Kesulitan: 'Sedang'
+      }
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template_Soal");
+    XLSX.writeFile(wb, "Template_Import_Soal.xlsx");
   };
 
   const resetForm = () => {
@@ -211,7 +247,14 @@ export default function ButirSoal() {
           </div>
         </div>
         
-        <div className="relative z-10">
+        <div className="relative z-10 flex gap-2">
+          <button 
+            onClick={handleDownloadTemplate}
+            className="bg-slate-800 text-slate-300 border border-slate-700 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-700 transition-all"
+          >
+            <FileText className="w-4 h-4" />
+            Template
+          </button>
           <input 
             type="file" 
             ref={fileInputRef} 
