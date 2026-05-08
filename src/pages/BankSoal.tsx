@@ -4,6 +4,7 @@ import {
   FileText, CheckCircle2, MoreVertical, BookOpen, Clock, Settings, X, SearchIcon, ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { DUMMY_MAPEL } from './MataPelajaran';
 
@@ -44,6 +45,7 @@ const DUMMY_BANK_SOAL: BankSoalModel[] = [
 ];
 
 export default function BankSoal() {
+  const navigate = useNavigate();
   const [bankSoals, setBankSoals] = useState<BankSoalModel[]>(DUMMY_BANK_SOAL);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -200,6 +202,12 @@ export default function BankSoal() {
                       <td className="px-4 py-4 text-right">
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
+                            onClick={(_) => {
+                              const prefix = window.location.pathname.startsWith('/s/') 
+                                ? `/s/${window.location.pathname.split('/')[2]}` 
+                                : '';
+                              navigate(`${prefix}/dashboard/soal/${bs.id}/detail`);
+                            }}
                             className="p-2 text-white bg-slate-800 hover:bg-emerald-600 rounded-lg transition-colors tooltip tooltip-left shadow-sm flex items-center gap-2 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
                             title="Kelola Butir Soal"
                           >

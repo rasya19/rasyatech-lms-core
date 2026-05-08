@@ -13,6 +13,7 @@ import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import DataSiswa from './pages/DataSiswa';
 import BankSoal from './pages/BankSoal';
+import ButirSoal from './pages/ButirSoal';
 import HasilUjian from './pages/HasilUjian';
 import Guru from './pages/Guru';
 import MataPelajaran from './pages/MataPelajaran';
@@ -127,6 +128,7 @@ function AppContent() {
              <Route path="course/:id" element={<CourseDetail />} />
              <Route path="data-siswa" element={<DataSiswa />} />
              <Route path="soal" element={<BankSoal />} />
+             <Route path="soal/:id/detail" element={<ButirSoal />} />
              <Route path="hasil-ujian" element={<HasilUjian />} />
              <Route path="data-guru" element={<Guru />} />
              <Route path="mata-pelajaran" element={<MataPelajaran />} />
@@ -162,6 +164,7 @@ function AppContent() {
             <Route path="course/:id" element={<CourseDetail />} />
             <Route path="data-siswa" element={<DataSiswa />} />
             <Route path="soal" element={<BankSoal />} />
+            <Route path="soal/:id/detail" element={<ButirSoal />} />
             <Route path="hasil-ujian" element={<HasilUjian />} />
             <Route path="data-guru" element={<Guru />} />
             <Route path="mata-pelajaran" element={<MataPelajaran />} />
@@ -200,6 +203,7 @@ function AppContent() {
         <Route path="course/:id" element={<CourseDetail />} />
         <Route path="data-siswa" element={<DataSiswa />} />
         <Route path="soal" element={<BankSoal />} />
+        <Route path="soal/:id/detail" element={<ButirSoal />} />
         <Route path="hasil-ujian" element={<HasilUjian />} />
         <Route path="data-guru" element={<Guru />} />
         <Route path="mata-pelajaran" element={<MataPelajaran />} />
