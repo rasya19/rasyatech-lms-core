@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, Filter, Plus, Edit2, Trash2, 
   User, MapPin, GraduationCap, Upload, X, ShieldCheck, 
-  Phone, CheckCircle2, AlertCircle
+  Phone, CheckCircle2, AlertCircle, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { supabase } from '../lib/supabase';
 
 export interface Student {
   id: string;
@@ -17,46 +18,13 @@ export interface Student {
   photoUrl?: string;
 }
 
-export const DUMMY_STUDENTS: Student[] = [
-  {
-    id: 'S001',
-    nisn: '0012345678',
-    name: 'Ahmad Rafli',
-    class: '10 IPA 1',
-    whatsapp: '081234567890',
-    status: 'Aktif'
-  },
-  {
-    id: 'S002',
-    nisn: '0012345679',
-    name: 'Siti Najwa',
-    class: '11 IPS 2',
-    whatsapp: '081234567891',
-    status: 'Aktif'
-  },
-  {
-    id: 'S003',
-    nisn: '0012345680',
-    name: 'Budi Santoso',
-    class: '12 IPA 3',
-    whatsapp: '081234567892',
-    status: 'Lulus'
-  },
-  {
-    id: 'S004',
-    nisn: '0012345681',
-    name: 'Clara Bella',
-    class: '10 IPS 1',
-    whatsapp: '081234567893',
-    status: 'Nonaktif'
-  }
-];
-
 export default function DataSiswa() {
-  const [students, setStudents] = useState<Student[]>(DUMMY_STUDENTS);
+  const [students, setStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   
   const [formData, setFormData] = useState<Partial<Student>>({
     nisn: '',
@@ -67,9 +35,34 @@ export default function DataSiswa() {
     photoUrl: ''
   });
 
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  const fetchStudents = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('profiles_siswa')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching students:', error);
+        return;
+      }
+
+      setStudents(data as Student[] || []);
+    } catch (err) {
+      console.error('Fetch error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const filteredStudents = students.filter(student => 
-    student.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    student.nisn.includes(searchTerm)
+    student.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    student.nisn?.includes(searchTerm)
   );
 
   const handleOpenModal = (student?: Student) => {
@@ -83,24 +76,67 @@ export default function DataSiswa() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus data siswa ini?')) {
-      setStudents(students.filter(s => s.id !== id));
+      try {
+        const { error } = await supabase
+          .from('profiles_siswa')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+        setStudents(students.filter(s => s.id !== id));
+      } catch (err) {
+        console.error('Error deleting student:', err);
+        alert('Gagal menghapus data siswa');
+      }
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isEditing && formData.id) {
-      setStudents(students.map(s => s.id === formData.id ? { ...formData } as Student : s));
-    } else {
-      const newStudent: Student = {
-        ...formData as Student,
-        id: `S${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
-      };
-      setStudents([...students, newStudent]);
+    setIsSaving(true);
+    try {
+      if (isEditing && formData.id) {
+        const { error } = await supabase
+          .from('profiles_siswa')
+          .update({
+            nisn: formData.nisn,
+            name: formData.name,
+            class: formData.class,
+            whatsapp: formData.whatsapp,
+            status: formData.status,
+            photoUrl: formData.photoUrl
+          })
+          .eq('id', formData.id);
+
+        if (error) throw error;
+        setStudents(students.map(s => s.id === formData.id ? { ...s, ...formData } as Student : s));
+      } else {
+        const { data, error } = await supabase
+          .from('profiles_siswa')
+          .insert([{
+            nisn: formData.nisn,
+            name: formData.name,
+            class: formData.class,
+            whatsapp: formData.whatsapp,
+            status: formData.status,
+            photoUrl: formData.photoUrl
+          }])
+          .select();
+
+        if (error) throw error;
+        if (data && data.length > 0) {
+          setStudents([...students, data[0] as Student]);
+        }
+      }
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error('Error saving student:', err);
+      alert('Gagal menyimpan data siswa');
+    } finally {
+      setIsSaving(false);
     }
-    setIsModalOpen(false);
   };
 
   const getStatusColor = (status: Student['status']) => {
@@ -174,7 +210,21 @@ export default function DataSiswa() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredStudents.map((student) => (
+              {isLoading ? (
+                <tr>
+                   <td colSpan={7} className="px-6 py-12 text-center text-slate-500 font-medium">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-500" />
+                      Memuat data siswa...
+                   </td>
+                </tr>
+              ) : filteredStudents.length === 0 ? (
+                <tr>
+                   <td colSpan={7} className="px-6 py-12 text-center text-slate-500 text-xs font-medium">
+                      Tidak ada data siswa yang ditemukan.
+                   </td>
+                </tr>
+              ) : (
+                filteredStudents.map((student) => (
                 <tr key={student.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
@@ -226,13 +276,7 @@ export default function DataSiswa() {
                     </div>
                   </td>
                 </tr>
-              ))}
-              {filteredStudents.length === 0 && (
-                <tr>
-                   <td colSpan={7} className="px-6 py-12 text-center text-slate-500 text-xs font-medium">
-                      Tidak ada data siswa yang ditemukan.
-                   </td>
-                </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -370,9 +414,15 @@ export default function DataSiswa() {
                  <button 
                    form="student-form"
                    type="submit"
-                   className="flex-1 bg-emerald-600 text-white py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                   disabled={isSaving}
+                   className="flex-1 bg-emerald-600 text-white py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                  >
-                   <ShieldCheck className="w-4 h-4" /> {isEditing ? 'Simpan Perubahan' : 'Simpan Data'}
+                   {isSaving ? (
+                     <Loader2 className="w-4 h-4 animate-spin" />
+                   ) : (
+                     <ShieldCheck className="w-4 h-4" />
+                   )}
+                   {isSaving ? 'Menyimpan...' : (isEditing ? 'Simpan Perubahan' : 'Simpan Data')}
                  </button>
               </div>
             </motion.div>

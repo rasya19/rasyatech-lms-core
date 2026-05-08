@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Clock, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Flag, MonitorPlay, Check } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Flag, MonitorPlay, Check, Rocket } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
 
@@ -35,6 +35,7 @@ export default function UjianSiswa() {
   const { id } = useParams();
   const navigate = useNavigate();
   
+  const [hasStarted, setHasStarted] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [raguRagu, setRaguRagu] = useState<Record<number, boolean>>({});
@@ -45,6 +46,7 @@ export default function UjianSiswa() {
 
   // Timer Countdown
   useEffect(() => {
+    if (!hasStarted) return;
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -56,7 +58,7 @@ export default function UjianSiswa() {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [hasStarted]);
 
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -107,6 +109,11 @@ export default function UjianSiswa() {
     }
   };
 
+  const startExam = () => {
+    toggleFullscreen();
+    setHasStarted(true);
+  };
+
   useEffect(() => {
     const onFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
@@ -119,9 +126,40 @@ export default function UjianSiswa() {
     if (window.confirm('Yakin ingin menyelesaikan ujian? Anda tidak dapat kembali lagi.')) {
       // Logic for submit
       alert('Ujian berhasil diselesaikan!');
+      if (document.fullscreenElement && document.exitFullscreen) {
+         document.exitFullscreen();
+      }
       navigate(-1);
     }
   };
+
+  // Pre-Start Overlay
+  if (!hasStarted) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6 text-center">
+         <div className="max-w-md w-full bg-slate-800 p-10 rounded-[3rem] border border-slate-700 shadow-2xl">
+            <div className="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-8 border border-emerald-500/30">
+               <MonitorPlay className="w-10 h-10 ml-1" />
+            </div>
+            <h1 className="text-3xl font-black italic tracking-tighter mb-4">Persiapan Ujian</h1>
+            <p className="text-sm text-slate-400 mb-10 font-medium">Ujian ini mewajibkan mode layar penuh (Full Screen) untuk mencegah kecurangan. Klik tombol di bawah untuk masuk ke mode layar penuh dan memulai waktu Anda.</p>
+            
+            <button 
+              onClick={startExam}
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-3"
+            >
+              <Rocket className="w-5 h-5" /> Mulai Ujian Sekarang
+            </button>
+            <button 
+              onClick={() => navigate(-1)}
+              className="w-full mt-4 text-slate-400 hover:text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all"
+            >
+              Kembali
+            </button>
+         </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200 flex flex-col font-sans select-none">

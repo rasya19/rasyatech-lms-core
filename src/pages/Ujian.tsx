@@ -1,17 +1,24 @@
 import React from 'react';
 import { ClipboardCheck, Rocket, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const MOCK_UJIAN = [
-  { id: '1', title: 'Ujian Tengah Semester - B. Indo', date: 'Mulai Hari Ini', time: 's/d Minggu (23:59)', status: 'Active', link: 'https://forms.gle/example' },
+  { id: '1', title: 'Ujian Tengah Semester - B. Indo', date: 'Mulai Hari Ini', time: 's/d Minggu (23:59)', status: 'Active', link: '/ujian/1' },
   { id: '2', title: 'Kuis Harian - Matematika', date: 'Hari Ini', time: 'Sudah Berakhir', status: 'Completed' },
   { id: '3', title: 'Try Out Paket C', date: '20 Mei 2026', time: '09:00 - 12:00', status: 'Locked' },
   { id: '4', title: 'Pre-Test Menjahit', date: '01 Mei 2026', time: 'Sudah Selesai', status: 'Completed' },
 ];
 
 export default function Ujian() {
+  const navigate = useNavigate();
+
   const handleStartExam = (link?: string) => {
     if (link) {
-      window.open(link, '_blank');
+      if (link.startsWith('/')) {
+        navigate(link);
+      } else {
+        window.open(link, '_blank');
+      }
     }
   };
 
@@ -20,7 +27,7 @@ export default function Ujian() {
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-xl font-bold text-brand-text-main tracking-tight uppercase italic">Jadwal <span className="text-brand-accent">Ujian Aktif</span></h2>
-          <p className="text-[10px] text-brand-text-muted font-bold uppercase tracking-widest italic opacity-70">Klik tombol pengerjaan untuk memulai via Google Form</p>
+          <p className="text-[10px] text-brand-text-muted font-bold uppercase tracking-widest italic opacity-70">Klik tombol pengerjaan untuk memulai ujian</p>
         </div>
       </div>
 
@@ -75,6 +82,7 @@ export default function Ujian() {
            <ol className="text-[10px] text-slate-300 list-decimal pl-4 space-y-1 font-medium italic opacity-80 mt-3">
              <li>Pastikan koneksi internet stabil selama pengerjaan.</li>
              <li>Dilarang membuka tab browser lain saat ujian berlangsung.</li>
+             <li>Sistem akan otomatis memasuki mode layar penuh. Dilarang keluar dari mode layar penuh.</li>
              <li>Sistem AI akan memantau aktivitas pengerjaan Anda.</li>
            </ol>
          </div>

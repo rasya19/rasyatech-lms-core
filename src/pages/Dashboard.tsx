@@ -72,6 +72,7 @@ const TRANSAKSI_TERAKHIR = [
 export default function Dashboard() {
   const { school } = useSchool();
   const adminName = localStorage.getItem('adminName') || 'Ismanto';
+  const userRole = localStorage.getItem('userRole') || 'Siswa';
 
   const isExpired = school?.expiryDate ? new Date(school.expiryDate) < new Date() : false;
   const isExpiringSoon = school?.expiryDate ? (new Date(school.expiryDate).getTime() - new Date().getTime()) < (7 * 24 * 60 * 60 * 1000) : false;
@@ -108,7 +109,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-2">
         <div>
-          <h2 className="text-3xl font-black text-slate-50 tracking-tight">Halo, Admin {adminName}!</h2>
+          <h2 className="text-3xl font-black text-slate-50 tracking-tight">Halo, {userRole === 'Admin' ? 'Admin ' + adminName : adminName}!</h2>
           <p className="text-sm font-medium text-emerald-400 mt-1 uppercase tracking-widest">Selamat Datang Kembali.</p>
         </div>
       </div>
@@ -118,8 +119,13 @@ export default function Dashboard() {
         {[
           { label: 'TOTAL SISWA', value: '1,245', icon: Users, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
           { label: 'TOTAL GURU', value: '48', icon: UserCheck, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
-          { label: 'SALDO MASUK', value: 'Rp 45.5M', icon: Wallet, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
-          { label: 'TAGIHAN PENDING', value: 'Rp 12.3M', icon: Clock, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
+          ...(userRole === 'Admin' ? [
+            { label: 'SALDO MASUK', value: 'Rp 45.5M', icon: Wallet, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
+            { label: 'TAGIHAN PENDING', value: 'Rp 12.3M', icon: Clock, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' }
+          ] : [
+            { label: 'MAPEL AKTIF', value: '12', icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
+            { label: 'TUGAS SELESAI', value: '8/10', icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' }
+          ])
         ].map((stat, i) => (
           <div
             key={i}
@@ -138,46 +144,48 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Chart Section */}
-        <div className="lg:col-span-2 bg-slate-900/50 p-6 rounded-3xl border border-slate-800 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h3 className="text-sm font-black text-slate-50 uppercase tracking-widest">Tren Pembayaran</h3>
-              <p className="text-xs font-medium text-emerald-400/60 mt-1">Statistik Lunas vs Menunggu (6 Bulan Terakhir)</p>
+      <div className={cn("grid gap-6", userRole === 'Admin' ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1")}>
+        {/* Chart Section - Only for Admin */}
+        {userRole === 'Admin' && (
+          <div className="lg:col-span-2 bg-slate-900/50 p-6 rounded-3xl border border-slate-800 flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-sm font-black text-slate-50 uppercase tracking-widest">Tren Pembayaran</h3>
+                <p className="text-xs font-medium text-emerald-400/60 mt-1">Statistik Lunas vs Menunggu (6 Bulan Terakhir)</p>
+              </div>
+              <select className="bg-slate-800 border border-slate-700 text-xs font-bold text-slate-300 px-3 py-2 rounded-xl outline-none focus:border-emerald-500/50">
+                <option>Tahun 2024</option>
+                <option>Tahun 2023</option>
+              </select>
             </div>
-            <select className="bg-slate-800 border border-slate-700 text-xs font-bold text-slate-300 px-3 py-2 rounded-xl outline-none focus:border-emerald-500/50">
-              <option>Tahun 2024</option>
-              <option>Tahun 2023</option>
-            </select>
+            
+            <div className="flex-1 min-h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorLunas" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorMenunggu" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#64748b" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#64748b" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} 
+                    tickFormatter={(val) => `Rp ${val/1000000}M`} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '16px', border: '1px solid #1e293b', backgroundColor: '#0f172a', fontSize: '12px', fontWeight: 'bold', color: '#f8fafc' }}
+                  />
+                  <Area type="monotone" dataKey="lunas" name="Lunas" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorLunas)" />
+                  <Area type="monotone" dataKey="menunggu" name="Menunggu" stroke="#64748b" strokeWidth={3} fillOpacity={1} fill="url(#colorMenunggu)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-          
-          <div className="flex-1 min-h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorLunas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorMenunggu" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#64748b" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#64748b" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} 
-                  tickFormatter={(val) => `Rp ${val/1000000}M`} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '16px', border: '1px solid #1e293b', backgroundColor: '#0f172a', fontSize: '12px', fontWeight: 'bold', color: '#f8fafc' }}
-                />
-                <Area type="monotone" dataKey="lunas" name="Lunas" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorLunas)" />
-                <Area type="monotone" dataKey="menunggu" name="Menunggu" stroke="#64748b" strokeWidth={3} fillOpacity={1} fill="url(#colorMenunggu)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        )}
 
         {/* Recent Activity */}
         <div className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800 flex flex-col">
@@ -186,10 +194,10 @@ export default function Dashboard() {
           </div>
           
           <div className="space-y-6 flex-1">
-            {RECENT_ACTIVITIES.map((activity, idx) => (
+            {RECENT_ACTIVITIES.filter(a => userRole === 'Admin' ? true : a.action.indexOf('pembayaran') === -1 && a.action.indexOf('Tagihan') === -1).map((activity, idx, arr) => (
               <div key={activity.id} className="flex gap-4 relative group">
                  {/* Timeline Line */}
-                 {idx !== RECENT_ACTIVITIES.length - 1 && (
+                 {idx !== arr.length - 1 && (
                    <div className="absolute left-[19px] top-10 bottom-[-24px] w-[1px] bg-slate-800" />
                  )}
                  
@@ -210,41 +218,43 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Transaksi Terakhir */}
-      <div className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800">
-        <h3 className="text-sm font-black text-slate-50 uppercase tracking-widest mb-6">Transaksi Terakhir</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-800">
-                <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID TRX</th>
-                <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nama</th>
-                <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nominal</th>
-                <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {TRANSAKSI_TERAKHIR.map((trx, idx) => (
-                <tr key={idx} className="hover:bg-slate-800/50 transition-colors">
-                  <td className="px-4 py-4 text-xs font-mono text-slate-500">{trx.id}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-200">{trx.nama}</td>
-                  <td className="px-4 py-4 text-xs font-bold text-emerald-400">{trx.nominal}</td>
-                  <td className="px-4 py-4 text-right">
-                    <span className={cn(
-                      "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider",
-                      trx.status === 'Lunas' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : 
-                      trx.status === 'Menunggu' ? "bg-slate-800 text-slate-300 border border-slate-700" :
-                      "bg-orange-500/10 text-orange-400 border border-orange-500/20"
-                    )}>
-                      {trx.status}
-                    </span>
-                  </td>
+      {/* Transaksi Terakhir - Only for Admin */}
+      {userRole === 'Admin' && (
+        <div className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800">
+          <h3 className="text-sm font-black text-slate-50 uppercase tracking-widest mb-6">Transaksi Terakhir</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-800">
+                  <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID TRX</th>
+                  <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nama</th>
+                  <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nominal</th>
+                  <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {TRANSAKSI_TERAKHIR.map((trx, idx) => (
+                  <tr key={idx} className="hover:bg-slate-800/50 transition-colors">
+                    <td className="px-4 py-4 text-xs font-mono text-slate-500">{trx.id}</td>
+                    <td className="px-4 py-4 text-sm font-bold text-slate-200">{trx.nama}</td>
+                    <td className="px-4 py-4 text-xs font-bold text-emerald-400">{trx.nominal}</td>
+                    <td className="px-4 py-4 text-right">
+                      <span className={cn(
+                        "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider",
+                        trx.status === 'Lunas' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : 
+                        trx.status === 'Menunggu' ? "bg-slate-800 text-slate-300 border border-slate-700" :
+                        "bg-orange-500/10 text-orange-400 border border-orange-500/20"
+                      )}>
+                        {trx.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

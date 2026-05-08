@@ -40,6 +40,7 @@ import Purchase from './pages/Purchase';
 import AffiliateDashboard from './pages/AffiliateDashboard';
 import SuperAdmin from './pages/SuperAdmin';
 import Feedback from './pages/Feedback';
+import Analitik from './pages/Analitik';
 
 function SchoolLoader() {
   const { schoolSlug } = useParams();
@@ -152,6 +153,7 @@ function AppContent() {
              <Route path="site" element={<Site />} />
              <Route path="keuangan" element={<Keuangan />} />
              <Route path="tagihan" element={<Tagihan />} />
+             <Route path="analitik" element={<Analitik />} />
              <Route path="diskusi" element={<Diskusi />} />
              <Route path="ai-asisten" element={<AiAsisten />} />
              <Route path="feedback" element={<Feedback />} />
@@ -189,6 +191,7 @@ function AppContent() {
             <Route path="site" element={<Site />} />
             <Route path="keuangan" element={<Keuangan />} />
             <Route path="tagihan" element={<Tagihan />} />
+            <Route path="analitik" element={<Analitik />} />
             <Route path="diskusi" element={<Diskusi />} />
             <Route path="ai-asisten" element={<AiAsisten />} />
             <Route path="feedback" element={<Feedback />} />
@@ -228,6 +231,7 @@ function AppContent() {
         <Route path="site" element={<Site />} />
         <Route path="keuangan" element={<Keuangan />} />
         <Route path="tagihan" element={<Tagihan />} />
+        <Route path="analitik" element={<Analitik />} />
         <Route path="diskusi" element={<Diskusi />} />
         <Route path="ai-asisten" element={<AiAsisten />} />
         <Route path="feedback" element={<Feedback />} />
