@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   FileText, Plus, Save, ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Edit2, Trash2, Upload, Loader2
 } from 'lucide-react';
@@ -6,54 +6,29 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { cn } from '../lib/utils';
+import { supabase } from '../lib/supabase';
 
+// Helper local types (DB mapping happens on submit)
 interface OpsiJawaban {
   id: string;
   teks: string;
 }
 
 interface ButirSoalModel {
-  id: string;
+  id: string | null;
+  bank_soal_id: string;
   pertanyaan: string;
   opsi: OpsiJawaban[];
   kunciJawabanId: string;
   tingkatKesulitan: 'Mudah' | 'Sedang' | 'Sulit';
 }
 
-const DUMMY_BUTIR_SOAL: ButirSoalModel[] = [
-  {
-    id: 'Q-001',
-    pertanyaan: 'Siapakah presiden pertama Republik Indonesia?',
-    opsi: [
-      { id: 'A', teks: 'B.J. Habibie' },
-      { id: 'B', teks: 'Soekarno' },
-      { id: 'C', teks: 'Suharto' },
-      { id: 'D', teks: 'Megawati Sukarnoputri' },
-      { id: 'E', teks: 'Joko Widodo' }
-    ],
-    kunciJawabanId: 'B',
-    tingkatKesulitan: 'Mudah'
-  },
-  {
-    id: 'Q-002',
-    pertanyaan: 'Sila ke-3 dari Pancasila berbunyi...',
-    opsi: [
-      { id: 'A', teks: 'Ketuhanan Yang Maha Esa' },
-      { id: 'B', teks: 'Kemanusiaan yang Adil dan Beradab' },
-      { id: 'C', teks: 'Persatuan Indonesia' },
-      { id: 'D', teks: 'Kerakyatan yang Dipimpin oleh Hikmat Kebijaksanaan dalam Permusyawaratan/Perwakilan' },
-      { id: 'E', teks: 'Keadilan Sosial bagi Seluruh Rakyat Indonesia' }
-    ],
-    kunciJawabanId: 'C',
-    tingkatKesulitan: 'Sedang'
-  }
-];
-
 export default function ButirSoal() {
-  const { id } = useParams<{ id: string }>();
+  const { id: bank_soal_id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  const [soals, setSoals] = useState<ButirSoalModel[]>(DUMMY_BUTIR_SOAL);
+  const [soals, setSoals] = useState<ButirSoalModel[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   
   // Form State
@@ -73,13 +48,50 @@ export default function ButirSoal() {
   const [isLoadingExcel, setIsLoadingExcel] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (bank_soal_id) {
+      fetchSoal();
+    }
+  }, [bank_soal_id]);
+
+  const fetchSoal = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase.from('butir_soal').select('*').eq('bank_soal_id', bank_soal_id).order('created_at', { ascending: false });
+      if (error) throw error;
+      
+      if (data) {
+        const mappedData: ButirSoalModel[] = data.map((d: any) => ({
+          id: d.id,
+          bank_soal_id: d.bank_soal_id,
+          pertanyaan: d.pertanyaan,
+          opsi: [
+            { id: 'A', teks: d.opsi_a || '' },
+            { id: 'B', teks: d.opsi_b || '' },
+            { id: 'C', teks: d.opsi_c || '' },
+            { id: 'D', teks: d.opsi_d || '' },
+            { id: 'E', teks: d.opsi_e || '' }
+          ],
+          kunciJawabanId: d.kunci_jawaban || 'A',
+          tingkatKesulitan: d.tingkat_kesulitan || 'Sedang'
+        }));
+        setSoals(mappedData);
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert('Gagal mengambil data soal: ' + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !bank_soal_id) return;
 
     setIsLoadingExcel(true);
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
         const bstr = evt.target?.result;
         const wb = XLSX.read(bstr, { type: 'binary' });
@@ -87,7 +99,7 @@ export default function ButirSoal() {
         const ws = wb.Sheets[wsname];
         const data = XLSX.utils.sheet_to_json(ws) as any[];
 
-        const newSoals: ButirSoalModel[] = [];
+        const newSoalsDb = [];
 
         for (const row of data) {
           const rowPertanyaan = row['Pertanyaan'] || row['pertanyaan'] || row['PERTANYAAN'];
@@ -100,36 +112,38 @@ export default function ButirSoal() {
              return;
           }
 
-          const getOpsi = (key: string, id: string) => {
+          const getOpsi = (key: string) => {
              const val = row[key] || row[key.toLowerCase()] || row[key.toUpperCase()] || row[key.replace('_', ' ')] || '';
-             return { id, teks: String(val) };
+             return String(val);
           };
 
           const diffK = row['Tingkat_Kesulitan'] || row['Tingkat Kesulitan'] || row['tingkat_kesulitan'] || 'Sedang';
-          let normalizedDiff: 'Mudah' | 'Sedang' | 'Sulit' = 'Sedang';
+          let normalizedDiff = 'Sedang';
           if (String(diffK).toLowerCase().includes('mudah')) normalizedDiff = 'Mudah';
           if (String(diffK).toLowerCase().includes('sulit')) normalizedDiff = 'Sulit';
 
-          newSoals.push({
-            id: `Q-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
+          newSoalsDb.push({
+            bank_soal_id: bank_soal_id,
             pertanyaan: String(rowPertanyaan),
-            opsi: [
-              getOpsi('Opsi_A', 'A'),
-              getOpsi('Opsi_B', 'B'),
-              getOpsi('Opsi_C', 'C'),
-              getOpsi('Opsi_D', 'D'),
-              getOpsi('Opsi_E', 'E'),
-            ],
-            kunciJawabanId: String(rowKunci).toUpperCase().charAt(0) || 'A',
-            tingkatKesulitan: normalizedDiff
+            opsi_a: getOpsi('Opsi_A'),
+            opsi_b: getOpsi('Opsi_B'),
+            opsi_c: getOpsi('Opsi_C'),
+            opsi_d: getOpsi('Opsi_D'),
+            opsi_e: getOpsi('Opsi_E'),
+            kunci_jawaban: String(rowKunci).toUpperCase().charAt(0) || 'A',
+            tingkat_kesulitan: normalizedDiff
           });
         }
 
-        setSoals([...newSoals, ...soals]);
-        alert(`Berhasil mengimpor ${newSoals.length} butir soal!`);
-      } catch (error) {
-         console.error('Error parsing excel:', error);
-         alert('Gagal membaca file Excel. Pastikan format sudah benar.');
+        // Simpan ke Supabase
+        const { error } = await supabase.from('butir_soal').insert(newSoalsDb);
+        if (error) throw error;
+        
+        fetchSoal();
+        alert(`Berhasil mengimpor ${newSoalsDb.length} butir soal!`);
+      } catch (error: any) {
+         console.error('Error parsing/inserting excel:', error);
+         alert('Gagal mengimpor soal ke database. ' + error.message);
       } finally {
          setIsLoadingExcel(false);
          if (fileInputRef.current) fileInputRef.current.value = '';
@@ -185,24 +199,38 @@ export default function ButirSoal() {
     setEditId(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pertanyaan.trim()) return alert('Pertanyaan tidak boleh kosong.');
     if (opsi.some(o => !o.teks.trim())) return alert('Semua opsi jawaban harus diisi.');
 
-    if (isEditing && editId) {
-      setSoals(soals.map(s => s.id === editId ? { id: editId, pertanyaan, opsi, kunciJawabanId: kunciJawaban, tingkatKesulitan } : s));
-    } else {
-      const newSoal: ButirSoalModel = {
-        id: `Q-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
+    try {
+      const payload = {
+        bank_soal_id,
         pertanyaan,
-        opsi,
-        kunciJawabanId: kunciJawaban,
-        tingkatKesulitan
+        opsi_a: opsi.find(o => o.id === 'A')?.teks || '',
+        opsi_b: opsi.find(o => o.id === 'B')?.teks || '',
+        opsi_c: opsi.find(o => o.id === 'C')?.teks || '',
+        opsi_d: opsi.find(o => o.id === 'D')?.teks || '',
+        opsi_e: opsi.find(o => o.id === 'E')?.teks || '',
+        kunci_jawaban: kunciJawaban,
+        tingkat_kesulitan: tingkatKesulitan
       };
-      setSoals([newSoal, ...soals]);
+
+      if (isEditing && editId) {
+        const { error } = await supabase.from('butir_soal').update(payload).eq('id', editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('butir_soal').insert([payload]);
+        if (error) throw error;
+      }
+      
+      resetForm();
+      fetchSoal();
+    } catch (err: any) {
+      console.error(err);
+      alert('Gagal menyimpan butir soal: ' + err.message);
     }
-    resetForm();
   };
 
   const handleEdit = (soal: ButirSoalModel) => {
@@ -216,9 +244,17 @@ export default function ButirSoal() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string | null) => {
+    if (!id) return;
     if (window.confirm('Yakin ingin menghapus butir soal ini?')) {
-      setSoals(soals.filter(s => s.id !== id));
+      try {
+        const { error } = await supabase.from('butir_soal').delete().eq('id', id);
+        if (error) throw error;
+        setSoals(soals.filter(s => s.id !== id));
+      } catch (err: any) {
+        console.error(err);
+        alert('Gagal menghapus soal: ' + err.message);
+      }
     }
   };
 

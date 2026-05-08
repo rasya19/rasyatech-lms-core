@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
 import { 
   Search, Plus, Layers, Edit2, Trash2, 
   FileText, CheckCircle2, MoreVertical, BookOpen, Clock, Settings, X, SearchIcon, ShieldCheck
@@ -10,58 +11,52 @@ import { DUMMY_MAPEL } from './MataPelajaran';
 
 interface BankSoalModel {
   id: string;
-  namaUjian: string;
-  mapelId: string;
-  jumlahSoal: number;
-  durasi: number; // in minutes
-  isAktif: boolean;
+  nama_ujian: string;
+  mapel_id?: string;
+  jumlah_soal?: number;
+  durasi?: number; // in minutes
+  is_aktif?: boolean;
 }
-
-const DUMMY_BANK_SOAL: BankSoalModel[] = [
-  {
-    id: 'BS-001',
-    namaUjian: 'Ujian Akhir Semester Ganjil',
-    mapelId: 'M001',
-    jumlahSoal: 40,
-    durasi: 90,
-    isAktif: true
-  },
-  {
-    id: 'BS-002',
-    namaUjian: 'Kuis Harian 1 - Tata Bahasa',
-    mapelId: 'M001',
-    jumlahSoal: 15,
-    durasi: 30,
-    isAktif: false
-  },
-  {
-    id: 'BS-003',
-    namaUjian: 'Ujian Tengah Semester',
-    mapelId: 'M003',
-    jumlahSoal: 50,
-    durasi: 120,
-    isAktif: true
-  }
-];
 
 export default function BankSoal() {
   const navigate = useNavigate();
-  const [bankSoals, setBankSoals] = useState<BankSoalModel[]>(DUMMY_BANK_SOAL);
+  const [bankSoals, setBankSoals] = useState<BankSoalModel[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<Omit<BankSoalModel, 'id'>>({
-    namaUjian: '',
-    mapelId: '',
-    jumlahSoal: 0,
+  const [formData, setFormData] = useState<Partial<BankSoalModel>>({
+    nama_ujian: '',
+    mapel_id: '',
+    jumlah_soal: 0,
     durasi: 60,
-    isAktif: false
+    is_aktif: false
   });
+
+  useEffect(() => {
+    fetchBankSoal();
+  }, []);
+
+  const fetchBankSoal = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase.from('bank_soal').select('*').order('created_at', { ascending: false });
+      if (error) {
+        throw error;
+      }
+      setBankSoals(data || []);
+    } catch (error: any) {
+      console.error('Error fetching bank soal:', error);
+      alert('Gagal mengambil data ujian. ' + (error.message || ''));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getMapel = (id: string) => DUMMY_MAPEL.find(m => m.id === id);
 
   const filteredBankSoals = bankSoals.filter(bs => {
-    return bs.namaUjian.toLowerCase().includes(searchTerm.toLowerCase());
+    return bs.nama_ujian?.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   const handleOpenModal = (bs?: BankSoalModel) => {
@@ -70,34 +65,56 @@ export default function BankSoal() {
       setIsEditing(true);
     } else {
       setFormData({
-        namaUjian: '',
-        mapelId: '',
-        jumlahSoal: 0,
+        nama_ujian: '',
+        mapel_id: '',
+        jumlah_soal: 0,
         durasi: 60,
-        isAktif: false
+        is_aktif: false
       });
       setIsEditing(false);
     }
     setIsModalOpen(true);
   };
 
-  const handleToggleAktif = (id: string) => {
-    setBankSoals(bankSoals.map(bs => 
-      bs.id === id ? { ...bs, isAktif: !bs.isAktif } : bs
-    ));
+  const handleToggleAktif = async (id: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase.from('bank_soal').update({ is_aktif: !currentStatus }).eq('id', id);
+      if (error) throw error;
+      setBankSoals(bankSoals.map(bs => 
+        bs.id === id ? { ...bs, is_aktif: !currentStatus } : bs
+      ));
+    } catch (err: any) {
+      alert('Gagal toggle status: ' + err.message);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isEditing) {
-      setBankSoals(bankSoals.map(bs => 
-        bs.id === (formData as BankSoalModel).id ? { ...formData, id: bs.id } as BankSoalModel : bs
-      ));
-    } else {
-      const newId = `BS-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-      setBankSoals([...bankSoals, { ...formData, id: newId }]);
+    try {
+      if (isEditing && formData.id) {
+         const { error } = await supabase.from('bank_soal').update({
+            nama_ujian: formData.nama_ujian,
+            mapel_id: formData.mapel_id,
+            jumlah_soal: formData.jumlah_soal,
+            durasi: formData.durasi,
+            is_aktif: formData.is_aktif
+         }).eq('id', formData.id);
+         if (error) throw error;
+      } else {
+         const { error } = await supabase.from('bank_soal').insert([{
+            nama_ujian: formData.nama_ujian,
+            mapel_id: formData.mapel_id,
+            jumlah_soal: formData.jumlah_soal,
+            durasi: formData.durasi,
+            is_aktif: formData.is_aktif
+         }]);
+         if (error) throw error;
+      }
+      setIsModalOpen(false);
+      fetchBankSoal();
+    } catch (err: any) {
+      alert('Gagal menyimpan data: ' + err.message);
     }
-    setIsModalOpen(false);
   };
 
   return (
@@ -111,9 +128,9 @@ export default function BankSoal() {
             <div className="p-2 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
               <Layers className="w-6 h-6 text-emerald-400" />
             </div>
-            <h1 className="text-2xl font-black uppercase tracking-tight">Bank <span className="text-emerald-400 italic">Soal</span></h1>
+            <h1 className="text-2xl font-black uppercase tracking-tight">Kelola <span className="text-emerald-400 italic">Ujian</span></h1>
           </div>
-          <p className="text-[11px] text-emerald-400/60 font-bold uppercase tracking-widest pl-1">Kelola Kumpulan Soal Ujian</p>
+          <p className="text-[11px] text-emerald-400/60 font-bold uppercase tracking-widest pl-1">Manajemen Judul dan Butir Soal Ujian</p>
         </div>
         
         <div className="relative z-10 flex gap-4">
@@ -121,7 +138,7 @@ export default function BankSoal() {
             onClick={() => handleOpenModal()}
             className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 border border-emerald-500"
           >
-            <Plus className="w-4 h-4" /> Buat Bank Soal
+            <Plus className="w-4 h-4" /> Buat Judul Ujian
           </button>
         </div>
       </div>
@@ -157,12 +174,12 @@ export default function BankSoal() {
             <tbody className="divide-y divide-slate-100">
               {filteredBankSoals.length > 0 ? (
                 filteredBankSoals.map((bs) => {
-                  const mapel = getMapel(bs.mapelId);
+                  const mapel = getMapel(bs.mapel_id || '');
                   return (
                     <tr key={bs.id} className="hover:bg-slate-50/80 transition-colors group">
                       <td className="px-4 py-4">
                         <div>
-                          <p className="text-sm font-bold text-slate-800">{bs.namaUjian}</p>
+                          <p className="text-sm font-bold text-slate-800">{bs.nama_ujian}</p>
                           <p className="text-[10px] font-mono font-bold text-emerald-600 mt-1">{bs.id}</p>
                         </div>
                       </td>
@@ -176,7 +193,7 @@ export default function BankSoal() {
                       </td>
                       <td className="px-4 py-4 text-center">
                         <span className="text-xs font-black text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                          {bs.jumlahSoal} Butir
+                          {bs.jumlah_soal} Butir
                         </span>
                       </td>
                       <td className="px-4 py-4 text-center">
@@ -187,16 +204,16 @@ export default function BankSoal() {
                       </td>
                       <td className="px-4 py-4 text-center">
                         <button 
-                          onClick={() => handleToggleAktif(bs.id)}
+                          onClick={() => handleToggleAktif(bs.id, bs.is_aktif || false)}
                           className={cn(
                             "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 mx-auto transition-all border",
-                            bs.isAktif 
+                            bs.is_aktif 
                               ? "bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100" 
                               : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
                           )}
                         >
-                          <div className={cn("w-1.5 h-1.5 rounded-full", bs.isAktif ? "bg-emerald-500" : "bg-slate-400")} />
-                          {bs.isAktif ? 'Aktif' : 'Nonaktif'}
+                          <div className={cn("w-1.5 h-1.5 rounded-full", bs.is_aktif ? "bg-emerald-500" : "bg-slate-400")} />
+                          {bs.is_aktif ? 'Aktif' : 'Nonaktif'}
                         </button>
                       </td>
                       <td className="px-4 py-4 text-right">
@@ -271,7 +288,7 @@ export default function BankSoal() {
                        </div>
                        <div>
                           <h3 className="font-black text-white uppercase tracking-widest text-lg leading-tight">
-                             {isEditing ? 'Edit' : 'Tambah'} <span className="text-emerald-400 italic">Bank Soal</span>
+                             {isEditing ? 'Edit' : 'Tambah'} <span className="text-emerald-400 italic">Judul Ujian</span>
                           </h3>
                           <p className="text-[9px] text-emerald-400/60 font-bold uppercase tracking-widest">Pengaturan Ujian</p>
                        </div>
@@ -292,8 +309,8 @@ export default function BankSoal() {
                        <input 
                          type="text" 
                          required
-                         value={formData.namaUjian}
-                         onChange={e => setFormData({...formData, namaUjian: e.target.value})}
+                         value={formData.nama_ujian}
+                         onChange={e => setFormData({...formData, nama_ujian: e.target.value})}
                          placeholder="Contoh: Ujian Tengah Semester Ganjil"
                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
                        />
@@ -302,8 +319,8 @@ export default function BankSoal() {
                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mata Pelajaran</label>
                        <select
                          required
-                         value={formData.mapelId}
-                         onChange={e => setFormData({...formData, mapelId: e.target.value})}
+                         value={formData.mapel_id}
+                         onChange={e => setFormData({...formData, mapel_id: e.target.value})}
                          className="w-full appearance-none bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all cursor-pointer"
                        >
                          <option value="" disabled>Pilih Mata Pelajaran...</option>
@@ -330,8 +347,8 @@ export default function BankSoal() {
                             <input 
                               type="number" 
                               min="0"
-                              value={formData.jumlahSoal}
-                              onChange={e => setFormData({...formData, jumlahSoal: parseInt(e.target.value) || 0})}
+                              value={formData.jumlah_soal}
+                              onChange={e => setFormData({...formData, jumlah_soal: parseInt(e.target.value) || 0})}
                               className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
                             />
                         </div>
@@ -344,16 +361,16 @@ export default function BankSoal() {
                        </div>
                        <button 
                          type="button"
-                         onClick={() => setFormData({...formData, isAktif: !formData.isAktif})}
+                         onClick={() => setFormData({...formData, is_aktif: !formData.is_aktif})}
                          className={cn(
                            "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                           formData.isAktif ? "bg-emerald-500" : "bg-slate-300"
+                           formData.is_aktif ? "bg-emerald-500" : "bg-slate-300"
                          )}
                        >
                          <span 
                            className={cn(
                              "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                             formData.isAktif ? "translate-x-6" : "translate-x-1"
+                             formData.is_aktif ? "translate-x-6" : "translate-x-1"
                            )}
                          />
                        </button>
@@ -374,7 +391,7 @@ export default function BankSoal() {
                    type="submit"
                    className="flex-1 bg-emerald-600 text-white py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                  >
-                   <ShieldCheck className="w-4 h-4" /> {isEditing ? 'Simpan Perubahan' : 'Buat Bank Soal'}
+                   <ShieldCheck className="w-4 h-4" /> {isEditing ? 'Simpan Perubahan' : 'Buat Judul Ujian'}
                  </button>
               </div>
             </motion.div>

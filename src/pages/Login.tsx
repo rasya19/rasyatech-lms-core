@@ -28,6 +28,13 @@ export default function Login() {
     setErrorMsg('');
 
     try {
+      // Demo bypass for convenient testing 
+      if (formData.email === 'demo_admin' && formData.password === 'demo123') {
+        localStorage.setItem('userRole', 'Admin');
+        navigate('/dashboard');
+        return;
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
@@ -100,7 +107,7 @@ export default function Login() {
                     <Mail className="w-4 h-4" />
                   </div>
                   <input 
-                    type="email" 
+                    type="text" 
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -141,6 +148,20 @@ export default function Login() {
                 >
                   Lupa Password?
                 </button>
+              </div>
+
+              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mt-2">
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 italic">Akses Demo / Testing:</p>
+                 <div className="flex gap-4">
+                    <div className="flex-1">
+                      <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Email</p>
+                      <code className="text-xs font-black text-emerald-400">demo_admin</code>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Password</p>
+                      <code className="text-xs font-black text-emerald-400">demo123</code>
+                    </div>
+                 </div>
               </div>
 
               <button 

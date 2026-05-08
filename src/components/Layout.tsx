@@ -147,8 +147,8 @@ export default function Layout() {
             icon: ClipboardCheck,
             label: 'Ujian Online',
             subItems: [
-              { icon: FileBarChart, label: 'Bank Soal', path: `${prefix}/dashboard/soal` },
-              { icon: ClipboardCheck, label: 'Kelola Ujian', path: `${prefix}/dashboard/ujian` },
+              { icon: FileBarChart, label: 'Kelola Ujian', path: `${prefix}/dashboard/soal` },
+              { icon: ClipboardCheck, label: 'Jadwal Ujian', path: `${prefix}/dashboard/ujian` },
               { icon: Check, label: 'Hasil Ujian', path: `${prefix}/dashboard/hasil-ujian` },
             ]
           },

@@ -15,7 +15,7 @@ export interface Student {
   class: string;
   whatsapp: string;
   status: 'Aktif' | 'Nonaktif' | 'Lulus' | 'Pindah';
-  photoUrl?: string;
+  photourl?: string;
 }
 
 export default function DataSiswa() {
@@ -25,6 +25,7 @@ export default function DataSiswa() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<Partial<Student>>({
     nisn: '',
@@ -32,7 +33,7 @@ export default function DataSiswa() {
     class: '',
     whatsapp: '',
     status: 'Aktif',
-    photoUrl: ''
+    photourl: ''
   });
 
   useEffect(() => {
@@ -42,18 +43,22 @@ export default function DataSiswa() {
   const fetchStudents = async () => {
     try {
       setIsLoading(true);
+      setFetchError(null);
       const { data, error } = await supabase
         .from('profiles_siswa')
         .select('*')
         .order('nama', { ascending: true });
 
       if (error) {
+        setFetchError(`Supabase Error: ${error.message} (Code: ${error.code})`);
         console.error('Error fetching students:', error);
+        setIsLoading(false);
         return;
       }
 
       setStudents(data as Student[] || []);
-    } catch (err) {
+    } catch (err: any) {
+      setFetchError(`Runtime Error: ${err.message || JSON.stringify(err)}`);
       console.error('Fetch error:', err);
     } finally {
       setIsLoading(false);
@@ -70,7 +75,7 @@ export default function DataSiswa() {
       setFormData(student);
       setIsEditing(true);
     } else {
-      setFormData({ nisn: '', nama: '', class: '', whatsapp: '', status: 'Aktif', photoUrl: '' });
+      setFormData({ nisn: '', nama: '', class: '', whatsapp: '', status: 'Aktif', photourl: '' });
       setIsEditing(false);
     }
     setIsModalOpen(true);
@@ -106,7 +111,7 @@ export default function DataSiswa() {
             class: formData.class,
             whatsapp: formData.whatsapp,
             status: formData.status,
-            photoUrl: formData.photoUrl
+            photourl: formData.photourl
           })
           .eq('id', formData.id);
 
@@ -121,7 +126,7 @@ export default function DataSiswa() {
             class: formData.class,
             whatsapp: formData.whatsapp,
             status: formData.status,
-            photoUrl: formData.photoUrl
+            photourl: formData.photourl
           }])
           .select();
 
@@ -165,7 +170,27 @@ export default function DataSiswa() {
           <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest pl-1">Kelola Identitas dan Profil Siswa</p>
         </div>
         
-        <div className="relative z-10 flex gap-4">
+        <div className="relative z-10 flex flex-wrap gap-4">
+          <button 
+            onClick={async () => {
+              try {
+                // Testing Supabase tables
+                const r1 = await supabase.from('bank_soal').select('*').limit(1);
+                const r2 = await supabase.from('ujian').select('*').limit(1);
+                const r3 = await supabase.from('butir_soal').select('*').limit(1);
+                alert('Tables check:\n' + 
+                   'bank_soal: ' + (r1.error ? r1.error.message : 'OK') + '\n' +
+                   'ujian: ' + (r2.error ? r2.error.message : 'OK') + '\n' +
+                   'butir_soal: ' + (r3.error ? r3.error.message : 'OK')
+                );
+              } catch (err) {
+                alert('Gagal terhubung ke Supabase. Periksa konfigurasi Anda.');
+              }
+            }}
+            className="bg-slate-800 text-slate-300 border border-slate-700 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg hover:text-emerald-400"
+          >
+            Test Koneksi
+          </button>
           <button 
             onClick={() => handleOpenModal()}
             className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
@@ -217,6 +242,13 @@ export default function DataSiswa() {
                       Memuat data siswa...
                    </td>
                 </tr>
+              ) : fetchError ? (
+                <tr>
+                   <td colSpan={7} className="px-6 py-12 text-center text-red-500 text-xs font-medium bg-red-50/50">
+                      <AlertCircle className="w-6 h-6 mx-auto mb-2 opacity-75" />
+                      {fetchError}
+                   </td>
+                </tr>
               ) : filteredStudents.length === 0 ? (
                 <tr>
                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500 text-xs font-medium">
@@ -228,8 +260,8 @@ export default function DataSiswa() {
                 <tr key={student.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
-                       {student.photoUrl ? (
-                         <img src={student.photoUrl} alt={student.nama} className="w-full h-full object-cover" />
+                       {student.photourl ? (
+                         <img src={student.photourl} alt={student.nama} className="w-full h-full object-cover" />
                        ) : (
                          <User className="w-5 h-5 text-slate-400" />
                        )}
@@ -327,8 +359,8 @@ export default function DataSiswa() {
                     {/* Photo Area */}
                     <div className="flex flex-col items-center gap-3 pb-6 border-b border-slate-100">
                        <div className="w-20 h-20 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center relative group cursor-pointer overflow-hidden">
-                          {formData.photoUrl ? (
-                             <img src={formData.photoUrl} alt="Preview" className="w-full h-full object-cover group-hover:opacity-50 transition-opacity" />
+                          {formData.photourl ? (
+                             <img src={formData.photourl} alt="Preview" className="w-full h-full object-cover group-hover:opacity-50 transition-opacity" />
                           ) : (
                              <User className="w-8 h-8 text-slate-400 group-hover:scale-110 transition-transform" />
                           )}
