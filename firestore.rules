@@ -41,6 +41,12 @@ service cloud.firestore {
                       !exists(/databases/$(database)/documents/schools/$(schoolId)) &&
                       isValidSchool(request.resource.data);
       allow update: if request.auth.token.email.lower() == 'ismanto095@gmail.com' || (request.auth.uid == resource.data.ownerUid);
+      allow delete: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
+    }
+
+    match /settings/{settingId} {
+      allow get: if true;
+      allow write: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
     }
   }
 }
