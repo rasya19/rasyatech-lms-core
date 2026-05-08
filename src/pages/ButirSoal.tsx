@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
-  FileText, Plus, Save, ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Edit2, Trash2, Upload
+  FileText, Plus, Save, ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Edit2, Trash2, Upload, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import { cn } from '../lib/utils';
 
 interface OpsiJawaban {
@@ -68,6 +69,70 @@ export default function ButirSoal() {
   ]);
   const [kunciJawaban, setKunciJawaban] = useState<string>('A');
   const [tingkatKesulitan, setTingkatKesulitan] = useState<'Mudah' | 'Sedang' | 'Sulit'>('Sedang');
+
+  const [isLoadingExcel, setIsLoadingExcel] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsLoadingExcel(true);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+        const newSoals: ButirSoalModel[] = [];
+
+        for (const row of data) {
+          const rowPertanyaan = row['Pertanyaan'] || row['pertanyaan'];
+          const rowKunci = row['Kunci_Jawaban'] || row['Kunci Jawaban'] || row['kunci_jawaban'] || row['kunci jawaban'];
+          
+          if (!rowPertanyaan || !rowKunci) {
+             alert('Format Excel tidak valid: Kolom "Pertanyaan" atau "Kunci_Jawaban" tidak boleh kosong.');
+             return;
+          }
+
+          const getOpsi = (key: string, id: string) => ({
+             id,
+             teks: String(row[key] || row[key.toLowerCase()] || '')
+          });
+
+          newSoals.push({
+            id: `Q-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
+            pertanyaan: String(rowPertanyaan),
+            opsi: [
+              getOpsi('Opsi_A', 'A'),
+              getOpsi('Opsi_B', 'B'),
+              getOpsi('Opsi_C', 'C'),
+              getOpsi('Opsi_D', 'D'),
+              getOpsi('Opsi_E', 'E'),
+            ],
+            kunciJawabanId: String(rowKunci).toUpperCase().charAt(0) || 'A',
+            tingkatKesulitan: (row['Tingkat_Kesulitan'] || row['tingkat kesulitan'] || 'Sedang') as any
+          });
+        }
+
+        setSoals([...newSoals, ...soals]);
+      } catch (error) {
+         console.error('Error parsing excel:', error);
+         alert('Gagal membaca file Excel. Pastikan format sudah benar.');
+      } finally {
+         setIsLoadingExcel(false);
+         if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    };
+    reader.onerror = () => {
+      alert('Gagal membaca file.');
+      setIsLoadingExcel(false);
+    };
+    reader.readAsBinaryString(file);
+  };
 
   const resetForm = () => {
     setPertanyaan('');
@@ -147,8 +212,20 @@ export default function ButirSoal() {
         </div>
         
         <div className="relative z-10">
-          <button className="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600/30 transition-all">
-            <Upload className="w-4 h-4" /> Import Excel
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileUpload} 
+            accept=".xlsx, .xls" 
+            className="hidden" 
+          />
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoadingExcel}
+            className="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            {isLoadingExcel ? 'Memproses...' : 'Import Excel'}
           </button>
         </div>
       </div>
