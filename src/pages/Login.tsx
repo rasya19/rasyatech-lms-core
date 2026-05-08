@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useSchool } from '../contexts/SchoolContext';
 import { db, auth } from '../lib/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { 
   ShieldCheck, 
   UserCheck, 
@@ -26,8 +26,10 @@ export default function Login() {
   const { school } = useSchool();
   const [selectedPortal, setSelectedPortal] = useState<PortalType | null>(null);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -192,6 +194,25 @@ export default function Login() {
     }, 1200);
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail) {
+      alert('Silakan masukkan email Anda.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      alert(`Instruksi reset password telah dikirim ke ${resetEmail}. Silakan cek kotak masuk atau folder spam Anda.`);
+      setIsResettingPassword(false);
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      alert(`Gagal mengirim email reset: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-brand-bg font-sans flex flex-col items-center justify-center p-6 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:20px_20px]">
       <div className="w-full max-w-4xl space-y-12">
@@ -199,17 +220,25 @@ export default function Login() {
         {/* Top Header */}
         <div className="flex justify-between items-end">
            <button 
-             onClick={() => selectedPortal ? setSelectedPortal(null) : navigate('/')}
+             onClick={() => {
+               if (isResettingPassword) {
+                 setIsResettingPassword(false);
+               } else if (selectedPortal) {
+                 setSelectedPortal(null);
+               } else {
+                 navigate('/');
+               }
+             }}
              className="flex items-center gap-2 p-3 text-slate-500 hover:text-brand-sidebar transition-all font-bold text-xs uppercase tracking-widest"
            >
-              <ArrowLeft className="w-4 h-4" /> {selectedPortal ? 'Kembali' : 'Kembali ke Web'}
+              <ArrowLeft className="w-4 h-4" /> {(selectedPortal || isResettingPassword) ? 'Kembali' : 'Kembali ke Web'}
            </button>
            <div className="text-right">
               <h2 className="text-2xl font-bold text-brand-sidebar italic uppercase tracking-tighter">
-                Portal <span className="text-brand-accent">{selectedPortal ? 'Login' : 'Layanan'}</span>
+                Portal <span className="text-brand-accent">{(selectedPortal || isResettingPassword) ? (isResettingPassword ? 'Recovery' : 'Login') : 'Layanan'}</span>
               </h2>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-                {selectedPortal ? `Akses ${selectedPortal.toUpperCase()}` : schoolName}
+                {isResettingPassword ? 'Reset Password' : (selectedPortal ? `Akses ${selectedPortal.toUpperCase()}` : schoolName)}
               </p>
            </div>
         </div>
@@ -247,6 +276,67 @@ export default function Login() {
                    </div>
                 </motion.button>
               ))}
+            </motion.div>
+          ) : isResettingPassword ? (
+            <motion.div 
+              key="reset-password"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="max-w-md mx-auto w-full bg-white rounded-[2.5rem] border border-brand-border p-10 shadow-2xl relative"
+            >
+              <div className="relative z-10">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-3 bg-brand-bg rounded-2xl border border-brand-border text-brand-sidebar">
+                    <Mail className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-brand-sidebar uppercase italic tracking-widest text-lg">LUPA <span className="text-brand-accent">PASSWORD</span></h3>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Email pemulihan akan dikirimkan</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleForgotPassword} className="space-y-5">
+                   <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">Email Akun Anda</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                      <input 
+                        type="email" 
+                        required
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        placeholder="nama@email.com"
+                        className="w-full bg-slate-50 border border-brand-border rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit"
+                    disabled={isLoading || !resetEmail}
+                    className="w-full bg-brand-sidebar text-white py-4 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl shadow-brand-sidebar/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group disabled:opacity-50"
+                  >
+                    {isLoading ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        Kirim Link Reset <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </button>
+
+                  <button 
+                    type="button"
+                    onClick={() => setIsResettingPassword(false)}
+                    className="w-full text-center text-[10px] font-black text-slate-400 hover:text-brand-sidebar uppercase tracking-[0.2em] transition-colors italic"
+                  >
+                    Batal & Kembali Login
+                  </button>
+                </form>
+              </div>
             </motion.div>
           ) : isChangingPassword ? (
             <motion.div 
@@ -412,7 +502,11 @@ export default function Login() {
                    )}
 
                   <div className="flex justify-end pt-2">
-                    <button type="button" className="text-[10px] font-bold text-slate-400 hover:text-brand-accent uppercase tracking-widest transition-colors italic">
+                    <button 
+                      type="button" 
+                      onClick={() => setIsResettingPassword(true)}
+                      className="text-[10px] font-bold text-slate-400 hover:text-brand-accent uppercase tracking-widest transition-colors italic"
+                    >
                       Lupa Password?
                     </button>
                   </div>

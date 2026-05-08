@@ -503,18 +503,55 @@ export default function Purchase() {
                 <p className="">
                    Terima kasih <span className="font-black text-brand-sidebar uppercase italic">{formData.name}</span>, pendaftaran untuk <span className="font-black text-brand-sidebar italic">{formData.schoolName}</span> telah kami catat di sistem.
                 </p>
-                <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2rem] space-y-4">
-                   <div className="flex items-start gap-4 text-left">
+                <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2rem] space-y-4 text-left">
+                   <div className="bg-white border border-brand-accent/20 p-5 rounded-2xl mb-2 shadow-sm">
+                      <h5 className="text-[10px] font-black text-brand-sidebar uppercase tracking-widest mb-4 flex items-center gap-2">
+                         <CreditCard className="w-4 h-4 text-brand-accent" /> Rekening Pembayaran ({paymentMethod})
+                      </h5>
+                      {paymentMethod === 'Transfer Bank' ? (
+                         <div className="space-y-2">
+                            <div className="flex justify-between items-center border-b border-slate-50 pb-2">
+                               <span className="text-[9px] font-black text-slate-400 uppercase">Bank</span>
+                               <span className="text-xs font-black text-brand-sidebar">BANK MANDIRI</span>
+                            </div>
+                            <div className="flex justify-between items-center border-b border-slate-50 pb-2">
+                               <span className="text-[9px] font-black text-slate-400 uppercase">Rekening</span>
+                               <span className="text-sm font-black text-brand-accent tracking-wider">123-00-0456-7890</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                               <span className="text-[9px] font-black text-slate-400 uppercase">Penerima</span>
+                               <span className="text-xs font-black text-brand-sidebar">PT ARMILLA NUSA TEKNOLOGI</span>
+                            </div>
+                         </div>
+                      ) : paymentMethod === 'E-Wallet' ? (
+                         <div className="space-y-2">
+                            <div className="flex justify-between items-center border-b border-slate-50 pb-2">
+                               <span className="text-[9px] font-black text-slate-400 uppercase">Digital Wallet</span>
+                               <span className="text-xs font-black text-brand-sidebar">OVO / DANA / GOPAY</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                               <span className="text-[9px] font-black text-slate-400 uppercase">Nomor HP</span>
+                               <span className="text-sm font-black text-brand-accent tracking-wider">0852-2502-5555</span>
+                            </div>
+                         </div>
+                      ) : (
+                         <div className="text-[10px] text-slate-500 font-bold uppercase italic p-2 bg-slate-50 rounded-lg text-center">
+                            Nomor Virtual Account (VA) unik akan dikirimkan otomatis ke email Anda dalam 15 menit.
+                         </div>
+                      )}
+                   </div>
+
+                   <div className="flex items-start gap-4">
                       <div className="w-6 h-6 rounded-full bg-brand-sidebar text-brand-accent flex items-center justify-center text-[10px] font-black shrink-0 mt-1">1</div>
-                      <p className="text-xs font-bold text-brand-sidebar uppercase tracking-tight">KAMI SEDANG MEMVALIDASI DATA ANDA.</p>
+                      <p className="text-[11px] font-bold text-brand-sidebar uppercase tracking-tight">Silakan selesaikan pembayaran sesuai detail di atas.</p>
                    </div>
-                   <div className="flex items-start gap-4 text-left">
+                   <div className="flex items-start gap-4">
                       <div className="w-6 h-6 rounded-full bg-brand-sidebar text-brand-accent flex items-center justify-center text-[10px] font-black shrink-0 mt-1">2</div>
-                      <p className="text-xs font-bold text-brand-sidebar uppercase tracking-tight">LINK AKTIVASI DAN INVOICE AKAN DIKIRIM KE <span className="text-brand-accent underline">{formData.email}</span> DALAM 1X24 JAM.</p>
+                      <p className="text-[11px] font-bold text-brand-sidebar uppercase tracking-tight">Admin kami akan memvalidasi pembayaran Anda dalam waktu maksimal 1x24 jam.</p>
                    </div>
-                   <div className="flex items-start gap-4 text-left">
+                   <div className="flex items-start gap-4">
                       <div className="w-6 h-6 rounded-full bg-brand-sidebar text-brand-accent flex items-center justify-center text-[10px] font-black shrink-0 mt-1">3</div>
-                      <p className="text-xs font-bold text-brand-sidebar uppercase tracking-tight">TIM AHLI KAMI AKAN MENGHUBUNGI NOMOR WHATSAPP <span className="text-brand-accent underline">{formData.phone}</span> UNTUK JADWAL PELATIHAN.</p>
+                      <p className="text-[11px] font-bold text-brand-sidebar uppercase tracking-tight">Cek email <span className="text-brand-accent underline">{formData.email}</span> untuk mendapatkan link login sekolah baru Anda.</p>
                    </div>
                 </div>
              </div>

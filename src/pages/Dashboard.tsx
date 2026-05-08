@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/src/lib/utils';
 import { Course } from '@/src/types';
 import AdBanner from '@/src/components/AdBanner';
+import { useSchool } from '../contexts/SchoolContext';
 
 const MOCK_COURSES: Course[] = [
   {
