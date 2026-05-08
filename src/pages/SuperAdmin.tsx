@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { db, auth } from '../lib/firebase';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
 import { 
   ShieldCheck, 
@@ -100,6 +100,17 @@ export default function SuperAdmin() {
     } catch (error) {
       console.error('Update error:', error);
       alert('Gagal memperbarui status.');
+    }
+  };
+
+  const handleDeleteSchool = async (id: string, name: string) => {
+    if (!confirm(`APAKAH ANDA YAKIN? Sekolah "${name}" akan dihapus PERMANEN dari sistem.`)) return;
+    try {
+      await deleteDoc(doc(db, 'schools', id));
+      alert('Sekolah berhasil dihapus.');
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert('Gagal menghapus sekolah.');
     }
   };
 
@@ -319,15 +330,33 @@ export default function SuperAdmin() {
                       >
                          <ExternalLink className="w-5 h-5" />
                       </button>
-                      {reg.status !== 'suspended' && (
+                      {reg.status !== 'suspended' ? (
                         <button 
                           onClick={() => handleUpdateStatus(reg.id, 'suspended')}
-                          className="p-3 bg-slate-100 text-slate-400 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-slate-200/20"
-                          title="Matikan/Hapus"
+                          className="p-3 bg-slate-100 text-slate-400 rounded-xl hover:bg-orange-500 hover:text-white transition-all shadow-lg shadow-slate-200/20"
+                          title="Nonaktifkan (Suspend)"
                         >
                            <XCircle className="w-5 h-5" />
                         </button>
+                      ) : (
+                        <button 
+                          onClick={() => handleUpdateStatus(reg.id, 'active')}
+                          className="p-3 bg-slate-100 text-slate-400 rounded-xl hover:bg-green-500 hover:text-white transition-all shadow-lg shadow-slate-200/20"
+                          title="Aktifkan Kembali"
+                        >
+                           <CheckCircle2 className="w-5 h-5" />
+                        </button>
                       )}
+                      
+                      <button 
+                        onClick={() => handleDeleteSchool(reg.id, reg.name)}
+                        className="p-3 bg-red-50 text-red-300 rounded-xl hover:bg-red-500 hover:text-white transition-all"
+                        title="Hapus Permanen"
+                      >
+                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                         </svg>
+                      </button>
                    </div>
                 </div>
               </div>
