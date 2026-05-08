@@ -92,6 +92,7 @@ function AppContent() {
       <Route path="/purchase" element={<Purchase />} />
       <Route path="/super-admin" element={<SuperAdmin />} />
       <Route path="/affiliate" element={<AffiliateDashboard />} />
+      <Route path="/affiliasi" element={<AffiliateDashboard />} />
       
       {/* If subdomain/custom domain is detected, allow accessing dashboard routes at root */}
       {school && (

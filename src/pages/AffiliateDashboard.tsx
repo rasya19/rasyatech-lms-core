@@ -60,11 +60,19 @@ export default function AffiliateDashboard() {
     if (savedCode) {
       setAffiliateCode(savedCode);
       const autoLogin = async () => {
-        const q = query(collection(db, 'affiliates'), where('code', '==', savedCode));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          setAffiliateData({ id: snap.docs[0].id, ...snap.docs[0].data() });
-          setIsLoggedIn(true);
+        try {
+          const q = query(collection(db, 'affiliates'), where('code', '==', savedCode));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const docSnap = snap.docs[0];
+            setAffiliateData({ id: docSnap.id, ...docSnap.data() });
+            setIsLoggedIn(true);
+          } else {
+            localStorage.removeItem('affiliate_session');
+          }
+        } catch (err) {
+          console.error("Auto login error:", err);
+          localStorage.removeItem('affiliate_session');
         }
       };
       autoLogin();
