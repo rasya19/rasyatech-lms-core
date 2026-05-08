@@ -50,12 +50,15 @@ const DAYS = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 export default function Akademik() {
   const [activeDay, setActiveDay] = useState('Senin');
   const [schedules, setSchedules] = useState(DUMMY_SCHEDULE);
+  const [filterKelas, setFilterKelas] = useState('Semua');
 
   const filteredSchedules = schedules
-    .filter(s => s.hari === activeDay)
+    .filter(s => s.hari === activeDay && (filterKelas === 'Semua' || s.kelas === filterKelas))
     .sort((a, b) => a.mulai.localeCompare(b.mulai));
 
   const getMapel = (id: string) => DUMMY_MAPEL.find(m => m.id === id);
+
+  const uniqueKelas = Array.from(new Set(schedules.map(s => s.kelas))).sort();
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -106,9 +109,21 @@ export default function Akademik() {
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-black text-slate-800 tracking-tight">Jadwal Hari {activeDay}</h2>
-            <button className="text-[10px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg flex items-center gap-1.5 uppercase hover:bg-slate-200 transition-colors">
-              <Filter className="w-3 h-3" /> Filter Kelas
-            </button>
+            <div className="relative">
+              <select
+                value={filterKelas}
+                onChange={(e) => setFilterKelas(e.target.value)}
+                className="appearance-none bg-slate-100 border border-slate-200 text-[10px] font-bold text-slate-700 px-8 py-2 rounded-lg outline-none cursor-pointer hover:bg-slate-200 transition-colors uppercase tracking-widest pl-3 pr-8"
+              >
+                <option value="Semua">Semua Kelas</option>
+                {uniqueKelas.map(kelas => (
+                  <option key={kelas} value={kelas}>{kelas}</option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                <Filter className="w-3 h-3" />
+              </div>
+            </div>
           </div>
 
           <div className="space-y-4">
