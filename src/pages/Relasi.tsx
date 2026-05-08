@@ -9,7 +9,8 @@ import {
   CheckCircle2,
   Clock,
   BookOpen,
-  Pencil
+  Pencil,
+  Check
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -92,11 +93,11 @@ export default function Relasi() {
   
   const [formData, setFormData] = useState({
     teacherId: '',
-    classId: '',
     subject: '',
     hari: 'Senin',
     jam: ''
   });
+  const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
 
   const handleDelete = (id: string) => {
     setRelations(relations.filter(r => r.id !== id));
@@ -122,24 +123,28 @@ export default function Relasi() {
 
   const handleAdd = () => {
     const teacher = DUMMY_TEACHERS.find(t => t.id === formData.teacherId);
-    const kelas = DUMMY_CLASSES.find(k => k.id === formData.classId);
 
-    if (teacher && kelas && formData.subject && formData.jam) {
-      const newRelation: Relation = {
-        id: Math.random().toString(36).substr(2, 9),
-        teacherId: teacher.id,
-        teacherName: teacher.name,
-        classId: kelas.id,
-        className: kelas.name,
-        subject: formData.subject,
-        hari: formData.hari,
-        jam: formData.jam
-      };
-      setRelations([...relations, newRelation]);
+    if (teacher && selectedClasses.length > 0 && formData.subject && formData.jam) {
+      const newRelations: Relation[] = selectedClasses.map(classId => {
+        const kelas = DUMMY_CLASSES.find(k => k.id === classId);
+        return {
+          id: Math.random().toString(36).substr(2, 9),
+          teacherId: teacher.id,
+          teacherName: teacher.name,
+          classId: classId,
+          className: kelas?.name || 'Unknown',
+          subject: formData.subject,
+          hari: formData.hari,
+          jam: formData.jam
+        };
+      });
+      
+      setRelations([...relations, ...newRelations]);
       setIsModalOpen(false);
-      setFormData({ teacherId: '', classId: '', subject: '', hari: 'Senin', jam: '' });
+      setFormData({ teacherId: '', subject: '', hari: 'Senin', jam: '' });
+      setSelectedClasses([]);
     } else {
-      alert('Mohon lengkapi semua data.');
+      alert('Mohon lengkapi semua data dan pilih minimal satu kelas.');
     }
   };
 
@@ -389,15 +394,29 @@ export default function Relasi() {
                </div>
 
                <div className="space-y-1.5">
-                  <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pl-1">Target Kelas</label>
-                  <select 
-                    value={formData.classId}
-                    onChange={(e) => setFormData({...formData, classId: e.target.value})}
-                    className="w-full bg-slate-50 border border-brand-border rounded-xl p-3 text-xs font-bold outline-none focus:border-brand-accent"
-                  >
-                    <option value="">-- Pilih Kelas --</option>
-                    {DUMMY_CLASSES.map(k => <option key={k.id} value={k.id}>{k.name}</option>)}
-                  </select>
+                  <div className="flex justify-between items-center pl-1">
+                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Target Kelas</label>
+                    <span className="text-[9px] font-bold text-brand-accent">{selectedClasses.length} Dipilih</span>
+                  </div>
+                  <div className="bg-slate-50 border border-brand-border rounded-xl p-3 max-h-40 overflow-y-auto space-y-2">
+                    {DUMMY_CLASSES.map(k => (
+                      <label key={k.id} className="flex items-center gap-3 cursor-pointer p-2 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-slate-200">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedClasses.includes(k.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedClasses([...selectedClasses, k.id]);
+                            } else {
+                              setSelectedClasses(selectedClasses.filter(id => id !== k.id));
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-slate-300 text-brand-accent focus:ring-brand-accent cursor-pointer"
+                        />
+                        <span className="text-xs font-bold text-brand-sidebar">{k.name}</span>
+                      </label>
+                    ))}
+                  </div>
                </div>
 
                <div className="space-y-1.5">
