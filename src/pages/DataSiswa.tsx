@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   Search, Filter, Plus, Edit2, Trash2, 
-  User, MapPin, GraduationCap, Upload, X, ShieldCheck
+  User, MapPin, GraduationCap, Upload, X, ShieldCheck, 
+  Phone, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -11,7 +12,8 @@ export interface Student {
   nisn: string;
   name: string;
   class: string;
-  address: string;
+  whatsapp: string;
+  status: 'Aktif' | 'Nonaktif' | 'Lulus' | 'Pindah';
   photoUrl?: string;
 }
 
@@ -21,28 +23,32 @@ export const DUMMY_STUDENTS: Student[] = [
     nisn: '0012345678',
     name: 'Ahmad Rafli',
     class: '10 IPA 1',
-    address: 'Jl. Merdeka No. 10, Jakarta',
+    whatsapp: '081234567890',
+    status: 'Aktif'
   },
   {
     id: 'S002',
     nisn: '0012345679',
     name: 'Siti Najwa',
     class: '11 IPS 2',
-    address: 'Jl. Pendidikan No. 2, Bandung',
+    whatsapp: '081234567891',
+    status: 'Aktif'
   },
   {
     id: 'S003',
     nisn: '0012345680',
     name: 'Budi Santoso',
     class: '12 IPA 3',
-    address: 'Jl. Pahlawan No. 45, Surabaya',
+    whatsapp: '081234567892',
+    status: 'Lulus'
   },
   {
     id: 'S004',
     nisn: '0012345681',
     name: 'Clara Bella',
     class: '10 IPS 1',
-    address: 'Jl. Melati No. 12, Semarang',
+    whatsapp: '081234567893',
+    status: 'Nonaktif'
   }
 ];
 
@@ -56,7 +62,8 @@ export default function DataSiswa() {
     nisn: '',
     name: '',
     class: '',
-    address: '',
+    whatsapp: '',
+    status: 'Aktif',
     photoUrl: ''
   });
 
@@ -70,7 +77,7 @@ export default function DataSiswa() {
       setFormData(student);
       setIsEditing(true);
     } else {
-      setFormData({ nisn: '', name: '', class: '', address: '', photoUrl: '' });
+      setFormData({ nisn: '', name: '', class: '', whatsapp: '', status: 'Aktif', photoUrl: '' });
       setIsEditing(false);
     }
     setIsModalOpen(true);
@@ -96,18 +103,28 @@ export default function DataSiswa() {
     setIsModalOpen(false);
   };
 
+  const getStatusColor = (status: Student['status']) => {
+    switch(status) {
+      case 'Aktif': return 'bg-emerald-50 text-emerald-600 border-emerald-200';
+      case 'Lulus': return 'bg-blue-50 text-blue-600 border-blue-200';
+      case 'Pindah': return 'bg-orange-50 text-orange-600 border-orange-200';
+      case 'Nonaktif': return 'bg-red-50 text-red-600 border-red-200';
+      default: return 'bg-slate-50 text-slate-600 border-slate-200';
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 text-white p-8 rounded-3xl relative overflow-hidden group shadow-lg">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-125 transition-transform duration-700" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-125 transition-transform duration-700" />
         
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-500/20 rounded-xl">
-              <User className="w-6 h-6 text-blue-400" />
+            <div className="p-2 bg-emerald-500/20 rounded-xl">
+              <User className="w-6 h-6 text-emerald-400" />
             </div>
-            <h1 className="text-2xl font-black uppercase tracking-tight">Master Data <span className="text-blue-400 italic">Siswa</span></h1>
+            <h1 className="text-2xl font-black uppercase tracking-tight">Master Data <span className="text-emerald-400 italic">Siswa</span></h1>
           </div>
           <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest pl-1">Kelola Identitas dan Profil Siswa</p>
         </div>
@@ -115,7 +132,7 @@ export default function DataSiswa() {
         <div className="relative z-10 flex gap-4">
           <button 
             onClick={() => handleOpenModal()}
-            className="bg-blue-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+            className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
           >
             <Plus className="w-4 h-4" /> Tambah Siswa
           </button>
@@ -129,10 +146,10 @@ export default function DataSiswa() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Cari berdasarkan Nama atau NISN..." 
+              placeholder="Cari berdasarkan Nama Lengkap atau NISN..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
             />
           </div>
           
@@ -149,9 +166,10 @@ export default function DataSiswa() {
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest w-20">Foto</th>
                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">NISN</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Nama Siswa</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Kelas</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Alamat</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Nama Lengkap</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Kelas / Rombel</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">WhatsApp</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Aksi</th>
               </tr>
             </thead>
@@ -174,20 +192,26 @@ export default function DataSiswa() {
                     <span className="text-sm font-black text-slate-800 tracking-tight">{student.name}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-wider border border-blue-100">
+                    <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-wider border border-slate-200">
                       {student.class}
                     </span>
                   </td>
-                  <td className="px-6 py-4 max-w-[200px]">
-                    <span className="text-xs font-medium text-slate-500 line-clamp-1" title={student.address}>
-                      {student.address}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+                      <Phone className="w-3 h-3 text-slate-400" />
+                      {student.whatsapp || '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={cn("text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border", getStatusColor(student.status))}>
+                      {student.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => handleOpenModal(student)}
-                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors tooltip tooltip-left"
+                        className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors tooltip tooltip-left"
                         data-tip="Edit"
                       >
                         <Edit2 className="w-4 h-4" />
@@ -205,7 +229,7 @@ export default function DataSiswa() {
               ))}
               {filteredStudents.length === 0 && (
                 <tr>
-                   <td colSpan={6} className="px-6 py-12 text-center text-slate-500 text-xs font-medium">
+                   <td colSpan={7} className="px-6 py-12 text-center text-slate-500 text-xs font-medium">
                       Tidak ada data siswa yang ditemukan.
                    </td>
                 </tr>
@@ -234,15 +258,15 @@ export default function DataSiswa() {
             >
               {/* Modal Header */}
               <div className="bg-slate-900 p-6 flex flex-col relative shrink-0">
-                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl -mr-10 -mt-10" />
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl -mr-10 -mt-10" />
                  <div className="relative z-10 flex items-center justify-between w-full">
                     <div className="flex items-center gap-3">
-                       <div className="p-2 bg-blue-500/20 rounded-xl">
-                          <User className="w-5 h-5 text-blue-400" />
+                       <div className="p-2 bg-emerald-500/20 rounded-xl">
+                          <User className="w-5 h-5 text-emerald-400" />
                        </div>
                        <div>
                           <h3 className="font-black text-white uppercase tracking-widest text-lg leading-tight">
-                             {isEditing ? 'Edit Data' : 'Tambah'} <span className="text-blue-400 italic">Siswa</span>
+                             {isEditing ? 'Edit Data' : 'Tambah'} <span className="text-emerald-400 italic">Siswa</span>
                           </h3>
                           <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Lengkapi formulir di bawah ini</p>
                        </div>
@@ -268,7 +292,7 @@ export default function DataSiswa() {
                              <Upload className="w-5 h-5 text-white" />
                           </div>
                        </div>
-                       <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest cursor-pointer hover:underline">Unggah Foto Siswa</p>
+                       <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest cursor-pointer hover:underline">Unggah Foto Siswa</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -280,41 +304,55 @@ export default function DataSiswa() {
                            value={formData.nisn}
                            onChange={e => setFormData({...formData, nisn: e.target.value})}
                            placeholder="Contoh: 0012345678"
-                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-mono"
+                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-mono"
                          />
                        </div>
                        <div className="space-y-2">
-                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nama Siswa</label>
+                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nama Lengkap</label>
                          <input 
                            type="text" 
                            required
                            value={formData.name}
                            onChange={e => setFormData({...formData, name: e.target.value})}
                            placeholder="Contoh: Ahmad Rafli"
-                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
                          />
                        </div>
-                       <div className="space-y-2 md:col-span-2">
-                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5"><GraduationCap className="w-3 h-3" /> Kelas</label>
+                       <div className="space-y-2 lg:col-span-1">
+                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5"><GraduationCap className="w-3 h-3" /> Kelas / Rombel</label>
                          <input 
                            type="text" 
                            required
                            value={formData.class}
                            onChange={e => setFormData({...formData, class: e.target.value})}
                            placeholder="Contoh: 10 IPA 1"
-                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all uppercase"
+                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all uppercase"
+                         />
+                       </div>
+                       <div className="space-y-2 lg:col-span-1">
+                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5"><Phone className="w-3 h-3" /> WhatsApp Aktif</label>
+                         <input 
+                           type="text" 
+                           required
+                           value={formData.whatsapp}
+                           onChange={e => setFormData({...formData, whatsapp: e.target.value})}
+                           placeholder="Contoh: 0812..."
+                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
                          />
                        </div>
                        <div className="space-y-2 md:col-span-2">
-                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5"><MapPin className="w-3 h-3" /> Alamat Lengkap</label>
-                         <textarea 
+                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5">Status Siswa</label>
+                         <select 
                            required
-                           rows={3}
-                           value={formData.address}
-                           onChange={e => setFormData({...formData, address: e.target.value})}
-                           placeholder="Masukkan alamat lengkap..."
-                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none"
-                         />
+                           value={formData.status}
+                           onChange={e => setFormData({...formData, status: e.target.value as Student['status']})}
+                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+                         >
+                            <option value="Aktif">Aktif</option>
+                            <option value="Nonaktif">Nonaktif</option>
+                            <option value="Lulus">Lulus</option>
+                            <option value="Pindah">Pindah</option>
+                         </select>
                        </div>
                     </div>
                  </form>
@@ -332,7 +370,7 @@ export default function DataSiswa() {
                  <button 
                    form="student-form"
                    type="submit"
-                   className="flex-1 bg-blue-600 text-white py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                   className="flex-1 bg-emerald-600 text-white py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                  >
                    <ShieldCheck className="w-4 h-4" /> {isEditing ? 'Simpan Perubahan' : 'Simpan Data'}
                  </button>
