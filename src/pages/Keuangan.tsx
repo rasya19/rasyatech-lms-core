@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Wallet, Search, Filter, Plus, ArrowUpRight, ArrowDownRight, 
   MoreVertical, FileText, CheckCircle2, XCircle, Clock, Check,
-  CreditCard, ExternalLink, ShieldCheck
+  CreditCard, ExternalLink, ShieldCheck, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
