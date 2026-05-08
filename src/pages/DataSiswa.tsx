@@ -11,7 +11,7 @@ import { supabase } from '../lib/supabase';
 export interface Student {
   id: string;
   nisn: string;
-  name: string;
+  nama: string;
   class: string;
   whatsapp: string;
   status: 'Aktif' | 'Nonaktif' | 'Lulus' | 'Pindah';
@@ -28,7 +28,7 @@ export default function DataSiswa() {
   
   const [formData, setFormData] = useState<Partial<Student>>({
     nisn: '',
-    name: '',
+    nama: '',
     class: '',
     whatsapp: '',
     status: 'Aktif',
@@ -45,7 +45,7 @@ export default function DataSiswa() {
       const { data, error } = await supabase
         .from('profiles_siswa')
         .select('*')
-        .order('name', { ascending: true });
+        .order('nama', { ascending: true });
 
       if (error) {
         console.error('Error fetching students:', error);
@@ -61,7 +61,7 @@ export default function DataSiswa() {
   };
 
   const filteredStudents = students.filter(student => 
-    student.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    student.nama?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     student.nisn?.includes(searchTerm)
   );
 
@@ -70,7 +70,7 @@ export default function DataSiswa() {
       setFormData(student);
       setIsEditing(true);
     } else {
-      setFormData({ nisn: '', name: '', class: '', whatsapp: '', status: 'Aktif', photoUrl: '' });
+      setFormData({ nisn: '', nama: '', class: '', whatsapp: '', status: 'Aktif', photoUrl: '' });
       setIsEditing(false);
     }
     setIsModalOpen(true);
@@ -102,7 +102,7 @@ export default function DataSiswa() {
           .from('profiles_siswa')
           .update({
             nisn: formData.nisn,
-            name: formData.name,
+            nama: formData.nama,
             class: formData.class,
             whatsapp: formData.whatsapp,
             status: formData.status,
@@ -117,7 +117,7 @@ export default function DataSiswa() {
           .from('profiles_siswa')
           .insert([{
             nisn: formData.nisn,
-            name: formData.name,
+            nama: formData.nama,
             class: formData.class,
             whatsapp: formData.whatsapp,
             status: formData.status,
@@ -229,7 +229,7 @@ export default function DataSiswa() {
                   <td className="px-6 py-4">
                     <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
                        {student.photoUrl ? (
-                         <img src={student.photoUrl} alt={student.name} className="w-full h-full object-cover" />
+                         <img src={student.photoUrl} alt={student.nama} className="w-full h-full object-cover" />
                        ) : (
                          <User className="w-5 h-5 text-slate-400" />
                        )}
@@ -239,7 +239,7 @@ export default function DataSiswa() {
                     <span className="text-xs font-bold text-slate-600 font-mono tracking-wider">{student.nisn}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm font-black text-slate-800 tracking-tight">{student.name}</span>
+                    <span className="text-sm font-black text-slate-800 tracking-tight">{student.nama}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-wider border border-slate-200">
@@ -356,8 +356,8 @@ export default function DataSiswa() {
                          <input 
                            type="text" 
                            required
-                           value={formData.name}
-                           onChange={e => setFormData({...formData, name: e.target.value})}
+                           value={formData.nama}
+                           onChange={e => setFormData({...formData, nama: e.target.value})}
                            placeholder="Contoh: Ahmad Rafli"
                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
                          />
