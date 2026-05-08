@@ -74,6 +74,22 @@ function SchoolLoader() {
   return <Outlet />;
 }
 
+function ComingSoon() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <div className="w-20 h-20 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-6">
+        <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <h2 className="text-2xl font-black text-slate-800 tracking-tight">Coming Soon</h2>
+      <p className="text-sm font-medium text-slate-500 mt-2 max-w-sm">
+        Halaman ini masih dalam tahap pengembangan. Silakan kembali lagi nanti.
+      </p>
+    </div>
+  );
+}
+
 function AppContent() {
   const { school, loading } = useSchool();
   const location = useLocation();
@@ -92,8 +108,8 @@ function AppContent() {
 
   return (
     <Routes>
-      {/* Root Path - Switches based on domain detection */}
-      <Route path="/" element={school ? <LandingPage /> : <LandingPage />} />
+      {/* Root Path - Redirect to Dashboard */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/preview" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/purchase" element={<Purchase />} />
@@ -171,6 +187,7 @@ function AppContent() {
         <Route path="/data-siswa" element={<DataSiswa />} />
         <Route path="/data-guru" element={<Guru />} />
         <Route path="/keuangan/tagihan" element={<Tagihan />} />
+        <Route path="*" element={<ComingSoon />} />
       </Route>
 
       <Route path="/dashboard" element={<Layout />}>
@@ -200,6 +217,7 @@ function AppContent() {
         <Route path="diskusi" element={<Diskusi />} />
         <Route path="ai-asisten" element={<AiAsisten />} />
         <Route path="feedback" element={<Feedback />} />
+        <Route path="*" element={<ComingSoon />} />
       </Route>
     </Routes>
   );
