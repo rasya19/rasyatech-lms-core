@@ -102,17 +102,21 @@ export const generateInvoicePDF = (data: InvoiceData) => {
   if (data.banks && data.banks.length > 0) {
     data.banks.forEach((bank) => {
       doc.setFont('helvetica', 'bold');
-      doc.text(`${bank.name}:`, 20, currentY);
+      doc.setTextColor(navyBlue[0], navyBlue[1], navyBlue[2]);
+      doc.text(`${bank.name}`, 20, currentY);
       doc.setFont('helvetica', 'normal');
-      doc.text(`${bank.account} a/n ${bank.recipient}`, 50, currentY);
-      currentY += 7;
+      doc.setTextColor(0, 0, 0);
+      doc.text(`: ${bank.account} a/n ${bank.recipient}`, 50, currentY);
+      currentY += 8;
     });
   } else {
     // Default fallback if no banks provided
     doc.setFont('helvetica', 'bold');
-    doc.text('BANK MANDIRI:', 20, currentY);
+    doc.setTextColor(navyBlue[0], navyBlue[1], navyBlue[2]);
+    doc.text('BANK MANDIRI', 20, currentY);
     doc.setFont('helvetica', 'normal');
-    doc.text('123-00-0456-7890 a/n PT ARMILLA NUSA TEKNOLOGI (Rasyacomp)', 50, currentY);
+    doc.setTextColor(0, 0, 0);
+    doc.text(': 123-00-0456-7890 a/n PT ARMILLA NUSA TEKNOLOGI (Rasyacomp)', 50, currentY);
   }
 
   // --- Footer ---

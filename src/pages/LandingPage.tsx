@@ -78,6 +78,11 @@ export default function LandingPage() {
               </a>
             ))}
             {!school && (
+              <Link id="nav-affiliate-link" to="/affiliate" className="bg-slate-100 text-slate-600 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-200 transition-all italic flex items-center gap-2">
+                Daftar Affiliate <Users className="w-3 h-3 text-brand-sidebar" />
+              </Link>
+            )}
+            {!school && (
               <Link to="/purchase" className="bg-white border-2 border-brand-sidebar text-brand-sidebar px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-50 transition-all italic flex items-center gap-2">
                 Daftar Sekolah <Rocket className="w-3 h-3 text-brand-accent" />
               </Link>
@@ -118,6 +123,16 @@ export default function LandingPage() {
                   </a>
                 ))}
                 <div className="flex flex-col gap-3 pt-4 mt-4 border-t border-brand-border">
+                  {!school && (
+                    <Link 
+                      id="mobile-nav-affiliate-link"
+                      to="/affiliate" 
+                      onClick={() => setIsMenuOpen(false)}
+                      className="w-full bg-slate-100 text-slate-600 py-4 rounded-xl text-center text-xs font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 italic"
+                    >
+                      Daftar Affiliate <Users className="w-4 h-4 text-brand-sidebar" />
+                    </Link>
+                  )}
                   {!school && (
                     <Link 
                       to="/purchase" 

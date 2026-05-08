@@ -106,7 +106,7 @@ export default function AffiliateDashboard() {
             <div className="w-20 h-20 bg-brand-sidebar text-brand-accent rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-brand-sidebar/20 rotate-3">
               <Users className="w-10 h-10" />
             </div>
-            <h1 className="text-2xl font-black italic uppercase tracking-tighter text-brand-sidebar leading-none">Influencer <span className="text-brand-accent">Portal</span></h1>
+            <h1 className="text-2xl font-black italic uppercase tracking-tighter text-brand-sidebar leading-none">Affiliate <span className="text-brand-accent">Portal</span></h1>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-3 italic">Pantau keberhasilan referal Anda</p>
           </div>
 

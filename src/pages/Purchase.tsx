@@ -513,7 +513,7 @@ export default function Purchase() {
                     value={formData.referralCode}
                     onChange={(e) => setFormData({...formData, referralCode: e.target.value.toUpperCase()})}
                     className="w-full bg-slate-50 border border-brand-border rounded-xl py-4 px-4 text-xs font-bold text-brand-sidebar focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
-                    placeholder="Contoh: INFLUENCER123"
+                    placeholder="Contoh: AFFILIATE123"
                   />
                 </div>
 

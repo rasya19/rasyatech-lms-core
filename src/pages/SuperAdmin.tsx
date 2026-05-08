@@ -104,6 +104,15 @@ export default function SuperAdmin() {
     commissionValue: 10
   });
 
+  const generateRandomCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let result = 'AFF-';
+    for (let i = 0; i < 5; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewAffiliate(prev => ({ ...prev, code: result }));
+  };
+
   const [newPayment, setNewPayment] = useState({
     schoolId: '',
     amount: '',
@@ -242,7 +251,12 @@ export default function SuperAdmin() {
         };
         fetchSettings();
 
-        return () => unsubFirestore();
+        return () => {
+          unsubFirestore();
+          unsubPay();
+          unsubAff();
+          unsubComm();
+        };
       } else {
         setLoading(false);
       }
@@ -371,19 +385,20 @@ export default function SuperAdmin() {
       await setDoc(doc(collection(db, 'affiliates')), {
         ...newAffiliate,
         code: newAffiliate.code.toUpperCase(),
-        commissionPerSchool: Number(newAffiliate.commissionPerSchool),
+        commissionValue: Number(newAffiliate.commissionValue),
         createdAt: serverTimestamp()
       });
-      alert('Influencer berhasil ditambahkan!');
+      alert('Affiliate berhasil ditambahkan!');
       setIsAddingAffiliate(false);
       setNewAffiliate({
         name: '',
         code: '',
-        commissionPerSchool: 100000
+        commissionType: 'percentage',
+        commissionValue: 10
       });
     } catch (error) {
       console.error('Add affiliate error:', error);
-      alert('Gagal menambahkan influencer.');
+      alert('Gagal menambahkan affiliate.');
     } finally {
       setIsAddingAffiliate(false);
     }
@@ -444,7 +459,7 @@ export default function SuperAdmin() {
     if (!confirm(`APAKAH ANDA YAKIN? Sekolah "${name}" akan dihapus PERMANEN dari sistem.`)) return;
     try {
       await deleteDoc(doc(db, 'schools', id));
-      alert('Sekolah berhasil dihapus.');
+      alert('Sekolah berhasil dihapus dari database. Harap hapus juga email pendaftar secara manual di Firebase Console Authentication jika ingin mendaftarkan dengan email yang sama.');
     } catch (error) {
       console.error('Delete error:', error);
       alert('Gagal menghapus sekolah.');
@@ -910,14 +925,14 @@ export default function SuperAdmin() {
                    </div>
                    <div>
                      <h3 className="text-2xl font-black italic uppercase tracking-tighter text-brand-sidebar">Affiliate <span className="text-brand-accent">Manager</span></h3>
-                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 italic">Kelola Influencer & Pantau Komisi Referal</p>
+                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 italic">Kelola Affiliate & Pantau Komisi Referal</p>
                    </div>
                 </div>
                 <button 
                   onClick={() => setIsAddingAffiliate(true)}
                   className="bg-brand-sidebar text-white px-6 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-sidebar/20 flex items-center gap-2 italic"
                 >
-                   <Plus className="w-4 h-4 text-brand-accent" /> Tambah Influencer
+                   <Plus className="w-4 h-4 text-brand-accent" /> Tambah Affiliate
                 </button>
              </div>
 
@@ -927,10 +942,10 @@ export default function SuperAdmin() {
                  animate={{ opacity: 1, y: 0 }}
                  className="bg-white border-2 border-brand-accent/20 rounded-[2.5rem] p-8 shadow-xl"
                >
-                  <h4 className="text-xs font-black uppercase text-brand-sidebar italic mb-6 tracking-widest">Informasi Influencer Baru</h4>
+                  <h4 className="text-xs font-black uppercase text-brand-sidebar italic mb-6 tracking-widest">Informasi Affiliate Baru</h4>
                   <form onSubmit={handleAddAffiliate} className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                      <div className="space-y-2">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Nama Influencer</label>
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Nama Affiliate</label>
                         <input 
                           type="text" 
                           required
@@ -942,14 +957,23 @@ export default function SuperAdmin() {
                      </div>
                      <div className="space-y-2">
                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Kode Referal unik</label>
-                        <input 
-                          type="text" 
-                          required
-                          value={newAffiliate.code}
-                          onChange={(e) => setNewAffiliate({...newAffiliate, code: e.target.value.toUpperCase()})}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs font-bold text-brand-sidebar"
-                          placeholder="BUDI123"
-                        />
+                        <div className="flex gap-2">
+                           <input 
+                             type="text" 
+                             required
+                             value={newAffiliate.code}
+                             onChange={(e) => setNewAffiliate({...newAffiliate, code: e.target.value.toUpperCase()})}
+                             className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs font-bold text-brand-sidebar"
+                             placeholder="AFF-XXXXX"
+                           />
+                           <button 
+                             type="button"
+                             onClick={generateRandomCode}
+                             className="px-4 bg-brand-accent/10 text-brand-sidebar rounded-xl text-[10px] font-black uppercase hover:bg-brand-accent/20 transition-all border border-brand-accent/20"
+                           >
+                              Auto
+                           </button>
+                        </div>
                      </div>
                      <div className="space-y-2">
                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Tipe Komisi</label>
@@ -1007,7 +1031,7 @@ export default function SuperAdmin() {
                           </div>
                           <button 
                             onClick={async () => {
-                              if (confirm(`Hapus influencer ${aff.name}?`)) {
+                              if (confirm(`Hapus affiliate ${aff.name}?`)) {
                                 await deleteDoc(doc(db, 'affiliates', aff.id));
                               }
                             }}
@@ -1019,7 +1043,7 @@ export default function SuperAdmin() {
 
                        <div className="grid grid-cols-2 gap-4 mb-6">
                           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Referensi</p>
+                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Closing</p>
                              <p className="text-xl font-black text-brand-sidebar italic">{affiliateCommissions.length} <span className="text-[10px] uppercase NOT-italic">Sekolah</span></p>
                           </div>
                           <div className="bg-brand-accent/10 p-4 rounded-2xl border border-brand-accent/20">
@@ -1042,7 +1066,7 @@ export default function SuperAdmin() {
 
              {affiliates.length === 0 && !isAddingAffiliate && (
                <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] p-24 text-center">
-                  <p className="text-xs font-black uppercase text-slate-300 tracking-widest italic">Belum ada influencer terdaftar</p>
+                  <p className="text-xs font-black uppercase text-slate-300 tracking-widest italic">Belum ada affiliate terdaftar</p>
                </div>
              )}
           </div>
