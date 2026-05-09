@@ -298,7 +298,7 @@ export default function ButirSoal() {
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-2xl font-black uppercase tracking-tight">Editor <span className="text-emerald-400 italic">Butir Soal</span></h1>
             </div>
-            <p className="text-[11px] text-emerald-400/60 font-bold uppercase tracking-widest">Bank Soal ID: {id || 'BS-000'}</p>
+            <p className="text-[11px] text-emerald-400/60 font-bold uppercase tracking-widest">Bank Soal ID: {bank_soal_id || 'BS-000'}</p>
           </div>
         </div>
         

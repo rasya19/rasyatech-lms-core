@@ -102,8 +102,3 @@ export default function Ujian() {
     </div>
   );
 }
-
-// Fixed import for cn
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}

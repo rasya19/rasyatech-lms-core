@@ -41,7 +41,7 @@ import {
   FolderOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '@/src/lib/utils';
+import { cn } from '../lib/utils';
 
 type Role = 'Admin' | 'Guru' | 'Siswa';
 

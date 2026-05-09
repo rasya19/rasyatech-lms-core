@@ -17,7 +17,7 @@ import {
 export default function Dashboard() {
   const { school } = useSchool();
   const userRole = localStorage.getItem('userRole') || 'Siswa';
-  const adminName = localStorage.getItem('adminName') || 'Ismanto';
+  const adminName = localStorage.getItem('adminName') || localStorage.getItem('teacherName') || 'Staf Pengajar';
   const studentName = localStorage.getItem('studentName') || 'Budi Santoso';
   const studentId = localStorage.getItem('studentId');
 
@@ -34,7 +34,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (userRole === 'Siswa' && studentId) {
       fetchStudentDashboardData();
-    } else if (userRole === 'Admin') {
+    } else {
       fetchAdminDashboardData();
     }
   }, [userRole, studentId]);
@@ -148,7 +148,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-2">
         <div>
-          <h2 className="text-3xl font-black text-slate-50 tracking-tight">Halo, {userRole === 'Admin' ? adminName : studentName}!</h2>
+          <h2 className="text-3xl font-black text-slate-50 tracking-tight">Halo, {userRole === 'Siswa' ? studentName : adminName}!</h2>
           <p className="text-sm font-medium text-emerald-400 mt-1 uppercase tracking-widest">Selamat Datang Kembali.</p>
         </div>
       </div>
@@ -158,7 +158,7 @@ export default function Dashboard() {
         {[
           { label: 'TOTAL SISWA', value: stats.totalSiswa, icon: Users, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
           { label: 'TOTAL GURU', value: stats.totalGuru, icon: UserCheck, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
-          ...(userRole === 'Admin' ? [
+          ...(userRole !== 'Siswa' ? [
             { label: 'TOTAL UJIAN', value: stats.totalUjian, icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
             { label: 'RATA-RATA SKOR', value: stats.rataNilai, icon: Trophy, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' }
           ] : [

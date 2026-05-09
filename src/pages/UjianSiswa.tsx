@@ -4,6 +4,7 @@ import { Clock, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Flag, Moni
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 
 // Interfaces for real data
 interface Soal {
@@ -202,7 +203,7 @@ export default function UjianSiswa() {
         .from('hasil_ujian')
         .select('*')
         .eq('student_id', studentId)
-        .eq('bank_soal_id', examId)
+        .eq('bank_soal_id', bankSoalId)
         .maybeSingle();
 
       if (data) {

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { cn } from '../lib/utils';
 import { 
   ShieldCheck, 
   ArrowLeft,
@@ -17,7 +18,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [loginRole, setLoginRole] = useState<'Admin' | 'Siswa'>('Admin');
+  const [loginRole, setLoginRole] = useState<'Admin' | 'Guru' | 'Siswa'>('Admin');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -37,6 +38,33 @@ export default function Login() {
     setErrorMsg('');
 
     try {
+      if (loginRole === 'Guru') {
+        // Mock teacher login for demo
+        if (formData.email === 'demo_guru' && formData.password === 'teacher123') {
+           localStorage.setItem('userRole', 'Guru');
+           localStorage.setItem('isDemoMode', 'true');
+           localStorage.setItem('teacherName', 'Dra. Siti Aminah');
+           setIsLoading(false);
+           navigate('/dashboard');
+           return;
+        }
+
+        // Real teacher login (usually via Auth but could be via profile check)
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (authError) throw authError;
+
+        if (data.user) {
+          localStorage.setItem('userRole', 'Guru');
+          localStorage.setItem('teacherName', data.user.email?.split('@')[0] || 'Guru');
+          navigate('/dashboard');
+        }
+        return;
+      }
+
       if (loginRole === 'Siswa') {
         // Mock student login for demo
         if (formData.nisn === '0012345678') {
@@ -126,26 +154,36 @@ export default function Login() {
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-16 -mt-16" />
           
           <div className="relative z-10">
-            <div className="flex bg-slate-900 p-1 rounded-2xl border border-slate-700 mb-8">
+            <div className="flex bg-slate-900 p-1 rounded-2xl border border-slate-700 mb-8 overflow-x-auto">
               <button 
                 type="button"
                 onClick={() => setLoginRole('Admin')}
                 className={cn(
-                  "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                  "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
                   loginRole === 'Admin' ? "bg-emerald-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
                 )}
               >
-                Administrator
+                Admin
+              </button>
+              <button 
+                type="button"
+                onClick={() => setLoginRole('Guru')}
+                className={cn(
+                  "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                  loginRole === 'Guru' ? "bg-emerald-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
+                )}
+              >
+                Guru
               </button>
               <button 
                 type="button"
                 onClick={() => setLoginRole('Siswa')}
                 className={cn(
-                  "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                  "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
                   loginRole === 'Siswa' ? "bg-emerald-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
                 )}
               >
-                Siswa / Peserta
+                Siswa
               </button>
             </div>
 
@@ -166,11 +204,11 @@ export default function Login() {
             )}
 
             <form onSubmit={handleLogin} className="space-y-5">
-              {loginRole === 'Admin' ? (
+              {loginRole !== 'Siswa' ? (
                 <>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">
-                      Email Akun
+                      Email Akun {loginRole}
                     </label>
                     <div className="relative group">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none group-focus-within:text-emerald-400 transition-colors text-slate-400">
@@ -243,14 +281,36 @@ export default function Login() {
 
               <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mt-2">
                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 italic">Akses Demo / Testing:</p>
-                 <div className="flex gap-4">
-                    <div className="flex-1">
-                      <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Email</p>
-                      <code className="text-xs font-black text-emerald-400">demo_admin</code>
+                 <div className="space-y-3">
+                    <div className="flex gap-4">
+                       <div className="flex-1">
+                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Role</p>
+                         <code className="text-xs font-black text-emerald-400">Admin</code>
+                       </div>
+                       <div className="flex-1">
+                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Email / Pass</p>
+                         <code className="text-[10px] font-black text-emerald-400">demo_admin / demo123</code>
+                       </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Password</p>
-                      <code className="text-xs font-black text-emerald-400">demo123</code>
+                    <div className="flex gap-4">
+                       <div className="flex-1">
+                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Role</p>
+                         <code className="text-xs font-black text-emerald-400">Guru</code>
+                       </div>
+                       <div className="flex-1">
+                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Email / Pass</p>
+                         <code className="text-[10px] font-black text-emerald-400">demo_guru / teacher123</code>
+                       </div>
+                    </div>
+                    <div className="flex gap-4">
+                       <div className="flex-1">
+                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Role</p>
+                         <code className="text-xs font-black text-emerald-400">Siswa</code>
+                       </div>
+                       <div className="flex-1">
+                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">NISN</p>
+                         <code className="text-[10px] font-black text-emerald-400">0012345678</code>
+                       </div>
                     </div>
                  </div>
               </div>
