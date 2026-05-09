@@ -28,11 +28,17 @@ interface Relation {
 
 export default function Relasi() {
   const [teachers, setTeachers] = useState<any[]>([]);
-  const [schoolClasses, setSchoolClasses] = useState<any[]>(() => {
-    const saved = localStorage.getItem('school_classes_list');
-    if (saved) return JSON.parse(saved);
-    return [];
-  });
+  const [schoolClasses, setSchoolClasses] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchSchoolClasses = async () => {
+      const { data } = await supabase.from('kelas').select('id, nama_kelas').order('nama_kelas', { ascending: true });
+      if (data) {
+        setSchoolClasses(data.map((d: any) => ({ id: d.id, name: d.nama_kelas })));
+      }
+    };
+    fetchSchoolClasses();
+  }, []);
   const [subjects, setSubjects] = useState<any[]>(() => {
     const saved = localStorage.getItem('school_mapel_list');
     if (saved) return JSON.parse(saved);

@@ -21,11 +21,17 @@ export interface Student {
 
 export default function DataSiswa() {
   const [students, setStudents] = useState<Student[]>([]);
-  const [classes] = useState<{id: string, name: string}[]>(() => {
-    const saved = localStorage.getItem('school_classes_list');
-    if (saved) return JSON.parse(saved);
-    return [];
-  });
+  const [classes, setClasses] = useState<{id: string, name: string}[]>([]);
+
+  React.useEffect(() => {
+    const fetchClasses = async () => {
+      const { data } = await supabase.from('kelas').select('id, nama_kelas').order('nama_kelas', { ascending: true });
+      if (data) {
+        setClasses(data.map(d => ({ id: d.id, name: d.nama_kelas })));
+      }
+    };
+    fetchClasses();
+  }, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);

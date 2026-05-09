@@ -6,38 +6,40 @@ import { cn } from '../lib/utils';
 
 interface ClassData {
   id: string;
-  name: string;
+  nama_kelas: string;
   tingkat: string;
-  wali: string;
+  wali_kelas_id: string;
 }
-
-const INITIAL_CLASSES: ClassData[] = [
-  { id: '1', name: 'Kelas 10', tingkat: '10', wali: '' },
-  { id: '2', name: 'Kelas 11', tingkat: '11', wali: '' },
-  { id: '3', name: 'Kelas 12', tingkat: '12', wali: '' }
-];
 
 export default function Kelas() {
   const [activeTab, setActiveTab] = useState<'daftar' | 'kenaikan'>('daftar');
   
-  const [classes, setClasses] = useState<ClassData[]>(() => {
-    const saved = localStorage.getItem('school_classes_list');
-    if (saved) return JSON.parse(saved);
-    return INITIAL_CLASSES;
-  });
-
+  const [classes, setClasses] = useState<ClassData[]>([]);
   const [guruList, setGuruList] = useState<{ id: string; nama: string }[]>([]);
   const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('school_classes_list', JSON.stringify(classes));
-  }, [classes]);
-
-  useEffect(() => {
+    fetchKelasList();
     fetchGuruList();
     fetchStudentCounts();
   }, []);
+
+  const fetchKelasList = async () => {
+    try {
+      const { data, error } = await supabase.from('kelas').select('*').order('nama_kelas', { ascending: true });
+      if (data) {
+        setClasses(data.map((d: any) => ({
+          id: d.id,
+          nama_kelas: d.nama_kelas,
+          tingkat: d.tingkat || '',
+          wali_kelas_id: d.wali_kelas_id || ''
+        })));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchGuruList = async () => {
     try {
@@ -63,36 +65,71 @@ export default function Kelas() {
     }
   };
 
-  const handleUpdateWali = (classId: string, w: string) => {
-    setClasses(classes.map(c => c.id === classId ? { ...c, wali: w } : c));
+  const handleUpdateWali = async (classId: string, w: string) => {
+    try {
+      setClasses(classes.map(c => c.id === classId ? { ...c, wali: w } : c));
+      await supabase.from('kelas').update({ wali_kelas: w }).eq('id', classId);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleUpdateName = (classId: string, name: string) => {
-    setClasses(classes.map(c => c.id === classId ? { ...c, name } : c));
+  const handleUpdateName = async (classId: string, name: string) => {
+    try {
+      setClasses(classes.map(c => c.id === classId ? { ...c, name } : c));
+      await supabase.from('kelas').update({ nama_kelas: name }).eq('id', classId);
+    } catch (error) {
+      console.error(error);
+    }
   };
   
-  const handleUpdateTingkat = (classId: string, tingkat: string) => {
-    setClasses(classes.map(c => c.id === classId ? { ...c, tingkat } : c));
+  const handleUpdateTingkat = async (classId: string, tingkat: string) => {
+    try {
+      setClasses(classes.map(c => c.id === classId ? { ...c, tingkat } : c));
+      await supabase.from('kelas').update({ tingkat }).eq('id', classId);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleDeleteClass = (id: string) => {
+  const handleDeleteClass = async (id: string) => {
     if (window.confirm('Hapus kelas ini?')) {
-      setClasses(classes.filter(c => c.id !== id));
+      try {
+        setClasses(classes.filter(c => c.id !== id));
+        await supabase.from('kelas').delete().eq('id', id);
+      } catch (error) {
+        console.error(error);
+      }
     }
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', tingkat: '', wali: '' });
+  const [formData, setFormData] = useState({ nama_kelas: '', tingkat: '', wali_kelas_id: '' });
 
-  const handleAddClass = (e: React.FormEvent) => {
+  const handleAddClass = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newClass: ClassData = {
-      id: Math.random().toString(36).substr(2, 9),
-      ...formData
-    };
-    setClasses([...classes, newClass]);
-    setIsModalOpen(false);
-    setFormData({ name: '', tingkat: '', wali: '' });
+    try {
+      const { data, error } = await supabase.from('kelas').insert([{
+        nama_kelas: formData.nama_kelas,
+        tingkat: formData.tingkat,
+        wali_kelas_id: formData.wali_kelas_id
+      }]).select();
+      if (error) throw error;
+      if (data) {
+        const newClass = data[0];
+        setClasses([...classes, {
+          id: newClass.id,
+          nama_kelas: newClass.nama_kelas,
+          tingkat: newClass.tingkat || '',
+          wali_kelas_id: newClass.wali_kelas_id || ''
+        }]);
+      }
+      setIsModalOpen(false);
+      setFormData({ nama_kelas: '', tingkat: '', wali_kelas_id: '' });
+    } catch (error) {
+      console.error(error);
+      alert('Gagal menambah kelas');
+    }
   };
 
   // Kenaikan Kelas State
@@ -102,11 +139,12 @@ export default function Kelas() {
 
   useEffect(() => {
     if (promoFrom) {
-       setPromoCount(studentCounts[promoFrom] || 0);
+       const cls = classes.find(c => c.id === promoFrom);
+       setPromoCount(cls ? (studentCounts[cls.nama_kelas] || 0) : 0);
     } else {
        setPromoCount(0);
     }
-  }, [promoFrom, studentCounts]);
+  }, [promoFrom, studentCounts, classes]);
 
   const handleProcessPromo = async () => {
     if (!promoFrom || !promoTo) {
@@ -118,26 +156,27 @@ export default function Kelas() {
       return;
     }
     
-    // Warn if target is Lulus
-    let message = `Apakah Anda yakin ingin menaikkan ${promoCount} siswa dari ${promoFrom} ke ${promoTo}?`;
+    const clsAsalLabel = classes.find(c => c.id === promoFrom)?.nama_kelas || promoFrom;
+    const clsTujuanLabel = promoTo === 'Lulus' ? 'Lulus' : (classes.find(c => c.id === promoTo)?.nama_kelas || promoTo);
+
+    let message = `Apakah Anda yakin ingin menaikkan ${promoCount} siswa dari ${clsAsalLabel} ke ${clsTujuanLabel}?`;
     if (promoTo === 'Lulus') {
-       message = `Apakah Anda yakin ingin MELULUSKAN ${promoCount} siswa dari ${promoFrom}? Data akan diubah statusnya menjadi Lulus.`;
+       message = `Apakah Anda yakin ingin MELULUSKAN ${promoCount} siswa dari ${clsAsalLabel}? Data akan diubah statusnya menjadi Lulus.`;
     }
 
     if (window.confirm(message)) {
        setIsLoading(true);
        try {
          if (promoTo === 'Lulus') {
+            const clsAsal = classes.find(c => c.id === promoFrom);
+            if (!clsAsal) throw new Error("Kelas asal tidak ditemukan");
             const { error } = await supabase
              .from('profiles_siswa')
              .update({ status: 'Lulus' })
-             .eq('class', promoFrom);
+             .eq('class', clsAsal.nama_kelas);
              if (error) throw error;
          } else {
-             const { error } = await supabase
-               .from('profiles_siswa')
-               .update({ class: promoTo })
-               .eq('class', promoFrom);
+             const { error } = await supabase.rpc('naikkan_kelas_massal', { id_asal: promoFrom, id_tujuan: promoTo });
              if (error) throw error;
          }
          
@@ -213,7 +252,7 @@ export default function Kelas() {
                       <td className="px-6 py-4">
                          <input 
                            type="text"
-                           value={c.name}
+                           value={c.nama_kelas}
                            onChange={(e) => handleUpdateName(c.id, e.target.value)}
                            className="bg-transparent border border-transparent hover:border-brand-border focus:border-brand-accent focus:bg-white rounded-lg px-3 py-2 text-xs font-bold text-brand-sidebar outline-none transition-all w-full uppercase"
                          />
@@ -229,7 +268,7 @@ export default function Kelas() {
                       </td>
                       <td className="px-6 py-4">
                          <select 
-                           value={c.wali}
+                           value={c.wali_kelas_id}
                            onChange={(e) => handleUpdateWali(c.id, e.target.value)}
                            className="w-full bg-slate-50 border border-brand-border rounded-lg px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-brand-accent cursor-pointer"
                          >
@@ -242,7 +281,7 @@ export default function Kelas() {
                       <td className="px-6 py-4 text-center">
                          <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-600 rounded-lg px-3 py-1 text-xs font-bold">
                            <Users className="w-3.5 h-3.5" />
-                           {studentCounts[c.name] || 0}
+                           {studentCounts[c.nama_kelas] || 0}
                          </div>
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -287,7 +326,7 @@ export default function Kelas() {
                  >
                    <option value="">-- Pilih Kelas Asal --</option>
                    {classes.map(c => (
-                     <option key={c.id} value={c.name}>{c.name}</option>
+                     <option key={c.id} value={c.id}>{c.nama_kelas}</option>
                    ))}
                  </select>
                  <div className="text-[10px] font-black text-emerald-600 mt-2">Jumlah Siswa: {promoCount}</div>
@@ -308,7 +347,7 @@ export default function Kelas() {
                  >
                    <option value="">-- Pilih Kelas Tujuan --</option>
                    {classes.map(c => (
-                     <option key={`to-${c.id}`} value={c.name}>{c.name}</option>
+                     <option key={`to-${c.id}`} value={c.id}>{c.nama_kelas}</option>
                    ))}
                    <option value="Lulus" className="text-blue-600 font-black">LULUS / ALUMNI</option>
                  </select>
@@ -356,8 +395,8 @@ export default function Kelas() {
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nama Kelas / Rombel</label>
                    <input 
                      type="text" required
-                     value={formData.name}
-                     onChange={e => setFormData({...formData, name: e.target.value})}
+                     value={formData.nama_kelas}
+                     onChange={e => setFormData({...formData, nama_kelas: e.target.value})}
                      className="w-full bg-slate-50 border border-brand-border rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-brand-accent"
                      placeholder="Contoh: 10 IPA 1"
                    />
@@ -375,8 +414,8 @@ export default function Kelas() {
                  <div className="space-y-2">
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Wali Kelas</label>
                    <select 
-                     value={formData.wali}
-                     onChange={(e) => setFormData({...formData, wali: e.target.value})}
+                     value={formData.wali_kelas_id}
+                     onChange={(e) => setFormData({...formData, wali_kelas_id: e.target.value})}
                      className="w-full bg-slate-50 border border-brand-border rounded-xl p-3 text-xs font-bold focus:border-brand-accent outline-none"
                    >
                      <option value="">-- Pilih Wali Kelas --</option>

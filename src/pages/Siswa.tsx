@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, UserPlus, Filter, MoreVertical, FileDown, FileUp, Edit2, Trash2, Download, Lock, X, Check, Sparkles, Loader2, CloudUpload } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 
@@ -224,11 +225,17 @@ export default function Siswa() {
     autoPushSiswa(newList);
   };
 
-  const [classes] = useState<{id: string, name: string}[]>(() => {
-    const saved = localStorage.getItem('school_classes_list');
-    if (saved) return JSON.parse(saved);
-    return [];
-  });
+  const [classes, setClasses] = useState<{id: string, name: string}[]>([]);
+
+  useEffect(() => {
+    const fetchClasses = async () => {
+      const { data } = await supabase.from('kelas').select('id, nama_kelas').order('nama_kelas', { ascending: true });
+      if (data) {
+        setClasses(data.map(d => ({ id: d.id, name: d.nama_kelas })));
+      }
+    };
+    fetchClasses();
+  }, []);
 
   const [formData, setFormData] = useState({
     name: '',
