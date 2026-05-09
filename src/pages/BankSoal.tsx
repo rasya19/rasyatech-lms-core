@@ -22,6 +22,11 @@ interface BankSoalModel {
 
 export default function BankSoal() {
   const navigate = useNavigate();
+  const [mapels] = useState<any[]>(() => {
+    const saved = localStorage.getItem('school_mapel_list');
+    if (saved) return JSON.parse(saved);
+    return DUMMY_MAPEL;
+  });
   const [bankSoals, setBankSoals] = useState<BankSoalModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -57,7 +62,7 @@ export default function BankSoal() {
     }
   };
 
-  const getMapel = (id: string) => DUMMY_MAPEL.find(m => m.id === id);
+  const getMapel = (id: string) => mapels.find(m => m.id === id);
 
   const filteredBankSoals = bankSoals.filter(bs => {
     return bs.nama_ujian?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -343,7 +348,7 @@ export default function BankSoal() {
                          className="w-full appearance-none bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all cursor-pointer"
                        >
                          <option value="" disabled>Pilih Mata Pelajaran...</option>
-                         {DUMMY_MAPEL.map((m) => (
+                         {mapels.map((m) => (
                             <option key={m.id} value={m.id}>{m.nama} ({m.jenjang})</option>
                          ))}
                        </select>

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import * as XLSX from 'xlsx';
 import { cn } from '../lib/utils';
 import { fetchKelasFromSheet, pushDataToSheet } from '../services/apiService';
+import { supabase } from '../lib/supabase';
 
 interface ClassData {
   id: string;
@@ -27,9 +28,30 @@ export default function Kelas() {
     return INITIAL_CLASSES;
   });
 
+  const [guruList, setGuruList] = useState<{ id: string; nama: string }[]>([]);
+
   useEffect(() => {
     localStorage.setItem('school_classes_list', JSON.stringify(classes));
   }, [classes]);
+
+  useEffect(() => {
+    fetchGuruList();
+  }, []);
+
+  const fetchGuruList = async () => {
+    try {
+      const { data, error } = await supabase.from('profiles_guru').select('id, nama').order('nama', { ascending: true });
+      if (error && !error.message.includes('Could not find the table')) {
+        console.error('Error fetching guru:', error);
+        return;
+      }
+      if (data) {
+        setGuruList(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassData | null>(null);
@@ -668,12 +690,16 @@ export default function Kelas() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic ml-1">Wali Kelas</label>
-                    <input 
-                      type="text" required value={formData.wali}
+                    <select 
+                      required value={formData.wali}
                       onChange={(e) => setFormData({...formData, wali: e.target.value})}
-                      placeholder="Masukkan nama guru"
                       className="w-full bg-slate-50 border border-brand-border rounded-xl p-3 text-xs font-bold focus:border-brand-accent outline-none"
-                    />
+                    >
+                      <option value="">-- Pilih Wali Kelas --</option>
+                      {guruList.map(guru => (
+                        <option key={guru.id} value={guru.nama}>{guru.nama}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">

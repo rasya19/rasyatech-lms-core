@@ -20,6 +20,11 @@ export interface Student {
 
 export default function DataSiswa() {
   const [students, setStudents] = useState<Student[]>([]);
+  const [classes] = useState<{id: string, name: string}[]>(() => {
+    const saved = localStorage.getItem('school_classes_list');
+    if (saved) return JSON.parse(saved);
+    return [];
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -436,14 +441,17 @@ export default function DataSiswa() {
                        </div>
                        <div className="space-y-2 lg:col-span-1">
                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5"><GraduationCap className="w-3 h-3" /> Kelas / Rombel</label>
-                         <input 
-                           type="text" 
+                         <select 
                            required
                            value={formData.class}
                            onChange={e => setFormData({...formData, class: e.target.value})}
-                           placeholder="Contoh: 10 IPA 1"
                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all uppercase"
-                         />
+                         >
+                           <option value="">-- Pilih Kelas --</option>
+                           {classes.map(c => (
+                             <option key={c.id} value={c.name}>{c.name}</option>
+                           ))}
+                         </select>
                        </div>
                        <div className="space-y-2 lg:col-span-1">
                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5"><Phone className="w-3 h-3" /> WhatsApp Aktif</label>

@@ -21,6 +21,11 @@ function getPredikat(rata: number) {
 export default function Nilai() {
   const navigate = useNavigate();
   const [isEditMode, setIsEditMode] = useState(false);
+  const [mapels] = useState<any[]>(() => {
+    const saved = localStorage.getItem('school_mapel_list');
+    if (saved) return JSON.parse(saved);
+    return [];
+  });
   const [nilaiList, setNilaiList] = useState<Grade[]>(() => {
     const saved = localStorage.getItem('school_nilai_list');
     if (saved) return JSON.parse(saved);
@@ -156,12 +161,16 @@ export default function Nilai() {
                 <tr key={i} className="hover:bg-slate-50 transition-colors group">
                   <td className="px-6 py-4 border-b border-brand-border">
                     {isEditMode ? (
-                      <input 
-                        type="text" 
-                        className="bg-white border border-brand-border rounded-lg p-2 text-xs font-bold w-full uppercase outline-none focus:border-brand-accent"
+                      <select 
+                        className="bg-white border border-brand-border rounded-lg p-2 text-xs font-bold w-full uppercase outline-none focus:border-brand-accent cursor-pointer"
                         value={n.mapel}
                         onChange={e => handleUpdateGrade(i, 'mapel', e.target.value)}
-                      />
+                      >
+                         <option value="Mata Pelajaran Baru" disabled>Pilih Mata Pelajaran...</option>
+                         {mapels.map((m: any) => (
+                           <option key={m.id} value={m.nama}>{m.nama} ({m.jenjang})</option>
+                         ))}
+                      </select>
                     ) : (
                       <span className="text-xs font-bold text-brand-text-main">{n.mapel}</span>
                     )}

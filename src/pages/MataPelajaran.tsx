@@ -54,7 +54,16 @@ export const DUMMY_MAPEL: MataPelajaranModel[] = [
 ];
 
 export default function MataPelajaran() {
-  const [mapels, setMapels] = useState<MataPelajaranModel[]>(DUMMY_MAPEL);
+  const [mapels, setMapels] = useState<MataPelajaranModel[]>(() => {
+    const saved = localStorage.getItem('school_mapel_list');
+    if (saved) return JSON.parse(saved);
+    return DUMMY_MAPEL;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('school_mapel_list', JSON.stringify(mapels));
+  }, [mapels]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterJenjang, setFilterJenjang] = useState<string>('Semua');
   const [isModalOpen, setIsModalOpen] = useState(false);
