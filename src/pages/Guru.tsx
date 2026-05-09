@@ -395,9 +395,10 @@ export default function Guru() {
                   </div>
 
                   <div className="flex gap-3 pt-4">
-                    <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-3 border border-brand-border rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50">Batal</button>
-                    <button type="submit" className="flex-1 px-4 py-3 bg-brand-sidebar text-white rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2">
-                      <Check className="w-3.5 h-3.5" /> Simpan Data
+                    <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-3 border border-brand-border rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 disabled:opacity-50" disabled={isSaving}>Batal</button>
+                    <button type="submit" disabled={isSaving} className="flex-1 px-4 py-3 bg-brand-sidebar text-white rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50">
+                      {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} 
+                      {isSaving ? 'Menyimpan...' : 'Simpan Data'}
                     </button>
                   </div>
                 </form>

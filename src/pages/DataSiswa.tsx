@@ -478,8 +478,9 @@ export default function DataSiswa() {
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex gap-3 shrink-0">
                  <button 
                    type="button"
+                   disabled={isSaving}
                    onClick={() => setIsModalOpen(false)}
-                   className="flex-1 bg-white text-slate-600 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest border border-slate-200 hover:bg-slate-100 transition-all"
+                   className="flex-1 bg-white text-slate-600 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest border border-slate-200 hover:bg-slate-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                  >
                    Batal
                  </button>

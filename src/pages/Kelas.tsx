@@ -59,6 +59,8 @@ export default function Kelas() {
     setIsModalOpen(true);
   };
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const autoPushKelas = async (list: ClassData[]) => {
     const url = import.meta.env.VITE_APP_URL || '';
     if (!url) return;
@@ -71,23 +73,28 @@ export default function Kelas() {
     }
   };
 
-  const handleSaveClass = (e: React.FormEvent) => {
+  const handleSaveClass = async (e: React.FormEvent) => {
     e.preventDefault();
-    let newList;
-    if (editingClass) {
-      newList = classes.map(c => c.id === editingClass.id ? { ...c, ...formData } : c);
-    } else {
-      const newClass: ClassData = {
-        id: Math.random().toString(36).substr(2, 9),
-        ...formData
-      };
-      newList = [...classes, newClass];
+    setIsSaving(true);
+    try {
+      let newList;
+      if (editingClass) {
+        newList = classes.map(c => c.id === editingClass.id ? { ...c, ...formData } : c);
+      } else {
+        const newClass: ClassData = {
+          id: Math.random().toString(36).substr(2, 9),
+          ...formData
+        };
+        newList = [...classes, newClass];
+      }
+      setClasses(newList);
+      await autoPushKelas(newList);
+      setIsModalOpen(false);
+      setEditingClass(null);
+      setFormData({ name: '', wali: '', label: 'A', siswaCount: 0 });
+    } finally {
+      setIsSaving(false);
     }
-    setClasses(newList);
-    autoPushKelas(newList);
-    setIsModalOpen(false);
-    setEditingClass(null);
-    setFormData({ name: '', wali: '', label: 'A', siswaCount: 0 });
   };
 
   const handleDuplicateClasses = () => {
@@ -688,8 +695,9 @@ export default function Kelas() {
                       />
                     </div>
                   </div>
-                  <button type="submit" className="w-full bg-brand-sidebar text-white py-3 rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] mt-4 flex items-center justify-center gap-2 italic">
-                    <Check className="w-4 h-4" /> {editingClass ? 'Simpan Perubahan' : 'Simpan Struktur Kelas'}
+                  <button type="submit" disabled={isSaving} className="w-full bg-brand-sidebar text-white py-3 rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] mt-4 flex items-center justify-center gap-2 italic disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} 
+                    {isSaving ? 'Menyimpan...' : (editingClass ? 'Simpan Perubahan' : 'Simpan Struktur Kelas')}
                   </button>
                 </form>
               </div>

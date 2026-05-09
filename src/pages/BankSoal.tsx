@@ -413,8 +413,9 @@ export default function BankSoal() {
               <div className="p-6 bg-white border-t border-slate-100 flex items-center gap-3 shrink-0">
                  <button 
                    type="button"
+                   disabled={loading}
                    onClick={() => setIsModalOpen(false)}
-                   className="px-6 py-3.5 bg-slate-100 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-colors"
+                   className="px-6 py-3.5 bg-slate-100 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                  >
                    Batal
                  </button>

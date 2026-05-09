@@ -71,6 +71,7 @@ export default function Siswa() {
   });
 
   const [loadingSheet, setLoadingSheet] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const autoPushSiswa = async (list: Student[]) => {
     const url = import.meta.env.VITE_APP_URL || '';
@@ -313,7 +314,7 @@ export default function Siswa() {
     setIsModalOpen(true);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!editingSiswa && school?.studentLimit && siswaList.length >= school.studentLimit) {
@@ -321,57 +322,62 @@ export default function Siswa() {
       return;
     }
 
-    const isAlumniStatus = formData.status === 'Lulus' || formData.status === 'Keluar';
+    setIsSaving(true);
+    try {
+      const isAlumniStatus = formData.status === 'Lulus' || formData.status === 'Keluar';
 
-    if (isAlumniStatus) {
-      if (confirm(`Apakah Anda yakin ingin memindahkan ${formData.name} ke Database Alumni? Siswa ini akan dihapus dari daftar siswa aktif.`)) {
-        const newAlumni = {
-          id: editingSiswa ? editingSiswa.id : Math.random().toString(36).substr(2, 9),
-          name: formData.name,
-          nisn: formData.nisn,
-          lulus: new Date().getFullYear().toString(),
-          program: formData.paket,
-          status: formData.status === 'Lulus' ? 'Alumni - Lulus' : 'Keluar / DO'
-        };
+      if (isAlumniStatus) {
+        if (confirm(`Apakah Anda yakin ingin memindahkan ${formData.name} ke Database Alumni? Siswa ini akan dihapus dari daftar siswa aktif.`)) {
+          const newAlumni = {
+            id: editingSiswa ? editingSiswa.id : Math.random().toString(36).substr(2, 9),
+            name: formData.name,
+            nisn: formData.nisn,
+            lulus: new Date().getFullYear().toString(),
+            program: formData.paket,
+            status: formData.status === 'Lulus' ? 'Alumni - Lulus' : 'Keluar / DO'
+          };
 
-        const savedAlumni = localStorage.getItem('school_alumni_list');
-        const alumniList = savedAlumni ? JSON.parse(savedAlumni) : [
-          { id: '1', name: 'Andri Laksana', nisn: '1234567890', lulus: '2024', program: 'Paket C', status: 'Kuliah - UNY' },
-          { id: '2', name: 'Maya Citra', nisn: '1234567891', lulus: '2023', program: 'Paket C', status: 'Bekerja - Admin' },
-          { id: '3', name: 'Rudi Tabuti', nisn: '1234567892', lulus: '2023', program: 'Paket B', status: 'Lanjut Paket C' },
-          { id: '4', name: 'Sinta Dewi', nisn: '1234567893', lulus: '2022', program: 'Paket C', status: 'Wirausaha' },
-        ];
-        
-        localStorage.setItem('school_alumni_list', JSON.stringify([...alumniList, newAlumni]));
-        
-        const newList = siswaList.filter(s => s.id !== editingSiswa.id);
-        if (editingSiswa) {
-          setSiswaList(newList);
+          const savedAlumni = localStorage.getItem('school_alumni_list');
+          const alumniList = savedAlumni ? JSON.parse(savedAlumni) : [
+            { id: '1', name: 'Andri Laksana', nisn: '1234567890', lulus: '2024', program: 'Paket C', status: 'Kuliah - UNY' },
+            { id: '2', name: 'Maya Citra', nisn: '1234567891', lulus: '2023', program: 'Paket C', status: 'Bekerja - Admin' },
+            { id: '3', name: 'Rudi Tabuti', nisn: '1234567892', lulus: '2023', program: 'Paket B', status: 'Lanjut Paket C' },
+            { id: '4', name: 'Sinta Dewi', nisn: '1234567893', lulus: '2022', program: 'Paket C', status: 'Wirausaha' },
+          ];
+          
+          localStorage.setItem('school_alumni_list', JSON.stringify([...alumniList, newAlumni]));
+          
+          const newList = siswaList.filter(s => s.id !== editingSiswa.id);
+          if (editingSiswa) {
+            setSiswaList(newList);
+          }
+          
+          alert(`Siswa ${formData.name} berhasil dipindahkan ke Database Alumni.`);
+          setIsModalOpen(false);
+          await autoPushSiswa(newList);
+          return;
         }
-        
-        alert(`Siswa ${formData.name} berhasil dipindahkan ke Database Alumni.`);
-        setIsModalOpen(false);
-        autoPushSiswa(newList);
-        return;
       }
-    }
 
-    if (editingSiswa) {
-      const newList = siswaList.map(s => s.id === editingSiswa.id ? { ...s, ...formData } : s);
-      setSiswaList(newList);
-      autoPushSiswa(newList);
-    } else {
-      const newSiswa: Student = {
-        id: Math.random().toString(36).substr(2, 9),
-        ...formData,
-        password: '12345',
-        mustChangePassword: true
-      };
-      const newList = [...siswaList, newSiswa];
-      setSiswaList(newList);
-      autoPushSiswa(newList);
+      if (editingSiswa) {
+        const newList = siswaList.map(s => s.id === editingSiswa.id ? { ...s, ...formData } : s);
+        setSiswaList(newList);
+        await autoPushSiswa(newList);
+      } else {
+        const newSiswa: Student = {
+          id: Math.random().toString(36).substr(2, 9),
+          ...formData,
+          password: '12345',
+          mustChangePassword: true
+        };
+        const newList = [...siswaList, newSiswa];
+        setSiswaList(newList);
+        await autoPushSiswa(newList);
+      }
+      setIsModalOpen(false);
+    } finally {
+      setIsSaving(false);
     }
-    setIsModalOpen(false);
   };
 
   const handleResetPassword = (id: string) => {
@@ -878,18 +884,20 @@ export default function Siswa() {
               <div className="p-6 border-t border-brand-border bg-white flex gap-3">
                 <button 
                   type="button" 
+                  disabled={isSaving}
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 px-4 py-3 border border-brand-border rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all font-bold"
+                  className="flex-1 px-4 py-3 border border-brand-border rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Batal
                 </button>
                 <button 
                   type="submit"
                   form="student-form"
-                  className="flex-1 px-4 py-3 bg-brand-sidebar text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-xl shadow-brand-sidebar/20"
+                  disabled={isSaving}
+                  className="flex-1 px-4 py-3 bg-brand-sidebar text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-xl shadow-brand-sidebar/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Check className="w-3.5 h-3.5" />
-                  Simpan Data Siswa
+                  {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  {isSaving ? 'Menyimpan...' : 'Simpan Data Siswa'}
                 </button>
               </div>
             </motion.div>
