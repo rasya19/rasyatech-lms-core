@@ -256,20 +256,6 @@ export default function Alumni() {
             <FileUp className="w-3.5 h-3.5" /> Import
           </button>
           <button 
-            onClick={handleSyncSpreadsheet}
-            disabled={loadingSheet}
-            className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-4 py-3 rounded-xl text-[10px] font-black hover:bg-emerald-200 transition-all uppercase tracking-widest italic shadow-sm border border-emerald-200 disabled:opacity-50"
-          >
-            {loadingSheet ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} Ambil
-          </button>
-          <button 
-            onClick={handlePushToSpreadsheet}
-            disabled={loadingSheet}
-            className="flex items-center gap-2 bg-brand-sidebar text-white px-4 py-3 rounded-xl text-[10px] font-black hover:bg-brand-sidebar/90 transition-all uppercase tracking-widest italic shadow-sm disabled:opacity-50"
-          >
-            <CloudUpload className="w-3.5 h-3.5" /> Simpan
-          </button>
-          <button 
             onClick={() => setIsModalOpen(true)}
             className="flex items-center gap-2 bg-brand-sidebar text-white px-6 py-3 rounded-xl text-[10px] font-black hover:bg-brand-sidebar/90 transition-all uppercase tracking-widest italic shadow-lg shadow-brand-sidebar/20"
           >

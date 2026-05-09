@@ -530,24 +530,6 @@ export default function Siswa() {
             Export
           </button>
           <button 
-            onClick={handleSyncSpreadsheet}
-            disabled={loadingSheet}
-            className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-200 transition-all shadow-sm disabled:opacity-50 border border-emerald-200"
-            title="Ambil data terbaru dari Spreadsheet"
-          >
-            {loadingSheet ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-            Ambil Cloud
-          </button>
-          <button 
-            onClick={handlePushToSpreadsheet}
-            disabled={loadingSheet}
-            className="flex items-center gap-2 bg-brand-sidebar text-white px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-brand-sidebar/90 transition-all shadow-sm disabled:opacity-50 flex-shrink-0"
-            title="Kirim data platform ini ke Spreadsheet"
-          >
-            <CloudUpload className="w-3.5 h-3.5" />
-            Simpan Cloud
-          </button>
-          <button 
             onClick={() => setIsPPDBModalOpen(true)}
             className="flex items-center gap-2 bg-brand-sidebar text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-brand-sidebar/90 transition-all shadow-sm"
           >

@@ -550,24 +550,6 @@ export default function Kelas() {
         </div>
         <div className="flex items-center gap-2">
           <button 
-            onClick={handleSyncSpreadsheet}
-            disabled={loadingSheet}
-            className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-200 transition-all shadow-sm border border-emerald-200 disabled:opacity-50"
-            title="Ambil data dari Cloud"
-          >
-            {loadingSheet ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-            Ambil
-          </button>
-          <button 
-            onClick={handlePushToSpreadsheet}
-            disabled={loadingSheet}
-            className="flex items-center gap-2 bg-brand-sidebar text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-brand-sidebar/90 transition-all shadow-sm disabled:opacity-50"
-            title="Simpan data ke Cloud"
-          >
-            <CloudUpload className="w-3.5 h-3.5" />
-            Simpan
-          </button>
-          <button 
             onClick={() => handleOpenModal()}
             className="flex items-center gap-2 bg-brand-accent text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-brand-accent/20 hover:scale-105 transition-all"
           >
