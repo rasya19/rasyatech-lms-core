@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, Plus, Edit2, Trash2, 
   Book, GraduationCap, X, ShieldCheck, 
@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { supabase } from '../lib/supabase';
 
 export interface MataPelajaranModel {
   id: string;
@@ -59,7 +60,27 @@ export default function MataPelajaran() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [guruInput, setGuruInput] = useState('');
+  const [guruList, setGuruList] = useState<{ id: string; nama: string }[]>([]);
   
+  useEffect(() => {
+    fetchGuruList();
+  }, []);
+
+  const fetchGuruList = async () => {
+    try {
+      const { data, error } = await supabase.from('profiles_guru').select('id, nama').order('nama', { ascending: true });
+      if (error && !error.message.includes('Could not find the table')) {
+        console.error('Error fetching guru:', error);
+        return;
+      }
+      if (data) {
+        setGuruList(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const [formData, setFormData] = useState<Partial<MataPelajaranModel>>({
     kode: '',
     nama: '',
@@ -362,23 +383,21 @@ export default function MataPelajaran() {
                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5"><Users className="w-3 h-3" /> Plotting Guru Pengampu</label>
                          
                          <div className="flex gap-2">
-                           <input 
-                             type="text" 
+                           <select 
                              value={guruInput}
                              onChange={e => setGuruInput(e.target.value)}
-                             onKeyDown={e => {
-                               if(e.key === 'Enter') {
-                                 e.preventDefault();
-                                 handleAddGuru();
-                               }
-                             }}
-                             placeholder="Ketik nama guru pengajar..."
                              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
-                           />
+                           >
+                              <option value="">-- Pilih Guru --</option>
+                              {guruList.map(guru => (
+                                <option key={guru.id} value={guru.nama}>{guru.nama}</option>
+                              ))}
+                           </select>
                            <button 
                              type="button" 
                              onClick={handleAddGuru}
-                             className="bg-slate-800 text-white px-4 py-3 rounded-xl text-xs font-bold hover:bg-slate-700 transition-colors"
+                             disabled={!guruInput}
+                             className="bg-slate-800 text-white px-4 py-3 rounded-xl text-xs font-bold hover:bg-slate-700 transition-colors disabled:opacity-50"
                            >
                               Tambah
                            </button>
