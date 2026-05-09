@@ -7,6 +7,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
+import * as XLSX from 'xlsx';
 
 export interface Student {
   id: string;
@@ -31,6 +32,8 @@ export default function DataSiswa() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<Partial<Student>>({
@@ -160,8 +163,57 @@ export default function DataSiswa() {
     }
   };
 
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+        const toInsert = data.map(item => ({
+          nisn: String(item.NISN || item.nisn || ''),
+          nama: item.Nama || item.nama || item.name || '',
+          class: String(item.Kelas || item.class || item.kelas || ''),
+          whatsapp: String(item.WhatsApp || item.whatsapp || item.noHp || ''),
+          status: item.Status || item.status || 'Aktif',
+          photourl: item.photourl || ''
+        })).filter(s => s.nama);
+
+        if (toInsert.length > 0) {
+          const { error } = await supabase.from('profiles_siswa').insert(toInsert);
+          if (error) throw error;
+          alert(`Berhasil mengimpor ${toInsert.length} data siswa.`);
+          fetchStudents();
+        } else {
+          alert('Tidak ada data valid yang bisa diimpor.');
+        }
+      } catch (err: any) {
+        console.error(err);
+        alert('Gagal mengimpor data: ' + err.message);
+      } finally {
+        setIsImporting(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   return (
     <div className="space-y-6">
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleImport} 
+        className="hidden" 
+        accept=".xlsx, .xls"
+      />
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 text-white p-8 rounded-3xl relative overflow-hidden group shadow-lg">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-125 transition-transform duration-700" />
@@ -177,6 +229,14 @@ export default function DataSiswa() {
         </div>
         
         <div className="relative z-10 flex flex-wrap gap-4">
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isImporting}
+            className="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600/30 transition-all shadow-lg disabled:opacity-50"
+          >
+            {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} 
+            {isImporting ? 'Mengimpor...' : 'Import Data'}
+          </button>
           <button 
             onClick={() => setIsPrinting(true)}
             className="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600/30 transition-all shadow-lg"
