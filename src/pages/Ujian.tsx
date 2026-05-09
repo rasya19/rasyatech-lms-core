@@ -1,25 +1,37 @@
-import React from 'react';
-import { ClipboardCheck, Rocket, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ClipboardCheck, Rocket, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-const MOCK_UJIAN = [
-  { id: '1', title: 'Ujian Tengah Semester - B. Indo', date: 'Mulai Hari Ini', time: 's/d Minggu (23:59)', status: 'Active', link: '/ujian/1' },
-  { id: '2', title: 'Kuis Harian - Matematika', date: 'Hari Ini', time: 'Sudah Berakhir', status: 'Completed' },
-  { id: '3', title: 'Try Out Paket C', date: '20 Mei 2026', time: '09:00 - 12:00', status: 'Locked' },
-  { id: '4', title: 'Pre-Test Menjahit', date: '01 Mei 2026', time: 'Sudah Selesai', status: 'Completed' },
-];
+import { supabase } from '../lib/supabase';
+import { cn } from '../lib/utils';
 
 export default function Ujian() {
   const navigate = useNavigate();
+  const [exams, setExams] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleStartExam = (link?: string) => {
-    if (link) {
-      if (link.startsWith('/')) {
-        navigate(link);
-      } else {
-        window.open(link, '_blank');
-      }
+  useEffect(() => {
+    fetchExams();
+  }, []);
+
+  const fetchExams = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('bank_soal')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setExams(data || []);
+    } catch (err) {
+      console.error('Error fetching exams:', err);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleStartExam = (id: string) => {
+    navigate(`/ujian/${id}`);
   };
 
   return (
@@ -31,50 +43,49 @@ export default function Ujian() {
         </div>
       </div>
 
-      <div className="grid gap-4">
-        {MOCK_UJIAN.map((u) => (
-          <div key={u.id} className="bg-white rounded-xl border border-brand-border p-5 flex items-center justify-between hover:shadow-md transition-all">
-            <div className="flex items-center gap-4">
-              <div className={cn(
-                "w-12 h-12 rounded-xl flex items-center justify-center",
-                u.status === 'Active' ? 'bg-brand-accent/10 text-brand-accent animate-pulse' : 
-                u.status === 'Upcoming' ? 'bg-slate-100 text-slate-500' :
-                u.status === 'Completed' ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-50 text-slate-300'
-              )}>
-                <ClipboardCheck className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-brand-text-main">{u.title}</h4>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{u.date}</span>
-                  <span className="text-[10px] text-brand-accent font-bold uppercase tracking-wider">• {u.time}</span>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-brand-accent" />
+        </div>
+      ) : exams.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center">
+           <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+              <ClipboardCheck className="w-8 h-8" />
+           </div>
+           <h3 className="font-bold text-slate-800">Tidak Ada Ujian</h3>
+           <p className="text-xs text-slate-500 mt-1">Saat ini belum ada jadwal ujian yang tersedia untuk Anda.</p>
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {exams.map((u) => (
+            <div key={u.id} className="bg-white rounded-xl border border-brand-border p-5 flex items-center justify-between hover:shadow-md transition-all group relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl -mr-12 -mt-12 group-hover:scale-150 transition-transform" />
+              
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="w-12 h-12 rounded-xl bg-brand-accent/10 text-brand-accent flex items-center justify-center shadow-sm">
+                  <ClipboardCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-brand-text-main">{u.nama_ujian}</h4>
+                  <div className="flex items-center gap-3 mt-1 text-[10px] font-bold uppercase tracking-wider">
+                    <span className="text-slate-500">{u.mata_pelajaran}</span>
+                    <span className="text-brand-accent">• {u.durasi} MENIT</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex items-center gap-4">
-              {u.status === 'Active' && (
+              <div className="flex items-center gap-4 relative z-10">
                 <button 
-                  onClick={() => handleStartExam(u.link)}
-                  className="flex items-center gap-2 bg-brand-accent text-white px-5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-brand-accent/90 transition-all shadow-lg shadow-brand-accent/20"
+                  onClick={() => handleStartExam(u.id)}
+                  className="flex items-center gap-2 bg-brand-accent text-white px-5 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-accent/90 transition-all shadow-lg shadow-brand-accent/20"
                 >
                   <Rocket className="w-3.5 h-3.5" /> Kerjakan Sekarang
                 </button>
-              )}
-              {u.status === 'Upcoming' && (
-                <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase italic">
-                  <AlertCircle className="w-3.5 h-3.5" /> Menunggu...
-                </div>
-              )}
-              {u.status === 'Completed' && (
-                <div className="flex items-center gap-1.5 text-emerald-500 font-bold text-[10px] uppercase">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Selesai
-                </div>
-              )}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className="bg-brand-sidebar rounded-xl p-6 text-white overflow-hidden relative group">
          <div className="relative z-10">

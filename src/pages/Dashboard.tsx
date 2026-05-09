@@ -1,130 +1,88 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, UserCheck, CheckCircle2, Clock,
   ArrowUpRight, ArrowDownRight, Activity, XCircle, AlertCircle,
-  FileText, Wallet
+  FileText, Wallet, Rocket, Trophy, Calendar
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { useSchool } from '../contexts/SchoolContext';
+import { supabase } from '../lib/supabase';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
 
-const CHART_DATA = [
-  { name: 'Jan', lunas: 4000000, menunggu: 2400000 },
-  { name: 'Feb', lunas: 3000000, menunggu: 1300000 },
-  { name: 'Mar', lunas: 2000000, menunggu: 5800000 },
-  { name: 'Apr', lunas: 2700000, menunggu: 3900000 },
-  { name: 'Mei', lunas: 1800000, menunggu: 4800000 },
-  { name: 'Jun', lunas: 2300000, menunggu: 3800000 },
-  { name: 'Jul', lunas: 3400000, menunggu: 4300000 },
-];
-
-const RECENT_ACTIVITIES = [
-  {
-    id: 1,
-    user: 'Sistem',
-    action: 'Pendaftaran Siswa Baru - Budi Santoso',
-    time: '2 menit yang lalu',
-    icon: Users,
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-500/20'
-  },
-  {
-    id: 2,
-    user: 'Admin Ismanto',
-    action: 'Memperbarui data Guru Matematika',
-    time: '15 menit yang lalu',
-    icon: UserCheck,
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-500/20'
-  },
-  {
-    id: 3,
-    user: 'System',
-    action: 'Generate Tagihan SPP Bulan ini',
-    time: '1 jam yang lalu',
-    icon: FileText,
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-500/20'
-  },
-  {
-    id: 4,
-    user: 'Siswa',
-    action: 'Siti Aminah melakukan pembayaran lunas',
-    time: '3 jam yang lalu',
-    icon: Wallet,
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-500/20'
-  }
-];
-
-const TRANSAKSI_TERAKHIR = [
-  { id: 'TRX-001', nama: 'Budi Santoso', nominal: 'Rp 250.000', status: 'Lunas' },
-  { id: 'TRX-002', nama: 'Siti Aminah', nominal: 'Rp 250.000', status: 'Menunggu' },
-  { id: 'TRX-003', nama: 'Ahmad Yani', nominal: 'Rp 500.000', status: 'Lunas' },
-  { id: 'TRX-004', nama: 'Joko Widodo', nominal: 'Rp 150.000', status: 'Lunas' },
-  { id: 'TRX-005', nama: 'Ratna Maimunah', nominal: 'Rp 250.000', status: 'Pending' },
-];
-
 export default function Dashboard() {
   const { school } = useSchool();
-  const adminName = localStorage.getItem('adminName') || 'Ismanto';
   const userRole = localStorage.getItem('userRole') || 'Siswa';
+  const adminName = localStorage.getItem('adminName') || 'Ismanto';
+  const studentName = localStorage.getItem('studentName') || 'Budi Santoso';
+  const studentId = localStorage.getItem('studentId');
+
+  const [studentResults, setStudentResults] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>({
+    totalSiswa: '1,245',
+    totalGuru: '48',
+    mapelAktif: '12',
+    tugasSelesai: '8/10'
+  });
+
+  useEffect(() => {
+    if (userRole === 'Siswa' && studentId) {
+      fetchStudentDashboardData();
+    }
+  }, [userRole, studentId]);
+
+  const fetchStudentDashboardData = async () => {
+    try {
+      // Fetch recent exam results
+      const { data, error } = await supabase
+        .from('hasil_ujian')
+        .select(`
+          *,
+          bank_soal (nama_ujian, mata_pelajaran)
+        `)
+        .eq('student_id', studentId)
+        .order('end_time', { ascending: false })
+        .limit(5);
+
+      if (!error && data) {
+        setStudentResults(data);
+        setStats(prev => ({
+          ...prev,
+          tugasSelesai: `${data.length}`
+        }));
+      }
+    } catch (err) {
+      console.error('Error fetching student dashboard:', err);
+    }
+  };
 
   const isExpired = school?.expiryDate ? new Date(school.expiryDate) < new Date() : false;
   const isExpiringSoon = school?.expiryDate ? (new Date(school.expiryDate).getTime() - new Date().getTime()) < (7 * 24 * 60 * 60 * 1000) : false;
 
   return (
     <div className="space-y-6 max-w-6xl p-6 bg-slate-950 min-h-screen text-slate-100 rounded-3xl mt-4">
-      {/* Expiry Warning */}
-      {isExpired ? (
-        <div className="bg-red-900/50 text-red-100 p-6 rounded-3xl flex items-center justify-between gap-6 border border-red-500/50">
-           <div className="flex items-center gap-4">
-              <div className="p-3 bg-red-500/20 rounded-2xl">
-                 <XCircle className="w-8 h-8 text-red-400" />
-              </div>
-              <div>
-                 <h3 className="text-lg font-black uppercase italic leading-tight text-red-400">Masa Aktif Berakhir!</h3>
-                 <p className="text-xs font-bold text-red-200/80 italic mt-1">Akses dashboard Anda telah dibatasi. Segera hubungi pusat untuk perpanjangan.</p>
-              </div>
-           </div>
-           <a href="https://wa.me/6285225025555" target="_blank" className="bg-red-500 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-600 transition-all italic">Layanan Pusat</a>
-        </div>
-      ) : isExpiringSoon ? (
-        <div className="bg-orange-900/50 text-orange-100 p-5 rounded-3xl flex items-center justify-between gap-4 border border-orange-500/50">
-           <div className="flex items-center gap-4">
-              <Clock className="w-6 h-6 text-orange-400 animate-pulse" />
-              <div>
-                 <h3 className="text-xs font-black uppercase italic leading-none text-orange-400">Peringatan Masa Aktif</h3>
-                 <p className="text-[10px] font-bold text-orange-200/80 italic mt-1">Masa aktif sekolah akan berakhir pada {school?.expiryDate}. Segera perpanjang layanan Anda.</p>
-              </div>
-           </div>
-           <a href="https://wa.me/6285225025555" target="_blank" className="bg-orange-500 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest italic shrink-0 hover:bg-orange-600 transition-colors">Beli Paket</a>
-        </div>
-      ) : null}
-
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-2">
         <div>
-          <h2 className="text-3xl font-black text-slate-50 tracking-tight">Halo, {userRole === 'Admin' ? 'Admin ' + adminName : adminName}!</h2>
+          <h2 className="text-3xl font-black text-slate-50 tracking-tight">Halo, {userRole === 'Admin' ? adminName : studentName}!</h2>
           <p className="text-sm font-medium text-emerald-400 mt-1 uppercase tracking-widest">Selamat Datang Kembali.</p>
         </div>
       </div>
 
-      {/* Compact Stat Cards */}
+      {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'TOTAL SISWA', value: '1,245', icon: Users, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
-          { label: 'TOTAL GURU', value: '48', icon: UserCheck, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
+          { label: 'TOTAL SISWA', value: stats.totalSiswa, icon: Users, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
+          { label: 'TOTAL GURU', value: stats.totalGuru, icon: UserCheck, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
           ...(userRole === 'Admin' ? [
             { label: 'SALDO MASUK', value: 'Rp 45.5M', icon: Wallet, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
             { label: 'TAGIHAN PENDING', value: 'Rp 12.3M', icon: Clock, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' }
           ] : [
-            { label: 'MAPEL AKTIF', value: '12', icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
-            { label: 'TUGAS SELESAI', value: '8/10', icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' }
+            { label: 'MAPEL AKTIF', value: stats.mapelAktif, icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
+            { label: 'UJIAN SELESAI', value: stats.tugasSelesai, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' }
           ])
         ].map((stat, i) => (
           <div
@@ -144,117 +102,70 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className={cn("grid gap-6", userRole === 'Admin' ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1")}>
-        {/* Chart Section - Only for Admin */}
-        {userRole === 'Admin' && (
-          <div className="lg:col-span-2 bg-slate-900/50 p-6 rounded-3xl border border-slate-800 flex flex-col">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-sm font-black text-slate-50 uppercase tracking-widest">Tren Pembayaran</h3>
-                <p className="text-xs font-medium text-emerald-400/60 mt-1">Statistik Lunas vs Menunggu (6 Bulan Terakhir)</p>
-              </div>
-              <select className="bg-slate-800 border border-slate-700 text-xs font-bold text-slate-300 px-3 py-2 rounded-xl outline-none focus:border-emerald-500/50">
-                <option>Tahun 2024</option>
-                <option>Tahun 2023</option>
-              </select>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {userRole === 'Siswa' ? (
+          <>
+            {/* Student Results List */}
+            <div className="lg:col-span-2 bg-slate-900/50 p-6 rounded-3xl border border-slate-800">
+               <div className="flex justify-between items-center mb-6">
+                 <h3 className="text-sm font-black text-slate-50 uppercase tracking-widest">Aktivitas Ujian Terakhir</h3>
+                 <Link to="/dashboard/ujian" className="text-[10px] font-black text-emerald-400 uppercase tracking-widest hover:underline">Lihat Semua</Link>
+               </div>
+               
+               <div className="space-y-4">
+                 {studentResults.length === 0 ? (
+                    <div className="py-10 text-center text-slate-500 italic text-xs">Belum ada data ujian.</div>
+                 ) : (
+                    studentResults.map((res) => (
+                      <div key={res.id} className="flex items-center justify-between p-4 bg-slate-800/30 rounded-2xl border border-slate-800/50 hover:border-emerald-500/30 transition-all">
+                        <div className="flex items-center gap-4">
+                          <div className={cn(
+                            "w-12 h-12 rounded-xl flex items-center justify-center",
+                            res.nilai >= 75 ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"
+                          )}>
+                            <Trophy className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-white uppercase italic tracking-tight">{res.bank_soal?.nama_ujian}</h4>
+                            <div className="flex items-center gap-3 mt-1 text-[10px] font-bold text-slate-500 uppercase">
+                              <span>{res.bank_soal?.mata_pelajaran}</span>
+                              <span>• {new Date(res.end_time).toLocaleDateString('id-ID')}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-black text-white italic">{res.nilai}</p>
+                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">SKOR AKHIR</p>
+                        </div>
+                      </div>
+                    ))
+                 )}
+               </div>
             </div>
-            
-            <div className="flex-1 min-h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorLunas" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorMenunggu" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#64748b" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#64748b" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} 
-                    tickFormatter={(val) => `Rp ${val/1000000}M`} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '16px', border: '1px solid #1e293b', backgroundColor: '#0f172a', fontSize: '12px', fontWeight: 'bold', color: '#f8fafc' }}
-                  />
-                  <Area type="monotone" dataKey="lunas" name="Lunas" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorLunas)" />
-                  <Area type="monotone" dataKey="menunggu" name="Menunggu" stroke="#64748b" strokeWidth={3} fillOpacity={1} fill="url(#colorMenunggu)" />
-                </AreaChart>
-              </ResponsiveContainer>
+
+            {/* Next Exam Card */}
+            <div className="bg-emerald-600 p-8 rounded-3xl relative overflow-hidden group shadow-2xl shadow-emerald-600/20">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
+               <div className="relative z-10">
+                 <Rocket className="w-10 h-10 text-white mb-6 animate-bounce" />
+                 <h3 className="text-xl font-black text-white uppercase italic tracking-tighter leading-tight mb-2">SIAP UNTUK<br/>UJIAN LANJUTAN?</h3>
+                 <p className="text-xs font-bold text-emerald-100 italic opacity-80 mb-8">Kerjakan sisa tugas dan ujian harian Anda hari ini untuk meningkatkan skor raport.</p>
+                 <Link 
+                   to="/dashboard/ujian" 
+                   className="inline-flex items-center gap-2 bg-slate-950 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all"
+                 >
+                   Ikut Ujian Sekarang <ArrowUpRight className="w-4 h-4" />
+                 </Link>
+               </div>
             </div>
+          </>
+        ) : (
+          /* Admin View (simplified version since we're focusing on Student) */
+          <div className="lg:col-span-3">
+             <p className="text-slate-500 italic text-xs">Menu Administrasi Sekolah lengkap tersedia di sidebar.</p>
           </div>
         )}
-
-        {/* Recent Activity */}
-        <div className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-sm font-black text-slate-50 uppercase tracking-widest">Aktivitas Terbaru</h3>
-          </div>
-          
-          <div className="space-y-6 flex-1">
-            {RECENT_ACTIVITIES.filter(a => userRole === 'Admin' ? true : a.action.indexOf('pembayaran') === -1 && a.action.indexOf('Tagihan') === -1).map((activity, idx, arr) => (
-              <div key={activity.id} className="flex gap-4 relative group">
-                 {/* Timeline Line */}
-                 {idx !== arr.length - 1 && (
-                   <div className="absolute left-[19px] top-10 bottom-[-24px] w-[1px] bg-slate-800" />
-                 )}
-                 
-                 <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 z-10 border border-slate-800 shadow-sm", activity.bg)}>
-                    <activity.icon className={cn("w-4 h-4", activity.color)} />
-                 </div>
-                 
-                 <div className="pt-1">
-                    <p className="text-xs font-bold text-emerald-400">
-                      {activity.user}
-                    </p>
-                    <p className="text-[11px] font-medium text-slate-400 mt-0.5">{activity.action}</p>
-                    <p className="text-[9px] font-bold text-slate-500 mt-2 uppercase tracking-widest">{activity.time}</p>
-                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
-
-      {/* Transaksi Terakhir - Only for Admin */}
-      {userRole === 'Admin' && (
-        <div className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800">
-          <h3 className="text-sm font-black text-slate-50 uppercase tracking-widest mb-6">Transaksi Terakhir</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800">
-                  <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID TRX</th>
-                  <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nama</th>
-                  <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nominal</th>
-                  <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800">
-                {TRANSAKSI_TERAKHIR.map((trx, idx) => (
-                  <tr key={idx} className="hover:bg-slate-800/50 transition-colors">
-                    <td className="px-4 py-4 text-xs font-mono text-slate-500">{trx.id}</td>
-                    <td className="px-4 py-4 text-sm font-bold text-slate-200">{trx.nama}</td>
-                    <td className="px-4 py-4 text-xs font-bold text-emerald-400">{trx.nominal}</td>
-                    <td className="px-4 py-4 text-right">
-                      <span className={cn(
-                        "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider",
-                        trx.status === 'Lunas' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : 
-                        trx.status === 'Menunggu' ? "bg-slate-800 text-slate-300 border border-slate-700" :
-                        "bg-orange-500/10 text-orange-400 border border-orange-500/20"
-                      )}>
-                        {trx.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

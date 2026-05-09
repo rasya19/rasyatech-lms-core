@@ -1,64 +1,142 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Clock, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Flag, MonitorPlay, Check, Rocket } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Flag, MonitorPlay, Check, Rocket, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
+import { supabase } from '../lib/supabase';
 
-// Interfaces for mock data
-interface Opsi {
-  id: string;
-  teks: string;
-}
-
+// Interfaces for real data
 interface Soal {
   id: string;
-  no: number;
+  bank_soal_id: string;
   pertanyaan: string;
-  opsi: Opsi[];
+  opsi_a: string;
+  opsi_b: string;
+  opsi_c: string;
+  opsi_d: string;
+  opsi_e: string;
+  kunci_jawaban: string;
 }
 
-// Generate 50 mock questions
-const MOCK_SOAL: Soal[] = Array.from({ length: 50 }).map((_, i) => ({
-  id: `S${i + 1}`,
-  no: i + 1,
-  pertanyaan: `Ini adalah contoh pertanyaan untuk soal nomor ${i + 1}. Pilihlah jawaban yang paling tepat menurut Anda dari opsi di bawah ini.`,
-  opsi: [
-    { id: 'A', teks: `Pilihan Jawaban A untuk soal ${i + 1}` },
-    { id: 'B', teks: `Pilihan Jawaban B untuk soal ${i + 1}` },
-    { id: 'C', teks: `Pilihan Jawaban C untuk soal ${i + 1}` },
-    { id: 'D', teks: `Pilihan Jawaban D untuk soal ${i + 1}` },
-    { id: 'E', teks: `Pilihan Jawaban E untuk soal ${i + 1}` },
-  ],
-}));
+interface BankSoal {
+  id: string;
+  nama_ujian: string;
+  mata_pelajaran: string;
+  durasi: number;
+}
 
 export default function UjianSiswa() {
-  const { id } = useParams();
+  const { id: bankSoalId } = useParams();
   const navigate = useNavigate();
   
+  const [bankSoal, setBankSoal] = useState<BankSoal | null>(null);
+  const [soalList, setSoalList] = useState<Soal[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [raguRagu, setRaguRagu] = useState<Record<number, boolean>>({});
-  const [timeLeft, setTimeLeft] = useState(120 * 60); // 120 minutes in seconds
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [raguRagu, setRaguRagu] = useState<Record<string, boolean>>({});
+  const [timeLeft, setTimeLeft] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const activeSoal = MOCK_SOAL[currentIdx];
+  const studentId = localStorage.getItem('studentId') || 'demo-siswa-1';
+  const studentName = localStorage.getItem('studentName') || 'Budi Santoso';
+  const studentNisn = localStorage.getItem('studentNisn') || '19201001';
+
+  // Load Initial Data
+  useEffect(() => {
+    if (bankSoalId) {
+      loadExamData();
+    }
+  }, [bankSoalId]);
+
+  const loadExamData = async () => {
+    try {
+      setIsLoading(true);
+      // 1. Fetch Bank Soal Metadata
+      const { data: bData, error: bError } = await supabase
+        .from('bank_soal')
+        .select('*')
+        .eq('id', bankSoalId)
+        .single();
+      
+      if (bError) throw bError;
+      setBankSoal(bData);
+      setTimeLeft(bData.durasi * 60);
+
+      // 2. Fetch Soal List
+      const { data: sData, error: sError } = await supabase
+        .from('butir_soal')
+        .select('*')
+        .eq('bank_soal_id', bankSoalId)
+        .order('id', { ascending: true });
+
+      if (sError) throw sError;
+      setSoalList(sData || []);
+
+      // 3. Fetch Existing Answers (Load Save State)
+      const { data: aData, error: aError } = await supabase
+        .from('jawaban_siswa')
+        .select('*')
+        .eq('student_id', studentId)
+        .eq('bank_soal_id', bankSoalId);
+
+      if (!aError && aData) {
+        const existingAnswers: Record<string, string> = {};
+        const existingRagu: Record<string, boolean> = {};
+        aData.forEach(ans => {
+          existingAnswers[ans.soal_id] = ans.jawaban;
+          existingRagu[ans.soal_id] = ans.is_ragu;
+        });
+        setAnswers(existingAnswers);
+        setRaguRagu(existingRagu);
+      }
+
+    } catch (err) {
+      console.error('Error loading exam data:', err);
+      alert('Gagal memuat data ujian. Silakan coba lagi.');
+      navigate(-1);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const activeSoal = soalList[currentIdx];
+
+  // Auto Save Logic
+  const autoSave = async (soalId: string, jawaban: string, isRagu: boolean) => {
+    try {
+      await supabase
+        .from('jawaban_siswa')
+        .upsert({
+          student_id: studentId,
+          bank_soal_id: bankSoalId,
+          soal_id: soalId,
+          jawaban: jawaban,
+          is_ragu: isRagu,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'student_id,soal_id' });
+    } catch (err) {
+      console.error('Error auto-saving:', err);
+    }
+  };
 
   // Timer Countdown
   useEffect(() => {
-    if (!hasStarted) return;
+    if (!hasStarted || timeLeft <= 0) return;
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timer);
-          // Auto submit logic
+          handleSubmit();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [hasStarted]);
+  }, [hasStarted, timeLeft]);
 
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -71,18 +149,24 @@ export default function UjianSiswa() {
   };
 
   const handleAnswer = (opsiId: string) => {
-    setAnswers({ ...answers, [activeSoal.no]: opsiId });
-    if (raguRagu[activeSoal.no]) {
-      setRaguRagu({ ...raguRagu, [activeSoal.no]: false });
-    }
+    if (!activeSoal) return;
+    const newAnswers = { ...answers, [activeSoal.id]: opsiId };
+    setAnswers(newAnswers);
+    
+    // Auto reset ragu if answered (logic decision)
+    const isRagu = raguRagu[activeSoal.id] || false;
+    autoSave(activeSoal.id, opsiId, isRagu);
   };
 
   const toggleRagu = () => {
-    setRaguRagu({ ...raguRagu, [activeSoal.no]: !raguRagu[activeSoal.no] });
+    if (!activeSoal) return;
+    const newValue = !raguRagu[activeSoal.id];
+    setRaguRagu({ ...raguRagu, [activeSoal.id]: newValue });
+    autoSave(activeSoal.id, answers[activeSoal.id] || '', newValue);
   };
 
   const handleNext = () => {
-    if (currentIdx < MOCK_SOAL.length - 1) {
+    if (currentIdx < soalList.length - 1) {
       setCurrentIdx(currentIdx + 1);
     }
   };
@@ -122,37 +206,127 @@ export default function UjianSiswa() {
     return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
   }, []);
 
-  const handleSubmit = () => {
-    if (window.confirm('Yakin ingin menyelesaikan ujian? Anda tidak dapat kembali lagi.')) {
-      // Logic for submit
-      alert('Ujian berhasil diselesaikan!');
+  // Prevent leaving fullscreen or closing tab
+  useEffect(() => {
+    if (!hasStarted) return;
+    
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasStarted]);
+
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    
+    if (timeLeft > 0) {
+      if (!window.confirm('Yakin ingin menyelesaikan ujian? Anda tidak dapat kembali lagi.')) {
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
+    try {
+      // 1. Logic Scoring
+      let correctCount = 0;
+      soalList.forEach((soal) => {
+        if (answers[soal.id] === soal.kunci_jawaban) {
+          correctCount++;
+        }
+      });
+
+      const totalSoal = soalList.length;
+      const score = totalSoal > 0 ? (correctCount / totalSoal) * 100 : 0;
+
+      // 2. Save result to database
+      const { error } = await supabase
+        .from('hasil_ujian')
+        .insert([{
+          student_id: studentId,
+          bank_soal_id: bankSoalId,
+          nilai: Math.round(score),
+          total_benar: correctCount,
+          total_soal: totalSoal,
+          end_time: new Date().toISOString()
+        }]);
+
+      if (error) throw error;
+
+      alert(`Ujian selesai! Skor Anda: ${Math.round(score)}`);
+      
       if (document.fullscreenElement && document.exitFullscreen) {
          document.exitFullscreen();
       }
-      navigate(-1);
+      navigate('/dashboard/ujian');
+    } catch (err) {
+      console.error('Error submitting exam:', err);
+      alert('Gagal menyimpan hasil ujian. Hubungi pengawas.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-emerald-400 mb-4" />
+        <p className="text-[10px] font-black uppercase text-emerald-400 tracking-widest animate-pulse">Menyiapkan Soal Ujian...</p>
+      </div>
+    );
+  }
 
   // Pre-Start Overlay
   if (!hasStarted) {
     return (
       <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6 text-center">
-         <div className="max-w-md w-full bg-slate-800 p-10 rounded-[3rem] border border-slate-700 shadow-2xl">
-            <div className="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-8 border border-emerald-500/30">
+         <div className="max-w-md w-full bg-slate-800 p-10 rounded-[3rem] border border-slate-700 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-16 -mt-16" />
+            
+            <div className="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-8 border border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
                <MonitorPlay className="w-10 h-10 ml-1" />
             </div>
-            <h1 className="text-3xl font-black italic tracking-tighter mb-4">Persiapan Ujian</h1>
-            <p className="text-sm text-slate-400 mb-10 font-medium">Ujian ini mewajibkan mode layar penuh (Full Screen) untuk mencegah kecurangan. Klik tombol di bawah untuk masuk ke mode layar penuh dan memulai waktu Anda.</p>
+            <h1 className="text-3xl font-black italic tracking-tighter mb-4 uppercase">{bankSoal?.nama_ujian}</h1>
+            <p className="text-sm text-slate-400 mb-4 font-medium uppercase tracking-widest">{bankSoal?.mata_pelajaran}</p>
+            <div className="flex items-center justify-center gap-6 mb-10">
+               <div className="text-center">
+                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">Durasi</p>
+                  <p className="text-sm font-black text-white">{bankSoal?.durasi} Menit</p>
+               </div>
+               <div className="w-px h-8 bg-slate-700" />
+               <div className="text-center">
+                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">Jumlah Soal</p>
+                  <p className="text-sm font-black text-white">{soalList.length} Butir</p>
+               </div>
+            </div>
             
+            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700 mb-8 text-left">
+               <h4 className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-3 italic">Peringatan Anti-Cheat:</h4>
+               <ul className="space-y-2">
+                 <li className="flex items-center gap-2 text-[10px] font-bold text-slate-400 italic">
+                   <Check className="w-3 h-3 text-emerald-500" /> Mode Layar Penuh akan diaktifkan
+                 </li>
+                 <li className="flex items-center gap-2 text-[10px] font-bold text-slate-400 italic">
+                   <Check className="w-3 h-3 text-emerald-500" /> Terdeteksi pindah Tab = Diskualifikasi
+                 </li>
+                 <li className="flex items-center gap-2 text-[10px] font-bold text-slate-400 italic">
+                   <Check className="w-3 h-3 text-emerald-500" /> Fitur Auto-Save aktif otomatis
+                 </li>
+               </ul>
+            </div>
+
             <button 
               onClick={startExam}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-3"
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-3 relative group overflow-hidden"
             >
-              <Rocket className="w-5 h-5" /> Mulai Ujian Sekarang
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+              <Rocket className="w-5 h-5 relative z-10" /> <span className="relative z-10">Mulai Ujian Sekarang</span>
             </button>
             <button 
               onClick={() => navigate(-1)}
-              className="w-full mt-4 text-slate-400 hover:text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all"
+              className="w-full mt-4 text-slate-400 hover:text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] transition-all"
             >
               Kembali
             </button>
@@ -164,27 +338,27 @@ export default function UjianSiswa() {
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200 flex flex-col font-sans select-none">
       {/* Header */}
-      <header className="bg-slate-950 border-b border-emerald-900 h-16 shrink-0 flex items-center justify-between px-6 sticky top-0 z-50">
+      <header className="bg-slate-950 border-b border-emerald-900/50 h-16 shrink-0 flex items-center justify-between px-6 sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center border border-emerald-500/30">
             <MonitorPlay className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
-            <h1 className="text-sm font-black uppercase tracking-widest text-white leading-tight">Ujian Akhir Semester</h1>
-            <p className="text-[10px] uppercase font-bold tracking-widest text-emerald-400/80">Ilmu Pengetahuan Alam - XII IPA</p>
+            <h1 className="text-sm font-black uppercase tracking-widest text-white leading-tight">{bankSoal?.nama_ujian}</h1>
+            <p className="text-[10px] uppercase font-bold tracking-widest text-emerald-400/80">{bankSoal?.mata_pelajaran}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-6">
-          <div className="text-right">
+          <div className="text-right hidden sm:block">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Peserta Ujian</p>
-            <p className="text-sm font-bold text-white">Budi Santoso (19201001)</p>
+            <p className="text-sm font-bold text-white uppercase italic">{studentName} ({studentNisn})</p>
           </div>
 
-          <div className="h-10 w-px bg-slate-800" />
+          <div className="h-10 w-px bg-slate-800 hidden sm:block" />
 
           <div className={cn(
-            "flex items-center gap-3 px-4 py-2 rounded-xl border text-xl font-mono font-black",
+            "flex items-center gap-3 px-4 py-2 rounded-xl border text-xl font-mono font-black shadow-[0_0_20px_rgba(16,185,129,0.1)]",
             timeLeft < 300 
               ? "bg-red-500/10 text-red-400 border-red-500/30 animate-pulse" 
               : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
@@ -195,8 +369,7 @@ export default function UjianSiswa() {
 
           <button 
             onClick={toggleFullscreen}
-            className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-400 transition-colors tooltip tooltip-left"
-            data-tip="Toggle Fullscreen"
+            className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-400 transition-colors"
           >
             <MonitorPlay className="w-5 h-5" />
           </button>
@@ -211,72 +384,82 @@ export default function UjianSiswa() {
           <div className="max-w-4xl w-full mx-auto pb-32">
             
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-black text-white">Soal Nomor {activeSoal.no}</h2>
-              <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border bg-slate-800 text-slate-400 border-slate-700">
-                Pilihan Ganda
+              <h2 className="text-2xl font-black text-white italic">Soal Nomor {currentIdx + 1}</h2>
+              <span className="text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border bg-slate-800/50 text-slate-400 border-slate-700 italic">
+                Sisa: {soalList.length - currentIdx - 1} Soal lagi
               </span>
             </div>
 
-            <div className="text-lg md:text-xl font-medium text-slate-300 leading-relaxed mb-10">
-              {activeSoal.pertanyaan}
-            </div>
+            {activeSoal && (
+              <>
+                <div className="text-lg md:text-xl font-bold text-slate-200 leading-relaxed mb-10 bg-slate-800/20 p-8 rounded-[2rem] border border-slate-800/50">
+                  {activeSoal.pertanyaan}
+                </div>
 
-            <div className="space-y-4">
-              {activeSoal.opsi.map((opsi) => {
-                const isSelected = answers[activeSoal.no] === opsi.id;
-                return (
-                  <label 
-                    key={opsi.id}
-                    className={cn(
-                      "flex items-start gap-5 p-5 rounded-2xl border-2 transition-all cursor-pointer group",
-                      isSelected 
-                        ? "bg-emerald-500/10 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.15)]" 
-                        : "bg-slate-800/50 border-slate-700 hover:border-slate-600 hover:bg-slate-800"
-                    )}
-                  >
-                    <input 
-                      type="radio" 
-                      name={`soal-${activeSoal.no}`}
-                      value={opsi.id}
-                      checked={isSelected}
-                      onChange={() => handleAnswer(opsi.id)}
-                      className="peer sr-only"
-                    />
-                    <div className={cn(
-                      "w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all text-sm font-black",
-                      isSelected 
-                        ? "bg-emerald-500 border-emerald-500 text-white" 
-                        : "border-slate-500 text-slate-400 group-hover:border-slate-400"
-                    )}>
-                      {isSelected ? <Check className="w-4 h-4" /> : opsi.id}
-                    </div>
-                    <div className={cn(
-                      "text-base md:text-lg pt-1 transition-colors",
-                      isSelected ? "text-emerald-100 font-bold" : "text-slate-300 font-medium"
-                    )}>
-                      {opsi.teks}
-                    </div>
-                  </label>
-                )
-              })}
-            </div>
+                <div className="grid grid-cols-1 gap-4">
+                  {[
+                    { id: 'A', teks: activeSoal.opsi_a },
+                    { id: 'B', teks: activeSoal.opsi_b },
+                    { id: 'C', teks: activeSoal.opsi_c },
+                    { id: 'D', teks: activeSoal.opsi_d },
+                    { id: 'E', teks: activeSoal.opsi_e },
+                  ].filter(o => o.teks).map((opsi) => {
+                    const isSelected = answers[activeSoal.id] === opsi.id;
+                    return (
+                      <label 
+                        key={opsi.id}
+                        className={cn(
+                          "flex items-start gap-5 p-6 rounded-2xl border-2 transition-all cursor-pointer group relative overflow-hidden",
+                          isSelected 
+                            ? "bg-emerald-500/10 border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.1)]" 
+                            : "bg-slate-800/50 border-slate-800 hover:border-slate-700 hover:bg-slate-800"
+                        )}
+                      >
+                        <input 
+                          type="radio" 
+                          name={`soal-${activeSoal.id}`}
+                          value={opsi.id}
+                          checked={isSelected}
+                          onChange={() => handleAnswer(opsi.id)}
+                          className="peer sr-only"
+                        />
+                        <div className={cn(
+                          "w-10 h-10 rounded-xl border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all text-sm font-black",
+                          isSelected 
+                            ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20" 
+                            : "border-slate-700 text-slate-500 group-hover:border-slate-600 group-hover:text-slate-400"
+                        )}>
+                          {isSelected ? <Check className="w-5 h-5" /> : opsi.id}
+                        </div>
+                        <div className={cn(
+                          "text-base md:text-lg pt-2 transition-colors flex-1",
+                          isSelected ? "text-emerald-50 font-black italic" : "text-slate-400 font-bold group-hover:text-slate-300"
+                        )}>
+                          {opsi.teks}
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
+              </>
+            )}
           </div>
         </main>
 
         {/* Right Area - Grid Navigation */}
-        <aside className="w-full lg:w-80 shrink-0 bg-slate-950 border-t lg:border-t-0 lg:border-l border-emerald-900/50 flex flex-col h-[300px] lg:h-auto">
-          <div className="p-4 border-b border-emerald-900/50 bg-slate-900/50 flex items-center justify-between">
-            <h3 className="text-xs font-black text-slate-300 uppercase tracking-widest">Navigasi Soal</h3>
-            <div className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-md">
-              {Object.keys(answers).length} / {MOCK_SOAL.length} Terjawab
+        <aside className="w-full lg:w-80 shrink-0 bg-slate-950 border-t lg:border-t-0 lg:border-l border-emerald-900/30 flex flex-col h-[300px] lg:h-auto overflow-hidden">
+          <div className="p-5 border-b border-emerald-900/30 bg-slate-900/50 flex items-center justify-between">
+            <h3 className="text-xs font-black text-slate-300 uppercase tracking-widest italic">Peta Navigasi</h3>
+            <div className="text-[10px] font-black text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full border border-emerald-400/20">
+              {Object.keys(answers).length} / {soalList.length} Terjawab
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 hide-scrollbar">
-            <div className="grid grid-cols-5 gap-2">
-              {MOCK_SOAL.map((s, idx) => {
-                const isAnswered = !!answers[s.no];
-                const isRagu = !!raguRagu[s.no];
+          <div className="flex-1 overflow-y-auto p-5 custom-scrollbar hide-scrollbar">
+            <div className="grid grid-cols-5 gap-3">
+              {soalList.map((s, idx) => {
+                const isAnswered = !!answers[s.id];
+                const isRagu = !!raguRagu[s.id];
                 const isActive = currentIdx === idx;
 
                 return (
@@ -284,31 +467,30 @@ export default function UjianSiswa() {
                     key={s.id}
                     onClick={() => jumpTo(idx)}
                     className={cn(
-                      "aspect-square rounded-xl flex items-center justify-center text-xs font-black relative overflow-hidden transition-all",
-                      isActive && !isAnswered && !isRagu ? "bg-blue-600 text-white ring-2 ring-blue-400 ring-offset-2 ring-offset-slate-950" : "",
-                      isAnswered && !isRagu ? "bg-emerald-500 text-white" : "",
-                      isRagu ? "bg-amber-500 text-white" : "",
-                      !isAnswered && !isRagu && !isActive ? "bg-slate-800 text-slate-400 hover:bg-slate-700" : "",
-                      isActive && (isAnswered || isRagu) ? "ring-2 ring-white ring-offset-2 ring-offset-slate-950" : ""
+                      "aspect-square rounded-xl flex items-center justify-center text-xs font-black relative overflow-hidden transition-all shadow-sm",
+                      isActive && !isAnswered && !isRagu ? "bg-blue-600 text-white ring-2 ring-blue-400 ring-offset-2 ring-offset-slate-950 scale-110 z-10" : "",
+                      isAnswered && !isRagu ? "bg-emerald-500 text-white shadow-emerald-500/20" : "",
+                      isRagu ? "bg-amber-500 text-white shadow-amber-500/20" : "",
+                      !isAnswered && !isRagu && !isActive ? "bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-slate-300" : "",
+                      isActive && (isAnswered || isRagu) ? "ring-2 ring-white ring-offset-2 ring-offset-slate-950 scale-110 z-10" : ""
                     )}
                   >
-                    {s.no}
-                    {/* Small dot for answered option if we want to show it, or keep it clean */}
+                    {idx + 1}
                   </button>
                 )
               })}
             </div>
           </div>
           
-          <div className="p-4 border-t border-emerald-900/50 bg-slate-900/50 space-y-2">
-            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
-              <div className="w-3 h-3 rounded bg-emerald-500" /> Sudah Dijawab
+          <div className="p-6 border-t border-emerald-900/30 bg-slate-900/50 space-y-3">
+            <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-500 tracking-widest italic">
+              <div className="w-4 h-4 rounded-md bg-emerald-500 shadow-lg shadow-emerald-500/20" /> Sudah Dijawab
             </div>
-            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
-              <div className="w-3 h-3 rounded bg-amber-500" /> Ragu-ragu
+            <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-500 tracking-widest italic">
+              <div className="w-4 h-4 rounded-md bg-amber-500 shadow-lg shadow-amber-500/20" /> Ragu-ragu
             </div>
-            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
-              <div className="w-3 h-3 rounded border border-slate-700 bg-slate-800" /> Belum Dijawab
+            <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-500 tracking-widest italic">
+              <div className="w-4 h-4 rounded-md border border-slate-700 bg-slate-800 shadow-lg shadow-black/20" /> Belum Dijawab
             </div>
           </div>
         </aside>
@@ -316,43 +498,49 @@ export default function UjianSiswa() {
       </div>
 
       {/* Footer Navigation */}
-      <footer className="bg-slate-950 border-t border-emerald-900 h-20 shrink-0 flex items-center justify-between px-6 lg:px-10 z-50">
-        <button
-          onClick={handlePrev}
-          disabled={currentIdx === 0}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          <ChevronLeft className="w-4 h-4" /> Soal Sebelumnya
-        </button>
+      <footer className="bg-slate-950 border-t border-emerald-900/50 h-24 shrink-0 flex items-center justify-between px-6 lg:px-10 z-50">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handlePrev}
+            disabled={currentIdx === 0}
+            className="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-slate-900 border border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30 disabled:opacity-30 disabled:cursor-not-allowed group shadow-xl"
+          >
+            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> <span className="hidden sm:inline">Soal Sebelumnya</span>
+          </button>
+        </div>
 
         <button
           onClick={toggleRagu}
           className={cn(
-            "flex items-center gap-2 px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border-2",
-            raguRagu[activeSoal.no] 
-              ? "bg-amber-500/20 text-amber-400 border-amber-500/50 hover:bg-amber-500/30" 
-              : "bg-transparent text-amber-500 border-amber-500/30 hover:bg-amber-500/10"
+            "flex items-center gap-3 px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border-2 shadow-xl",
+            activeSoal && raguRagu[activeSoal.id] 
+              ? "bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20" 
+              : "bg-transparent text-amber-500 border-amber-500/10 hover:bg-amber-500/10"
           )}
         >
-          <Flag className={cn("w-4 h-4", raguRagu[activeSoal.no] ? "fill-amber-400" : "")} /> 
-          Ragu-ragu
+          <Flag className={cn("w-4 h-4", activeSoal && raguRagu[activeSoal.id] ? "fill-amber-400" : "")} /> 
+          <span className="hidden sm:inline">Ragu-ragu</span>
         </button>
 
-        {currentIdx === MOCK_SOAL.length - 1 ? (
-          <button
-            onClick={handleSubmit}
-            className="flex items-center gap-2 px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-500/20"
-          >
-            <CheckCircle2 className="w-4 h-4" /> Selesai Ujian
-          </button>
-        ) : (
-          <button
-            onClick={handleNext}
-            className="flex items-center gap-2 px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-slate-200 text-slate-900 hover:bg-white"
-          >
-            Soal Selanjutnya <ChevronRight className="w-4 h-4" />
-          </button>
-        )}
+        <div className="flex items-center gap-4">
+          {currentIdx === soalList.length - 1 ? (
+             <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="flex items-center gap-3 px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all bg-emerald-600 text-white hover:bg-emerald-500 shadow-2xl shadow-emerald-600/30 active:scale-95 disabled:opacity-50"
+            >
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              Selesai Ujian
+            </button>
+          ) : (
+            <button
+              onClick={handleNext}
+              className="flex items-center gap-3 px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-slate-200 text-slate-900 hover:bg-white shadow-2xl shadow-white/10 active:scale-95 group"
+            >
+              <span className="hidden sm:inline">Soal Selanjutnya</span> <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+          )}
+        </div>
       </footer>
 
     </div>

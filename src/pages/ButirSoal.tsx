@@ -102,22 +102,28 @@ export default function ButirSoal() {
         const newSoalsDb = [];
 
         for (const row of data) {
-          const rowPertanyaan = row['Pertanyaan'] || row['pertanyaan'] || row['PERTANYAAN'];
-          const rowKunci = row['Kunci_Jawaban'] || row['Kunci Jawaban'] || row['kunci_jawaban'] || row['kunci jawaban'] || row['KUNCI_JAWABAN'];
+          const rowPertanyaan = row['Pertanyaan'] || row['pertanyaan'] || row['Question'] || row['question'];
+          const rowKunci = row['Kunci_Jawaban'] || row['Kunci Jawaban'] || row['kunci_jawaban'] || row['Answer'] || row['answer'] || row['Kunci'];
           
-          if (!rowPertanyaan || !rowKunci) {
-             alert('Format Excel tidak valid: Kolom "Pertanyaan" atau "Kunci_Jawaban" tidak boleh kosong pada salah satu baris.');
-             setIsLoadingExcel(false);
-             if (fileInputRef.current) fileInputRef.current.value = '';
-             return;
-          }
+          if (!rowPertanyaan) continue; // Skip empty rows
 
           const getOpsi = (key: string) => {
-             const val = row[key] || row[key.toLowerCase()] || row[key.toUpperCase()] || row[key.replace('_', ' ')] || '';
-             return String(val);
+             const keys = [
+               key, 
+               key.toLowerCase(), 
+               key.toUpperCase(), 
+               key.replace('_', ' '),
+               key.replace('_', ''),
+               `Option ${key.split('_')[1]}`,
+               `option ${key.split('_')[1]}`
+             ];
+             for (const k of keys) {
+               if (row[k] !== undefined) return String(row[k]);
+             }
+             return '';
           };
 
-          const diffK = row['Tingkat_Kesulitan'] || row['Tingkat Kesulitan'] || row['tingkat_kesulitan'] || 'Sedang';
+          const diffK = row['Tingkat_Kesulitan'] || row['Tingkat Kesulitan'] || row['Difficulty'] || 'Sedang';
           let normalizedDiff = 'Sedang';
           if (String(diffK).toLowerCase().includes('mudah')) normalizedDiff = 'Mudah';
           if (String(diffK).toLowerCase().includes('sulit')) normalizedDiff = 'Sulit';

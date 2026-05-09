@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Search, Plus, Layers, Edit2, Trash2, 
@@ -169,6 +169,7 @@ export default function BankSoal() {
             <thead>
               <tr className="border-b border-slate-200/80">
                 <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nama Ujian</th>
+                <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Jenjang</th>
                 <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mata Pelajaran</th>
                 <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Jumlah Soal</th>
                 <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Durasi</th>
@@ -187,6 +188,11 @@ export default function BankSoal() {
                           <p className="text-sm font-bold text-slate-800">{bs.nama_ujian}</p>
                           <p className="text-[10px] font-mono font-bold text-emerald-600 mt-1">{bs.id}</p>
                         </div>
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <span className="text-[10px] font-black text-white bg-slate-900 px-3 py-1 rounded-full italic tracking-widest">
+                          {bs.jenjang || 'SMA'}
+                        </span>
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-2">

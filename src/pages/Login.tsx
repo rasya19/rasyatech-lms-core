@@ -17,9 +17,11 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [loginRole, setLoginRole] = useState<'Admin' | 'Siswa'>('Admin');
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
+    nisn: ''
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -28,9 +30,45 @@ export default function Login() {
     setErrorMsg('');
 
     try {
+      if (loginRole === 'Siswa') {
+        // Mock student login for demo
+        if (formData.nisn === '0012345678') {
+          localStorage.setItem('userRole', 'Siswa');
+          localStorage.setItem('isDemoMode', 'true');
+          localStorage.setItem('studentName', 'Budi Santoso');
+          localStorage.setItem('studentNisn', '0012345678');
+          localStorage.setItem('studentId', 'demo-siswa-1');
+          setIsLoading(false);
+          navigate('/dashboard');
+          return;
+        }
+
+        // Real student login by NISN
+        const { data, error } = await supabase
+          .from('profiles_siswa')
+          .select('*')
+          .eq('nisn', formData.nisn)
+          .single();
+
+        if (error || !data) {
+          throw new Error('NISN tidak ditemukan atau akun tidak aktif.');
+        }
+
+        localStorage.setItem('userRole', 'Siswa');
+        localStorage.setItem('studentName', data.nama);
+        localStorage.setItem('studentNisn', data.nisn);
+        localStorage.setItem('studentId', data.id);
+        localStorage.setItem('studentClass', data.class);
+        navigate('/dashboard');
+        return;
+      }
+
       // Demo bypass for convenient testing 
       if (formData.email === 'demo_admin' && formData.password === 'demo123') {
         localStorage.setItem('userRole', 'Admin');
+        localStorage.setItem('isDemoMode', 'true');
+        localStorage.setItem('adminName', 'Demo Admin');
+        setIsLoading(false);
         navigate('/dashboard');
         return;
       }
@@ -81,6 +119,29 @@ export default function Login() {
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-16 -mt-16" />
           
           <div className="relative z-10">
+            <div className="flex bg-slate-900 p-1 rounded-2xl border border-slate-700 mb-8">
+              <button 
+                type="button"
+                onClick={() => setLoginRole('Admin')}
+                className={cn(
+                  "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                  loginRole === 'Admin' ? "bg-emerald-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
+                )}
+              >
+                Administrator
+              </button>
+              <button 
+                type="button"
+                onClick={() => setLoginRole('Siswa')}
+                className={cn(
+                  "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                  loginRole === 'Siswa' ? "bg-emerald-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
+                )}
+              >
+                Siswa / Peserta
+              </button>
+            </div>
+
             <div className="flex items-center gap-4 mb-8">
               <div className="p-3 bg-slate-900 rounded-2xl border border-slate-700 text-emerald-400">
                 <ShieldCheck className="w-6 h-6" />
@@ -98,48 +159,71 @@ export default function Login() {
             )}
 
             <form onSubmit={handleLogin} className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">
-                  Email Akun
-                </label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none group-focus-within:text-emerald-400 transition-colors text-slate-400">
-                    <Mail className="w-4 h-4" />
+              {loginRole === 'Admin' ? (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">
+                      Email Akun
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none group-focus-within:text-emerald-400 transition-colors text-slate-400">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                      <input 
+                        type="text" 
+                        required
+                        value={formData.email}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        placeholder="nama@email.com"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600"
+                      />
+                    </div>
                   </div>
-                  <input 
-                    type="text" 
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    placeholder="nama@email.com"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600"
-                  />
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">Kata Sandi</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none group-focus-within:text-emerald-400 transition-colors text-slate-400">
-                    <Lock className="w-4 h-4" />
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">Kata Sandi</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none group-focus-within:text-emerald-400 transition-colors text-slate-400">
+                        <Lock className="w-4 h-4" />
+                      </div>
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        required
+                        value={formData.password}
+                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        placeholder="••••••••"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 pl-12 pr-12 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-emerald-400 transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
-                  <input 
-                    type={showPassword ? "text" : "password"} 
-                    required
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    placeholder="••••••••"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 pl-12 pr-12 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600"
-                  />
-                  <button 
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-emerald-400 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 italic">
+                    Nomor NISN Siswa
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none group-focus-within:text-emerald-400 transition-colors text-slate-400">
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                    <input 
+                      type="text" 
+                      required
+                      value={formData.nisn}
+                      onChange={(e) => setFormData({...formData, nisn: e.target.value})}
+                      placeholder="Masukkan 10 digit NISN Anda"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-600"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="flex justify-end pt-2">
                 <button 
