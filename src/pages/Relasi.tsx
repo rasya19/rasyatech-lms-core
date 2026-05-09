@@ -13,6 +13,7 @@ import {
   Check
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { supabase } from '../lib/supabase';
 
 interface Relation {
   id: string;
@@ -25,30 +26,26 @@ interface Relation {
   hari: string;
 }
 
-const DUMMY_TEACHERS = [
-  { id: '1', name: 'Budi Santoso, S.Pd', subject: 'Matematika' },
-  { id: '2', name: 'Siti Aminah, M.Pd', subject: 'Bahasa Indonesia' },
-  { id: '3', name: 'Dr. Ahmad Fauzi', subject: 'Fisika' },
-];
-
-const DUMMY_CLASSES = [
-  { id: '1', name: 'X-IPA-1' },
-  { id: '2', name: 'X-IPS-2' },
-  { id: '3', name: 'XI-IPA-1' },
-];
-
 export default function Relasi() {
-  const [subjects, setSubjects] = useState(() => {
-    const saved = localStorage.getItem('school_subjects_list');
+  const [teachers, setTeachers] = useState<any[]>([]);
+  const [schoolClasses, setSchoolClasses] = useState<any[]>(() => {
+    const saved = localStorage.getItem('school_classes_list');
     if (saved) return JSON.parse(saved);
-    return [
-      { id: '1', name: 'Matematika Dasar' },
-      { id: '2', name: 'Bahasa Indonesia' },
-      { id: '3', name: 'Bahasa Inggris' },
-      { id: '4', name: 'Fisika' },
-      { id: '5', name: 'Ekonomi' }
-    ];
+    return [];
   });
+  const [subjects, setSubjects] = useState<any[]>(() => {
+    const saved = localStorage.getItem('school_mapel_list');
+    if (saved) return JSON.parse(saved);
+    return [];
+  });
+
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      const { data } = await supabase.from('profiles_guru').select('id, nama').order('nama', { ascending: true });
+      if (data) setTeachers(data);
+    };
+    fetchTeachers();
+  }, []);
 
   const [relations, setRelations] = useState<Relation[]>(() => {
     const saved = localStorage.getItem('school_relations_list');
@@ -78,7 +75,7 @@ export default function Relasi() {
   });
 
   useEffect(() => {
-    localStorage.setItem('school_subjects_list', JSON.stringify(subjects));
+    localStorage.setItem('school_mapel_list', JSON.stringify(subjects));
   }, [subjects]);
 
   useEffect(() => {
@@ -122,15 +119,15 @@ export default function Relasi() {
   };
 
   const handleAdd = () => {
-    const teacher = DUMMY_TEACHERS.find(t => t.id === formData.teacherId);
+    const teacher = teachers.find(t => t.id === formData.teacherId);
 
     if (teacher && selectedClasses.length > 0 && formData.subject && formData.jam) {
       const newRelations: Relation[] = selectedClasses.map(classId => {
-        const kelas = DUMMY_CLASSES.find(k => k.id === classId);
+        const kelas = schoolClasses.find(k => k.id === classId);
         return {
           id: Math.random().toString(36).substr(2, 9),
           teacherId: teacher.id,
-          teacherName: teacher.name,
+          teacherName: teacher.nama || teacher.name, // in case of 'nama' field in Supabase
           classId: classId,
           className: kelas?.name || 'Unknown',
           subject: formData.subject,
@@ -180,7 +177,7 @@ export default function Relasi() {
           </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1.5">Total Guru</p>
-            <p className="text-xl font-black text-brand-sidebar italic tracking-tighter">{DUMMY_TEACHERS.length}</p>
+            <p className="text-xl font-black text-brand-sidebar italic tracking-tighter">{teachers.length}</p>
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl border border-brand-border flex items-center gap-4">
@@ -189,7 +186,7 @@ export default function Relasi() {
           </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1.5">Total Kelas</p>
-            <p className="text-xl font-black text-brand-sidebar italic tracking-tighter">{DUMMY_CLASSES.length}</p>
+            <p className="text-xl font-black text-brand-sidebar italic tracking-tighter">{schoolClasses.length}</p>
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl border border-brand-border flex items-center gap-4">
@@ -386,10 +383,10 @@ export default function Relasi() {
                   <select 
                     value={formData.teacherId}
                     onChange={(e) => setFormData({...formData, teacherId: e.target.value})}
-                    className="w-full bg-slate-50 border border-brand-border rounded-xl p-3 text-xs font-bold outline-none focus:border-brand-accent"
+                    className="w-full bg-slate-50 border border-brand-border rounded-xl p-3 text-xs font-bold outline-none focus:border-brand-accent cursor-pointer"
                   >
                     <option value="">-- Pilih Guru --</option>
-                    {DUMMY_TEACHERS.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    {teachers.map(t => <option key={t.id} value={t.id}>{t.nama || t.name}</option>)}
                   </select>
                </div>
 
@@ -398,8 +395,8 @@ export default function Relasi() {
                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Target Kelas</label>
                     <span className="text-[9px] font-bold text-brand-accent">{selectedClasses.length} Dipilih</span>
                   </div>
-                  <div className="bg-slate-50 border border-brand-border rounded-xl p-3 max-h-40 overflow-y-auto space-y-2">
-                    {DUMMY_CLASSES.map(k => (
+                  <div className="bg-slate-50 border border-brand-border rounded-xl p-3 max-h-40 overflow-y-auto custom-scrollbar space-y-2">
+                    {schoolClasses.map(k => (
                       <label key={k.id} className="flex items-center gap-3 cursor-pointer p-2 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-slate-200">
                         <input 
                           type="checkbox" 

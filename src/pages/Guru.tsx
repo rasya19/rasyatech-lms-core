@@ -17,6 +17,11 @@ interface Teacher {
 export default function Guru() {
   const [guruList, setGuruList] = useState<Teacher[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [mapels] = useState<any[]>(() => {
+    const saved = localStorage.getItem('school_mapel_list');
+    if (saved) return JSON.parse(saved);
+    return [];
+  });
 
   useEffect(() => {
     fetchGuru();
@@ -356,12 +361,17 @@ export default function Guru() {
 
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Mata Pelajaran</label>
-                    <input 
-                      type="text" required
+                    <select 
+                      required
                       value={formData.mataPelajaran}
                       onChange={(e) => setFormData({...formData, mataPelajaran: e.target.value})}
-                      className="w-full bg-slate-50 border border-brand-border rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
-                    />
+                      className="w-full bg-slate-50 border border-brand-border rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none cursor-pointer"
+                    >
+                      <option value="" disabled>-- Pilih Mata Pelajaran --</option>
+                      {mapels.map((m: any) => (
+                        <option key={m.id} value={m.nama}>{m.nama} ({m.jenjang})</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
