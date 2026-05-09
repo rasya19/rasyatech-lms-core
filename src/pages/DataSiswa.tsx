@@ -25,6 +25,7 @@ export default function DataSiswa() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<Partial<Student>>({
@@ -172,24 +173,10 @@ export default function DataSiswa() {
         
         <div className="relative z-10 flex flex-wrap gap-4">
           <button 
-            onClick={async () => {
-              try {
-                // Testing Supabase tables
-                const r1 = await supabase.from('bank_soal').select('*').limit(1);
-                const r2 = await supabase.from('ujian').select('*').limit(1);
-                const r3 = await supabase.from('butir_soal').select('*').limit(1);
-                alert('Tables check:\n' + 
-                   'bank_soal: ' + (r1.error ? r1.error.message : 'OK') + '\n' +
-                   'ujian: ' + (r2.error ? r2.error.message : 'OK') + '\n' +
-                   'butir_soal: ' + (r3.error ? r3.error.message : 'OK')
-                );
-              } catch (err) {
-                alert('Gagal terhubung ke Supabase. Periksa konfigurasi Anda.');
-              }
-            }}
-            className="bg-slate-800 text-slate-300 border border-slate-700 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg hover:text-emerald-400"
+            onClick={() => setIsPrinting(true)}
+            className="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600/30 transition-all shadow-lg"
           >
-            Test Koneksi
+            Cetak Kartu Ujian
           </button>
           <button 
             onClick={() => handleOpenModal()}
@@ -317,6 +304,59 @@ export default function DataSiswa() {
 
       {/* Modal Form */}
       <AnimatePresence>
+        {isPrinting && (
+          <div className="fixed inset-0 bg-slate-100 z-[200] overflow-y-auto">
+            <div className="p-6 pb-20 print:p-0">
+              <div className="max-w-4xl mx-auto flex gap-4 mb-8 print:hidden">
+                <button 
+                  onClick={() => window.print()} 
+                  className="bg-emerald-600 text-white px-8 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20"
+                >
+                  Confirm & Cetak PDF
+                </button>
+                <button 
+                  onClick={() => setIsPrinting(false)} 
+                  className="bg-white border border-slate-200 text-slate-800 px-8 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 transition-all shadow-sm"
+                >
+                  Tutup / Batal
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mx-auto max-w-4xl print:grid-cols-2 lg:print:grid-cols-3 print:gap-4 print:max-w-none">
+                {filteredStudents.map(student => (
+                  <div key={student.id} className="bg-white border-2 border-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center text-center break-inside-avoid shadow-[6px_6px_0px_#1e293b] print:shadow-none print:border-slate-400">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">KARTU PESERTA UJIAN</h4>
+                    <h3 className="text-xl font-black italic tracking-tighter text-slate-900 mb-4">PKBM Armilla Nusa</h3>
+                    
+                    <div className="w-16 h-16 rounded-full bg-slate-100 border-2 border-slate-200 flex items-center justify-center overflow-hidden mb-4 shadow-sm">
+                       {student.photourl ? (
+                         <img src={student.photourl} alt={student.nama} className="w-full h-full object-cover" />
+                       ) : (
+                         <User className="w-8 h-8 text-slate-300" />
+                       )}
+                    </div>
+
+                    <div className="w-full space-y-3">
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Nama Siswa</p>
+                        <p className="text-sm font-black text-slate-800 uppercase leading-snug">{student.nama}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">NISN / Username</p>
+                        <p className="text-sm font-black text-slate-800 font-mono tracking-widest">{student.nisn}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Password</p>
+                        <p className="text-sm font-black text-slate-800 font-mono tracking-widest">{student.nisn}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {isModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div 

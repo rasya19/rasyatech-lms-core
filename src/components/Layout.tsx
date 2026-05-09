@@ -43,6 +43,8 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
+import { supabase } from '../lib/supabase';
+
 type Role = 'Admin' | 'Guru' | 'Siswa';
 
 export default function Layout() {

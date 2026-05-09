@@ -85,15 +85,37 @@ export default function UjianSiswa() {
         .eq('student_id', studentId)
         .eq('bank_soal_id', bankSoalId);
 
-      if (!aError && aData) {
-        const existingAnswers: Record<string, string> = {};
-        const existingRagu: Record<string, boolean> = {};
+      let earliestTime = Date.now();
+      const existingAnswers: Record<string, string> = {};
+      const existingRagu: Record<string, boolean> = {};
+
+      if (!aError && aData && aData.length > 0) {
         aData.forEach(ans => {
           existingAnswers[ans.soal_id] = ans.jawaban;
           existingRagu[ans.soal_id] = ans.is_ragu;
+          const time = new Date(ans.created_at || ans.updated_at).getTime();
+          if (time < earliestTime) earliestTime = time;
         });
         setAnswers(existingAnswers);
         setRaguRagu(existingRagu);
+
+        // Resume Timer Logic
+        const elapsedSecs = Math.floor((Date.now() - earliestTime) / 1000);
+        const remaining = Math.max(0, (bData.durasi * 60) - elapsedSecs);
+        setTimeLeft(remaining);
+
+        // Find the first unanswered question to jump to
+        if (sData && sData.length > 0) {
+          const firstUnansweredIndex = sData.findIndex(s => !existingAnswers[s.id]);
+          if (firstUnansweredIndex !== -1) {
+            setCurrentIdx(firstUnansweredIndex);
+          } else {
+            setCurrentIdx(sData.length - 1);
+          }
+        }
+      } else {
+        // First time starting
+        setTimeLeft(bData.durasi * 60);
       }
 
     } catch (err) {
@@ -129,17 +151,18 @@ export default function UjianSiswa() {
   useEffect(() => {
     if (!hasStarted || timeLeft <= 0) return;
     const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
+      setTimeLeft(prev => Math.max(0, prev - 1));
     }, 1000);
+    
     return () => clearInterval(timer);
-  }, [hasStarted, timeLeft]);
+  }, [hasStarted]);
+
+  // Auto-submit when time is up
+  useEffect(() => {
+    if (hasStarted && timeLeft === 0 && !isSubmitting) {
+      handleSubmit();
+    }
+  }, [timeLeft, hasStarted, isSubmitting]);
 
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
