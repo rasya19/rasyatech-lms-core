@@ -5,6 +5,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 
@@ -29,6 +30,7 @@ export default function ButirSoal() {
   
   const [soals, setSoals] = useState<ButirSoalModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   
   // Form State
@@ -99,6 +101,11 @@ export default function ButirSoal() {
         const ws = wb.Sheets[wsname];
         const data = XLSX.utils.sheet_to_json(ws) as any[];
 
+        if (!data || data.length === 0) {
+          toast.error('File Excel kosong atau format tidak valid.');
+          return;
+        }
+
         const newSoalsDb = [];
 
         for (const row of data) {
@@ -146,17 +153,17 @@ export default function ButirSoal() {
         if (error) throw error;
         
         fetchSoal();
-        alert(`Berhasil mengimpor ${newSoalsDb.length} butir soal!`);
+        toast.success(`Berhasil mengimpor ${newSoalsDb.length} butir soal!`);
       } catch (error: any) {
          console.error('Error parsing/inserting excel:', error);
-         alert('Gagal mengimpor soal ke database. ' + error.message);
+         toast.error('Gagal mengimpor soal ke database. ' + error.message);
       } finally {
          setIsLoadingExcel(false);
          if (fileInputRef.current) fileInputRef.current.value = '';
       }
     };
     reader.onerror = () => {
-      alert('Gagal membaca file.');
+      toast.error('Gagal membaca file.');
       setIsLoadingExcel(false);
     };
     reader.readAsBinaryString(file);
@@ -207,9 +214,10 @@ export default function ButirSoal() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pertanyaan.trim()) return alert('Pertanyaan tidak boleh kosong.');
-    if (opsi.some(o => !o.teks.trim())) return alert('Semua opsi jawaban harus diisi.');
+    if (!pertanyaan.trim()) return toast.error('Pertanyaan tidak boleh kosong.');
+    if (opsi.some(o => !o.teks.trim())) return toast.error('Semua opsi jawaban harus diisi.');
 
+    setLoading(true);
     try {
       const payload = {
         bank_soal_id,
@@ -226,16 +234,20 @@ export default function ButirSoal() {
       if (isEditing && editId) {
         const { error } = await supabase.from('butir_soal').update(payload).eq('id', editId);
         if (error) throw error;
+        toast.success('Butir soal berhasil diperbarui');
       } else {
         const { error } = await supabase.from('butir_soal').insert([payload]);
         if (error) throw error;
+        toast.success('Butir soal baru berhasil ditambahkan');
       }
       
       resetForm();
       fetchSoal();
     } catch (err: any) {
       console.error(err);
-      alert('Gagal menyimpan butir soal: ' + err.message);
+      toast.error('Gagal menyimpan butir soal: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -257,9 +269,10 @@ export default function ButirSoal() {
         const { error } = await supabase.from('butir_soal').delete().eq('id', id);
         if (error) throw error;
         setSoals(soals.filter(s => s.id !== id));
+        toast.success('Butir soal berhasil dihapus');
       } catch (err: any) {
         console.error(err);
-        alert('Gagal menghapus soal: ' + err.message);
+        toast.error('Gagal menghapus soal: ' + err.message);
       }
     }
   };
@@ -421,9 +434,10 @@ export default function ButirSoal() {
             )}
             <button 
               type="submit"
-              className="bg-emerald-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-700 active:scale-[0.98] transition-all shadow-lg shadow-emerald-600/20"
+              disabled={loading}
+              className="bg-emerald-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-700 active:scale-[0.98] transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50"
             >
-              {isEditing ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (isEditing ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />)}
               {isEditing ? 'Simpan Perubahan' : 'Tambah Soal'}
             </button>
           </div>

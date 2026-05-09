@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Search, Plus, Layers, Edit2, Trash2, 
-  FileText, CheckCircle2, MoreVertical, BookOpen, Clock, Settings, X, SearchIcon, ShieldCheck
+  FileText, CheckCircle2, MoreVertical, BookOpen, Clock, Settings, X, SearchIcon, ShieldCheck, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 import { DUMMY_MAPEL } from './MataPelajaran';
 
@@ -23,6 +24,7 @@ export default function BankSoal() {
   const navigate = useNavigate();
   const [bankSoals, setBankSoals] = useState<BankSoalModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -86,13 +88,15 @@ export default function BankSoal() {
       setBankSoals(bankSoals.map(bs => 
         bs.id === id ? { ...bs, is_aktif: !currentStatus } : bs
       ));
+      toast.success(`Ujian berhasil ${!currentStatus ? 'diaktifkan' : 'dinonaktifkan'}`);
     } catch (err: any) {
-      alert('Gagal toggle status: ' + err.message);
+      toast.error('Gagal toggle status: ' + err.message);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     try {
       if (isEditing && formData.id) {
          const { error } = await supabase.from('bank_soal').update({
@@ -104,6 +108,7 @@ export default function BankSoal() {
             is_aktif: formData.is_aktif
          }).eq('id', formData.id);
          if (error) throw error;
+         toast.success('Judul ujian berhasil diperbarui');
       } else {
          const { error } = await supabase.from('bank_soal').insert([{
             nama_ujian: formData.nama_ujian,
@@ -114,11 +119,14 @@ export default function BankSoal() {
             is_aktif: formData.is_aktif
          }]);
          if (error) throw error;
+         toast.success('Judul ujian baru berhasil dibuat');
       }
       setIsModalOpen(false);
       fetchBankSoal();
     } catch (err: any) {
-      alert('Gagal menyimpan data: ' + err.message);
+      toast.error('Gagal menyimpan data: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -413,9 +421,10 @@ export default function BankSoal() {
                  <button 
                    form="banksoal-form"
                    type="submit"
+                   disabled={loading}
                    className="flex-1 bg-emerald-600 text-white py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                  >
-                   <ShieldCheck className="w-4 h-4" /> {isEditing ? 'Simpan Perubahan' : 'Buat Judul Ujian'}
+                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />} {isEditing ? 'Simpan Perubahan' : 'Buat Judul Ujian'}
                  </button>
               </div>
             </motion.div>

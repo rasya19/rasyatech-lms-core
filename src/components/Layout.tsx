@@ -151,6 +151,7 @@ export default function Layout() {
               { icon: ClipboardCheck, label: 'Jadwal Ujian', path: `${prefix}/dashboard/ujian` },
               { icon: Eye, label: 'Monitoring Live', path: `${prefix}/dashboard/hasil-ujian` },
               { icon: Check, label: 'Riwayat Ujian', path: `${prefix}/dashboard/nilai` },
+              { icon: Settings, label: 'Pengaturan', path: `${prefix}/dashboard/settings` },
             ]
           },
           {

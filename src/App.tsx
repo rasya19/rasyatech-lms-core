@@ -41,6 +41,8 @@ import AffiliateDashboard from './pages/AffiliateDashboard';
 import SuperAdmin from './pages/SuperAdmin';
 import Feedback from './pages/Feedback';
 import Analitik from './pages/Analitik';
+import Settings from './pages/Settings';
+import { Toaster } from 'sonner';
 
 function SchoolLoader() {
   const { schoolSlug } = useParams();
@@ -157,6 +159,7 @@ function AppContent() {
              <Route path="diskusi" element={<Diskusi />} />
              <Route path="ai-asisten" element={<AiAsisten />} />
              <Route path="feedback" element={<Feedback />} />
+             <Route path="settings" element={<Settings />} />
           </Route>
         </>
       )}
@@ -195,6 +198,7 @@ function AppContent() {
             <Route path="diskusi" element={<Diskusi />} />
             <Route path="ai-asisten" element={<AiAsisten />} />
             <Route path="feedback" element={<Feedback />} />
+            <Route path="settings" element={<Settings />} />
          </Route>
       </Route>
 
@@ -235,6 +239,7 @@ function AppContent() {
         <Route path="diskusi" element={<Diskusi />} />
         <Route path="ai-asisten" element={<AiAsisten />} />
         <Route path="feedback" element={<Feedback />} />
+        <Route path="settings" element={<Settings />} />
         <Route path="*" element={<ComingSoon />} />
       </Route>
     </Routes>
@@ -244,6 +249,7 @@ function AppContent() {
 export default function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" richColors />
       <SchoolProvider>
         <AppContent />
       </SchoolProvider>

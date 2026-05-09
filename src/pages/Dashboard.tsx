@@ -22,17 +22,84 @@ export default function Dashboard() {
 
   const [studentResults, setStudentResults] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
-    totalSiswa: '1,245',
-    totalGuru: '48',
-    mapelAktif: '12',
-    tugasSelesai: '8/10'
+    totalSiswa: '0',
+    totalGuru: '0',
+    totalUjian: '0',
+    rataNilai: '0',
+    mapelAktif: '0',
+    tugasSelesai: '0'
   });
 
   useEffect(() => {
     if (userRole === 'Siswa' && studentId) {
       fetchStudentDashboardData();
+    } else if (userRole === 'Admin') {
+      fetchAdminDashboardData();
     }
   }, [userRole, studentId]);
+
+  const fetchAdminDashboardData = async () => {
+    try {
+      // Total Siswa
+      const { count: siswaCount } = await supabase.from('profiles_siswa').select('*', { count: 'exact', head: true });
+      // Total Guru
+      const { count: guruCount } = await supabase.from('profiles_guru').select('*', { count: 'exact', head: true });
+      // Total Ujian
+      const { count: ujianCount } = await supabase.from('bank_soal').select('*', { count: 'exact', head: true });
+      // Rata Nilai
+      const { data: results } = await supabase.from('hasil_ujian').select('nilai');
+      const avg = results && results.length > 0 
+        ? Math.round(results.reduce((acc, curr) => acc + curr.nilai, 0) / results.length)
+        : 0;
+
+      setStats({
+        totalSiswa: siswaCount?.toString() || '0',
+        totalGuru: guruCount?.toString() || '0',
+        totalUjian: ujianCount?.toString() || '0',
+        rataNilai: avg.toString()
+      });
+    } catch (err) {
+      console.error('Error fetching admin dashboard:', err);
+    }
+  };
+
+  const exportAttendance = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('hasil_ujian')
+        .select(`
+          nilai,
+          end_time,
+          profiles_siswa:student_id (nama, nisn, class),
+          bank_soal (nama_ujian)
+        `);
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        toast.error('Belum ada data kehadiran ujian.');
+        return;
+      }
+
+      const worksheetData = data.map(row => ({
+        'Nama Siswa': row.profiles_siswa?.nama,
+        'NISN': row.profiles_siswa?.nisn,
+        'Kelas': row.profiles_siswa?.class,
+        'Nama Ujian': row.bank_soal?.nama_ujian,
+        'Skor': row.nilai,
+        'Waktu Selesai': new Date(row.end_time).toLocaleString('id-ID')
+      }));
+
+      const { utils, writeFile } = await import('xlsx');
+      const wb = utils.book_new();
+      const ws = utils.json_to_sheet(worksheetData);
+      utils.book_append_sheet(wb, ws, 'Kehadiran Ujian');
+      writeFile(wb, `Laporan_Kehadiran_Ujian_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Laporan Kehadiran berhasil diunduh.');
+    } catch (err) {
+      console.error('Export failed:', err);
+      toast.error('Gagal mengekspor laporan.');
+    }
+  };
 
   const fetchStudentDashboardData = async () => {
     try {
@@ -78,8 +145,8 @@ export default function Dashboard() {
           { label: 'TOTAL SISWA', value: stats.totalSiswa, icon: Users, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
           { label: 'TOTAL GURU', value: stats.totalGuru, icon: UserCheck, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
           ...(userRole === 'Admin' ? [
-            { label: 'SALDO MASUK', value: 'Rp 45.5M', icon: Wallet, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
-            { label: 'TAGIHAN PENDING', value: 'Rp 12.3M', icon: Clock, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' }
+            { label: 'TOTAL UJIAN', value: stats.totalUjian, icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
+            { label: 'RATA-RATA SKOR', value: stats.rataNilai, icon: Trophy, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' }
           ] : [
             { label: 'MAPEL AKTIF', value: stats.mapelAktif, icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
             { label: 'UJIAN SELESAI', value: stats.tugasSelesai, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' }
@@ -160,13 +227,41 @@ export default function Dashboard() {
             </div>
           </>
         ) : (
-          /* Admin View (simplified version since we're focusing on Student) */
-          <div className="lg:col-span-3">
-             <p className="text-slate-500 italic text-xs">Menu Administrasi Sekolah lengkap tersedia di sidebar.</p>
+          /* Admin View */
+          <div className="lg:col-span-3 space-y-6">
+             <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-10 bg-slate-900/80 rounded-[3rem] border border-slate-800 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl -mr-32 -mt-32" />
+                <div className="relative z-10 space-y-4">
+                  <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter leading-tight">Laporan Kehadiran <br/> <span className="text-emerald-400">Siap Cetak?</span></h3>
+                  <p className="text-xs font-medium text-slate-400 max-w-sm">Dapatkan daftar siswa yang telah menyelesaikan ujian beserta nilainya dalam format Excel untuk arsip sekolah.</p>
+                  <button 
+                    onClick={exportAttendance}
+                    className="bg-slate-50 text-slate-900 px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 hover:text-white transition-all shadow-xl shadow-black/20 flex items-center gap-3"
+                  >
+                    <FileText className="w-4 h-4" /> Ekspor Daftar Hadir (XLSX)
+                  </button>
+                </div>
+                <div className="relative z-10 w-full md:w-auto">
+                   <div className="grid grid-cols-2 gap-4">
+                      <Link to="/dashboard/hasil-ujian" className="p-6 bg-slate-800/50 rounded-3xl border border-slate-700 hover:border-emerald-500/30 transition-all text-center">
+                         <Activity className="w-8 h-8 text-emerald-400 mx-auto mb-3" />
+                         <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Live Monitor</p>
+                      </Link>
+                      <Link to="/dashboard/settings" className="p-6 bg-slate-800/50 rounded-3xl border border-slate-700 hover:border-emerald-500/30 transition-all text-center">
+                         <RotateCcw className="w-8 h-8 text-emerald-400 mx-auto mb-3" />
+                         <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Reset Sesi</p>
+                      </Link>
+                   </div>
+                </div>
+             </div>
           </div>
         )}
       </div>
     </div>
   );
 }
+
+const RotateCcw = (props: any) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+);
 
