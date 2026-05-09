@@ -13,18 +13,18 @@ try {
     : ({
         from: () => ({
           select: () => {
-            const promise = Promise.resolve({ data: [], error: { message: 'Database belum dikonfigurasi' } });
+            const promise = Promise.resolve({ data: [], error: { message: 'Database belum dikonfigurasi. Jika di Vercel, pastikan Environment Variables VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY sudah disetting.' } });
             (promise as any).order = () => promise;
             (promise as any).limit = () => promise;
             return promise;
           },
           insert: () => {
-            const promise = Promise.resolve({ data: null, error: { message: 'Database belum dikonfigurasi' } });
+            const promise = Promise.resolve({ data: null, error: { message: 'Database belum dikonfigurasi. Jika di Vercel, pastikan Environment Variables VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY sudah disetting.' } });
             (promise as any).select = () => promise;
             return promise;
           },
-          update: () => ({ eq: () => Promise.resolve({ data: null, error: { message: 'Database belum dikonfigurasi' } }) }),
-          delete: () => ({ eq: () => Promise.resolve({ data: null, error: { message: 'Database belum dikonfigurasi' } }) }),
+          update: () => ({ eq: () => Promise.resolve({ data: null, error: { message: 'Database belum dikonfigurasi. Cek Vercel Env Vars.' } }) }),
+          delete: () => ({ eq: () => Promise.resolve({ data: null, error: { message: 'Database belum dikonfigurasi. Cek Vercel Env Vars.' } }) }),
         })
       } as any);
 } catch (error) {

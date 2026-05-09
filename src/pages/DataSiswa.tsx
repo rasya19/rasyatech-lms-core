@@ -137,9 +137,9 @@ export default function DataSiswa() {
         }
       }
       setIsModalOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving student:', err);
-      alert('Gagal menyimpan data siswa');
+      alert('Gagal menyimpan data siswa: ' + (err.message || 'Unknown error'));
     } finally {
       setIsSaving(false);
     }

@@ -42,6 +42,10 @@ export default function Login() {
     keysToInitialClear.forEach(k => localStorage.removeItem(k));
 
     try {
+      // Always sign out of supabase first to clear any stale auth sessions
+      // which might cause 401 Unauthorized on public tables
+      await supabase.auth.signOut().catch(() => {});
+
       if (loginRole === 'Guru') {
         // Mock teacher login for demo
         if (formData.email === 'demo_guru' && formData.password === 'teacher123') {
