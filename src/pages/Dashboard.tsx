@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, UserCheck, CheckCircle2, Clock,
   ArrowUpRight, ArrowDownRight, Activity, XCircle, AlertCircle,
-  FileText, Wallet, Rocket, Trophy, Calendar
+  FileText, Wallet, Rocket, Trophy, Calendar, Download
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { useSchool } from '../contexts/SchoolContext';
 import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
@@ -37,6 +38,19 @@ export default function Dashboard() {
       fetchAdminDashboardData();
     }
   }, [userRole, studentId]);
+
+  const handleResetAll = async () => {
+    if (!window.confirm('Hapus SEMUA jawaban siswa dan hasil ujian sekarang? Tujuannya untuk memulai simulasi dari awal.')) return;
+    try {
+      const { error: err1 } = await supabase.from('jawaban_siswa').delete().neq('student_id', 'none');
+      const { error: err2 } = await supabase.from('hasil_ujian').delete().neq('student_id', 'none');
+      if (err1 || err2) throw (err1 || err2);
+      toast.success('Database berhasil direset untuk simulasi baru.');
+      fetchAdminDashboardData();
+    } catch (err: any) {
+      toast.error('Gagal reset: ' + err.message);
+    }
+  };
 
   const fetchAdminDashboardData = async () => {
     try {
@@ -232,14 +246,22 @@ export default function Dashboard() {
              <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-10 bg-slate-900/80 rounded-[3rem] border border-slate-800 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl -mr-32 -mt-32" />
                 <div className="relative z-10 space-y-4">
-                  <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter leading-tight">Laporan Kehadiran <br/> <span className="text-emerald-400">Siap Cetak?</span></h3>
-                  <p className="text-xs font-medium text-slate-400 max-w-sm">Dapatkan daftar siswa yang telah menyelesaikan ujian beserta nilainya dalam format Excel untuk arsip sekolah.</p>
-                  <button 
-                    onClick={exportAttendance}
-                    className="bg-slate-50 text-slate-900 px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 hover:text-white transition-all shadow-xl shadow-black/20 flex items-center gap-3"
-                  >
-                    <FileText className="w-4 h-4" /> Ekspor Daftar Hadir (XLSX)
-                  </button>
+                  <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter leading-tight">Rekap Nilai <br/> <span className="text-emerald-400">Simulasi UNBK</span></h3>
+                  <p className="text-xs font-medium text-slate-400 max-w-sm">Unduh rekapitulasi nilai seluruh siswa yang telah mengikuti simulasi dalam format Excel untuk evaluasi hasil belajar.</p>
+                  <div className="flex flex-wrap gap-4">
+                    <button 
+                      onClick={exportAttendance}
+                      className="bg-slate-50 text-slate-900 px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 hover:text-white transition-all shadow-xl shadow-black/20 flex items-center gap-3"
+                    >
+                      <Download className="w-4 h-4" /> Download Rekap Simulasi (XLSX)
+                    </button>
+                    <button 
+                      onClick={handleResetAll}
+                      className="bg-red-500/10 text-red-500 border border-red-500/20 px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-xl"
+                    >
+                      <RotateCcw className="w-4 h-4" /> Reset Semua Sesi
+                    </button>
+                  </div>
                 </div>
                 <div className="relative z-10 w-full md:w-auto">
                    <div className="grid grid-cols-2 gap-4">

@@ -195,8 +195,30 @@ export default function UjianSiswa() {
     }
   };
 
-  const startExam = () => {
-    toggleFullscreen();
+  const startExam = async () => {
+    // Check if already finished
+    try {
+      const { data, error } = await supabase
+        .from('hasil_ujian')
+        .select('*')
+        .eq('student_id', studentId)
+        .eq('bank_soal_id', examId)
+        .maybeSingle();
+
+      if (data) {
+        toast.error('Anda sudah menyelesaikan ujian ini. Tidak diperbolehkan masuk kembali.');
+        navigate('/dashboard/ujian');
+        return;
+      }
+    } catch (err) {
+      console.error('Check failed:', err);
+    }
+
+    if (!document.fullscreenElement) {
+       document.documentElement.requestFullscreen().catch(() => {
+          console.warn('Fullscreen denied');
+       });
+    }
     setHasStarted(true);
   };
 
