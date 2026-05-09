@@ -41,6 +41,7 @@ export default function UjianSiswa() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResultCard, setShowResultCard] = useState(false);
+  const [resultData, setResultData] = useState<any>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [integrityChecked, setIntegrityChecked] = useState(false);
 

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Mail, Phone, MoreVertical, Plus, Download, X, Check, FileUp, FileDown, Edit2, Trash2, Sparkles, Loader2, CloudUpload } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
-import { fetchGuruFromSheet, pushDataToSheet } from '../services/apiService';
+import { supabase } from '../lib/supabase';
 
 interface Teacher {
   id: string;
@@ -14,26 +14,49 @@ interface Teacher {
   alamat?: string;
 }
 
-const INITIAL_GURU: Teacher[] = [
-  { id: '1', name: 'Dra. Siti Aminah', mataPelajaran: 'Bahasa Indonesia', nip: '1970051255', email: 'siti@armilla.edu', phone: '0812345678', alamat: 'Kuningan' },
-  { id: '2', name: 'Drs. Ahmad Yani', mataPelajaran: 'Matematika', nip: '1975082012', email: 'ahmad@armilla.edu', phone: '0812345679', alamat: 'Cirebon' },
-  { id: '3', name: 'Ibu Ratna', mataPelajaran: 'Keterampilan Menjahit', nip: 'Tenaga Ahli', email: 'ratna@armilla.edu', phone: '0812345680', alamat: 'Kuningan' },
-  { id: '4', name: 'Bp. Suryadi', mataPelajaran: 'TIK', nip: '1982031544', email: 'suryadi@armilla.edu', phone: '0812345681', alamat: 'Majalengka' },
-];
-
 export default function Guru() {
-  const [guruList, setGuruList] = useState<Teacher[]>(() => {
-    const saved = localStorage.getItem('school_guru_list');
-    if (saved) return JSON.parse(saved);
-    return INITIAL_GURU;
-  });
+  const [guruList, setGuruList] = useState<Teacher[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    localStorage.setItem('school_guru_list', JSON.stringify(guruList));
-  }, [guruList]);
+    fetchGuru();
+  }, []);
+
+  const fetchGuru = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase.from('profiles_guru').select('*').order('created_at', { ascending: false });
+      
+      if (error && !error.message.includes('Could not find the table')) {
+        console.error('Error fetching guru:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const formattedData: Teacher[] = data.map(item => ({
+          id: item.id,
+          name: item.nama || item.name || '',
+          mataPelajaran: item.mataPelajaran || item.mata_pelajaran || '',
+          nip: item.nip || '',
+          email: item.email || '',
+          phone: item.phone || item.whatsapp || '',
+          alamat: item.alamat || ''
+        }));
+        setGuruList(formattedData);
+      } else {
+        // Fallback for demo or first load if no table/data
+        setGuruList([]);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGuru, setEditingGuru] = useState<Teacher | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
@@ -70,42 +93,56 @@ export default function Guru() {
     setIsModalOpen(true);
   };
 
-  const autoPushGuru = async (list: Teacher[]) => {
-    const url = import.meta.env.VITE_APP_URL || '';
-    if (!url) return;
-    try {
-      const header = ["Nama", "NIP/ID", "ID Lain", "Email", "Telepon", "Mata Pelajaran", "Alamat"];
-      const rows = list.map(g => [
-        g.name, g.nip, g.nip, g.email || '', g.phone || '', g.mataPelajaran || '', g.alamat || ''
-      ]);
-      await pushDataToSheet(url, 'Guru', [header, ...rows]);
-    } catch (e) {
-      console.error("Auto-sync error", e);
-    }
-  };
-
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    let newList;
-    if (editingGuru) {
-      newList = guruList.map(g => g.id === editingGuru.id ? { ...g, ...formData } : g);
-    } else {
-      const newGuru: Teacher = {
-        id: Math.random().toString(36).substr(2, 9),
-        ...formData
+    setIsSaving(true);
+    
+    try {
+      const payload = {
+        nama: formData.name,
+        mataPelajaran: formData.mataPelajaran,
+        nip: formData.nip,
+        email: formData.email,
+        phone: formData.phone,
+        alamat: formData.alamat
       };
-      newList = [...guruList, newGuru];
+
+      if (editingGuru && editingGuru.id && !editingGuru.id.startsWith('temp')) {
+        const { error } = await supabase.from('profiles_guru').update(payload).eq('id', editingGuru.id);
+        if (error) {
+           if (error.message.includes('Could not find the table')) alert('Simulasi sukses, namun tabel profiles_guru belum ada di database.');
+           else throw error;
+        }
+      } else {
+        const { error } = await supabase.from('profiles_guru').insert([payload]);
+        if (error) {
+           if (error.message.includes('Could not find the table')) alert('Simulasi sukses, namun tabel profiles_guru belum ada di database.');
+           else throw error;
+        }
+      }
+      
+      await fetchGuru();
+      setIsModalOpen(false);
+    } catch (err: any) {
+      console.error(err);
+      alert('Gagal menyimpan data guru.');
+    } finally {
+      setIsSaving(false);
     }
-    setGuruList(newList);
-    autoPushGuru(newList);
-    setIsModalOpen(false);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Apakah Anda yakin ingin menghapus data guru ini?')) {
-      const newList = guruList.filter(g => g.id !== id);
-      setGuruList(newList);
-      autoPushGuru(newList);
+      if (!id.startsWith('temp')) {
+        try {
+          const { error } = await supabase.from('profiles_guru').delete().eq('id', id);
+          if (error && !error.message.includes('Could not find the table')) throw error;
+        } catch (err) {
+          console.error(err);
+          alert('Gagal menghapus data guru.');
+        }
+      }
+      await fetchGuru();
     }
   };
 
@@ -134,84 +171,43 @@ export default function Guru() {
     XLSX.writeFile(wb, "data_guru_export.xlsx");
   };
 
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       const bstr = evt.target?.result;
       const wb = XLSX.read(bstr, { type: 'binary' });
       const wsname = wb.SheetNames[0];
       const ws = wb.Sheets[wsname];
       const data = XLSX.utils.sheet_to_json(ws) as any[];
 
-      const importedGuru: Teacher[] = data.map((item, index) => ({
-        id: `imported-teacher-${Date.now()}-${index}`,
-        name: item.Nama || item.name || '',
+      const importedGuru = data.map((item, index) => ({
+        nama: item.Nama || item.name || '',
         nip: String(item.NIP || item.nip || ''),
         mataPelajaran: item["Mata Pelajaran"] || item.mataPelajaran || '',
         email: item.Email || item.email || '',
         phone: item.Telepon || item.phone || String(item.phone || '')
       }));
 
-      const newList = [...guruList, ...importedGuru];
-      setGuruList(newList);
-      autoPushGuru(newList);
-      alert(`${importedGuru.length} data guru berhasil diimport.`);
+      try {
+        const { error } = await supabase.from('profiles_guru').insert(importedGuru);
+        if (error) {
+           if (error.message.includes('Could not find the table')) alert(`Simulasi selesai. Ditemukan ${importedGuru.length} data untuk diimport, tapi tabel profiles_guru tidak ada.`);
+           else throw error;
+        } else {
+           alert(`${importedGuru.length} data guru berhasil diimport.`);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Gagal mengimport data guru ke database.');
+      }
+      
+      await fetchGuru();
     };
     reader.readAsBinaryString(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const [loadingSheet, setLoadingSheet] = useState(false);
-
-  const handleSyncSpreadsheet = async () => {
-    const url = import.meta.env.VITE_APP_URL || '';
-    if (!url) {
-      alert("URL Spreadsheet belum diatur di environment variable (VITE_APP_URL).");
-      return;
-    }
-
-    setLoadingSheet(true);
-    try {
-      const data = await fetchGuruFromSheet(url);
-      if (data.length > 0) {
-        setGuruList(data);
-        alert(`Berhasil sinkronisasi ${data.length} data guru dari spreadsheet.`);
-      } else {
-        alert("Tidak ada data ditemukan di spreadsheet sheet 'Guru'.");
-      }
-    } catch (error) {
-      alert("Gagal mengambil data. Pastikan URL Apps Script benar dan sheet bernama 'Guru' sudah ada.");
-    } finally {
-      setLoadingSheet(false);
-    }
-  };
-
-  const handlePushToSpreadsheet = async () => {
-    const url = import.meta.env.VITE_APP_URL || '';
-    if (!url) {
-      alert("URL Spreadsheet belum diatur di environment variable (VITE_APP_URL).");
-      return;
-    }
-
-    if (!confirm("Ini akan mengirim seluruh data guru di platform ini ke Spreadsheet (Overwrite). Lanjutkan?")) return;
-
-    setLoadingSheet(true);
-    try {
-      const header = ["Nama", "NIP/ID", "ID Lain", "Email", "Telepon", "Mata Pelajaran", "Alamat"];
-      const rows = guruList.map(g => [
-        g.name, g.nip, g.nip, g.email || '', g.phone || '', g.mataPelajaran || '', g.alamat || ''
-      ]);
-
-      await pushDataToSheet(url, 'Guru', [header, ...rows]);
-      alert("Data guru berhasil dikirim ke Spreadsheet.");
-    } catch (error) {
-      alert("Gagal mengirim data.");
-    } finally {
-      setLoadingSheet(false);
-    }
   };
 
   return (
@@ -244,24 +240,6 @@ export default function Guru() {
           >
             <FileDown className="w-3.5 h-3.5" />
             Export
-          </button>
-          <button 
-            onClick={handleSyncSpreadsheet}
-            disabled={loadingSheet}
-            className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-200 transition-all shadow-sm border border-emerald-200 disabled:opacity-50"
-            title="Ambil data dari Cloud"
-          >
-            {loadingSheet ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-            Ambil
-          </button>
-          <button 
-            onClick={handlePushToSpreadsheet}
-            disabled={loadingSheet}
-            className="flex items-center gap-2 bg-brand-sidebar text-white px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-brand-sidebar/90 transition-all shadow-sm disabled:opacity-50"
-            title="Simpan data ke Cloud"
-          >
-            <CloudUpload className="w-3.5 h-3.5" />
-            Simpan
           </button>
           <button 
             onClick={() => handleOpenModal()}
