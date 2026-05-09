@@ -41,7 +41,8 @@ export default function UjianSiswa() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResultCard, setShowResultCard] = useState(false);
-  const [resultData, setResultData] = useState<any>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [integrityChecked, setIntegrityChecked] = useState(false);
 
   const studentId = localStorage.getItem('studentId') || 'demo-siswa-1';
   const studentName = localStorage.getItem('studentName') || 'Budi Santoso';
@@ -160,6 +161,7 @@ export default function UjianSiswa() {
   // Auto-submit when time is up
   useEffect(() => {
     if (hasStarted && timeLeft === 0 && !isSubmitting) {
+      if (showConfirmModal) setShowConfirmModal(false);
       handleSubmit();
     }
   }, [timeLeft, hasStarted, isSubmitting]);
@@ -267,13 +269,16 @@ export default function UjianSiswa() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasStarted]);
 
+  const handleManualSubmitClick = () => {
+    setIntegrityChecked(false);
+    setShowConfirmModal(true);
+  };
+
   const handleSubmit = async () => {
     if (isSubmitting) return;
-    
-    if (timeLeft > 0) {
-      if (!window.confirm('Yakin ingin menyelesaikan ujian? Anda tidak dapat kembali lagi.')) {
-        return;
-      }
+
+    if (showConfirmModal) {
+      setShowConfirmModal(false);
     }
 
     setIsSubmitting(true);
@@ -302,6 +307,9 @@ export default function UjianSiswa() {
         }]);
 
       if (error) throw error;
+
+      // Unlock device / set is_online to false
+      await supabase.from('profiles_siswa').update({ is_online: false }).eq('id', studentId);
 
       setResultData({
         score: Math.round(score),
@@ -658,7 +666,7 @@ export default function UjianSiswa() {
         <div className="flex items-center gap-2 sm:gap-4">
           {currentIdx === soalList.length - 1 ? (
              <button
-              onClick={handleSubmit}
+              onClick={handleManualSubmitClick}
               disabled={isSubmitting}
               className="flex items-center gap-3 px-6 sm:px-10 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-[9px] sm:text-[10px] uppercase tracking-[0.2em] transition-all bg-emerald-600 text-white hover:bg-emerald-500 shadow-2xl shadow-emerald-600/30 active:scale-95 disabled:opacity-50"
             >
@@ -675,6 +683,60 @@ export default function UjianSiswa() {
           )}
         </div>
       </footer>
+
+      {/* Confirmation Modal */}
+      <AnimatePresence>
+        {showConfirmModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-slate-900 border border-slate-700 p-8 rounded-3xl max-w-md w-full shadow-2xl space-y-6"
+            >
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-16 h-16 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black uppercase text-white italic tracking-tight">Akhiri Ujian?</h3>
+                  <p className="text-sm font-medium text-slate-400 mt-2">
+                    Anda masih memiliki <span className="font-black text-red-400">{soalList.length - Object.keys(answers).length} soal</span> yang belum dijawab. 
+                  </p>
+                </div>
+              </div>
+
+              <label className="flex items-start gap-4 p-4 bg-slate-800/50 rounded-xl border border-slate-700 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={integrityChecked}
+                  onChange={(e) => setIntegrityChecked(e.target.checked)}
+                  className="mt-1 w-5 h-5 accent-emerald-500 rounded"
+                />
+                <span className="text-xs font-medium text-slate-300">
+                  Saya yakin dan setuju untuk mengakhiri ujian sekarang. Saya bertanggung jawab atas semua jawaban yang telah saya berikan.
+                </span>
+              </label>
+
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setShowConfirmModal(false)}
+                  className="flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all"
+                >
+                  Batal
+                </button>
+                <button 
+                  onClick={handleSubmit}
+                  disabled={!integrityChecked || isSubmitting}
+                  className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Ya, Selesai"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

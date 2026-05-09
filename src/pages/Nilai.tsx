@@ -11,6 +11,13 @@ interface Grade {
   rata: number;
 }
 
+function getPredikat(rata: number) {
+  if (rata >= 85) return { label: 'Sangat Baik', color: 'text-emerald-500' };
+  if (rata >= 70) return { label: 'Baik', color: 'text-blue-500' };
+  if (rata >= 55) return { label: 'Cukup', color: 'text-amber-500' };
+  return { label: 'Kurang', color: 'text-red-500' };
+}
+
 export default function Nilai() {
   const navigate = useNavigate();
   const [isEditMode, setIsEditMode] = useState(false);
@@ -140,6 +147,7 @@ export default function Nilai() {
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-brand-border text-center italic">UAS</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-brand-border text-center italic">Tugas</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-brand-accent uppercase tracking-widest border-b border-brand-border text-center italic">Rata-Rata</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-brand-accent uppercase tracking-widest border-b border-brand-border text-center italic">Predikat</th>
                 {isEditMode && <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-brand-border text-center">Aksi</th>}
               </tr>
             </thead>
@@ -196,6 +204,11 @@ export default function Nilai() {
                   </td>
                   <td className="px-6 py-4 border-b border-brand-border text-center">
                     <span className="text-xs font-black text-brand-accent italic">{n.rata}</span>
+                  </td>
+                  <td className="px-6 py-4 border-b border-brand-border text-center">
+                    <span className={cn("text-xs font-black uppercase tracking-widest", getPredikat(n.rata).color)}>
+                      {getPredikat(n.rata).label}
+                    </span>
                   </td>
                   {isEditMode && (
                     <td className="px-6 py-4 border-b border-brand-border text-center">

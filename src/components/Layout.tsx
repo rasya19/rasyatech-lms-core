@@ -91,6 +91,17 @@ export default function Layout() {
   };
 
   const handleLogout = async () => {
+    try {
+      const studentId = localStorage.getItem('studentId');
+      if (studentId) {
+        await supabase.from('profiles_siswa').update({ is_online: false }).eq('id', studentId);
+      }
+      // Attempt sign out but don't strictly await it to prevent "stuck" redirects
+      supabase.auth.signOut().catch(e => console.warn('Sign out error:', e));
+    } catch (err) {
+      console.warn('Logout try/catch error:', err);
+    }
+
     // Clear storage first for immediate session termination in the browser
     const keysToRemove = [
       'userRole', 
@@ -103,13 +114,6 @@ export default function Layout() {
       'studentClass'
     ];
     keysToRemove.forEach(k => localStorage.removeItem(k));
-    
-    try {
-      // Attempt sign out but don't strictly await it to prevent "stuck" redirects
-      supabase.auth.signOut().catch(e => console.warn('Sign out error:', e));
-    } catch (err) {
-      console.warn('Logout try/catch error:', err);
-    }
     
     // Redirect immediately
     window.location.href = schoolSlug ? `/s/${schoolSlug}/login` : '/login';

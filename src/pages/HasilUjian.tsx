@@ -66,6 +66,10 @@ export default function MonitoringUjian() {
         status: 'FORCED'
       });
       if (error) throw error;
+
+      // also update profiles_siswa to unlock their device
+      await supabase.from('profiles_siswa').update({ is_online: false }).eq('id', studentId);
+
       alert('Siswa berhasil dipaksa selesai.');
       fetchMonitoring();
     } catch (err: any) {

@@ -93,6 +93,13 @@ export default function Login() {
           throw new Error('NISN tidak ditemukan atau akun tidak aktif.');
         }
 
+        if (data.is_online) {
+          throw new Error('Akun sedang aktif di perangkat lain. Hubungi admin untuk mereset sesi (Database Sync).');
+        }
+
+        // Mark as online
+        await supabase.from('profiles_siswa').update({ is_online: true }).eq('id', data.id);
+
         localStorage.setItem('userRole', 'Siswa');
         localStorage.setItem('studentName', data.nama);
         localStorage.setItem('studentNisn', data.nisn);

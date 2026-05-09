@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, UserCheck, CheckCircle2, Clock,
   ArrowUpRight, ArrowDownRight, Activity, XCircle, AlertCircle,
-  FileText, Wallet, Rocket, Trophy, Calendar, Download
+  FileText, Wallet, Rocket, Trophy, Calendar, Download, RefreshCcw, RotateCcw
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
@@ -94,14 +94,22 @@ export default function Dashboard() {
         return;
       }
 
-      const worksheetData = data.map(row => ({
-        'Nama Siswa': row.profiles_siswa?.nama,
-        'NISN': row.profiles_siswa?.nisn,
-        'Kelas': row.profiles_siswa?.class,
-        'Nama Ujian': row.bank_soal?.nama_ujian,
-        'Skor': row.nilai,
-        'Waktu Selesai': new Date(row.end_time).toLocaleString('id-ID')
-      }));
+      const worksheetData = data.map(row => {
+        let predikat = 'Kurang';
+        if (row.nilai >= 85) predikat = 'Sangat Baik';
+        else if (row.nilai >= 70) predikat = 'Baik';
+        else if (row.nilai >= 55) predikat = 'Cukup';
+
+        return {
+          'Nama Siswa': row.profiles_siswa?.nama,
+          'NISN': row.profiles_siswa?.nisn,
+          'Kelas': row.profiles_siswa?.class,
+          'Nama Ujian': row.bank_soal?.nama_ujian,
+          'Skor': row.nilai,
+          'Predikat': predikat,
+          'Waktu Selesai': new Date(row.end_time).toLocaleString('id-ID')
+        };
+      });
 
       const { utils, writeFile } = await import('xlsx');
       const wb = utils.book_new();
@@ -137,6 +145,38 @@ export default function Dashboard() {
       }
     } catch (err) {
       console.error('Error fetching student dashboard:', err);
+    }
+  };
+
+  const handleDatabaseSync = async () => {
+    try {
+      // Find students who have finished the exam
+      const { data: finished } = await supabase.from('hasil_ujian').select('student_id');
+      if (finished && finished.length > 0) {
+        const studentIds = finished.map(f => f.student_id).filter(Boolean);
+        
+        // Convert to unique array to avoid big IN clause redundancy
+        const uniqueIds = Array.from(new Set(studentIds));
+
+        // Update their is_online logic
+        const { error } = await supabase
+          .from('profiles_siswa')
+          .update({ is_online: false })
+          .in('id', uniqueIds)
+          .eq('is_online', true);
+
+        if (error) {
+          console.warn('is_online column might not exist:', error.message);
+          toast.success('Database di-sync. ' + (error.message.includes('column') ? '(Simulasi tanpa kolom is_online)' : ''));
+        } else {
+          toast.success('Database Sync berhasil. Status is_online siswa yang sudah selesai ujian kini di-reset menjadi false.');
+        }
+      } else {
+         toast.info('Tidak ada siswa yang telah menyelesaikan ujian saat ini.');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Gagal melakukan sync database.');
     }
   };
 
@@ -256,8 +296,14 @@ export default function Dashboard() {
                       <Download className="w-4 h-4" /> Download Rekap Simulasi (XLSX)
                     </button>
                     <button 
+                      onClick={handleDatabaseSync}
+                      className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all shadow-xl flex items-center gap-3"
+                    >
+                      <RefreshCcw className="w-4 h-4" /> Database Sync
+                    </button>
+                    <button 
                       onClick={handleResetAll}
-                      className="bg-red-500/10 text-red-500 border border-red-500/20 px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-xl"
+                      className="bg-red-500/10 text-red-500 border border-red-500/20 px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-xl flex items-center gap-3"
                     >
                       <RotateCcw className="w-4 h-4" /> Reset Semua Sesi
                     </button>
