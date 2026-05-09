@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Clock, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Flag, MonitorPlay, Check, Rocket, Loader2 } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Flag, MonitorPlay, Check, Rocket, Loader2, Trophy, Download } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
@@ -39,6 +39,8 @@ export default function UjianSiswa() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showResultCard, setShowResultCard] = useState(false);
+  const [resultData, setResultData] = useState<any>(null);
 
   const studentId = localStorage.getItem('studentId') || 'demo-siswa-1';
   const studentName = localStorage.getItem('studentName') || 'Budi Santoso';
@@ -255,12 +257,19 @@ export default function UjianSiswa() {
 
       if (error) throw error;
 
-      alert(`Ujian selesai! Skor Anda: ${Math.round(score)}`);
-      
+      setResultData({
+        score: Math.round(score),
+        correct: correctCount,
+        incorrect: totalSoal - correctCount,
+        total: totalSoal,
+        examName: bankSoal?.nama_ujian,
+        subject: bankSoal?.mata_pelajaran
+      });
+
       if (document.fullscreenElement && document.exitFullscreen) {
          document.exitFullscreen();
       }
-      navigate('/dashboard/ujian');
+      setShowResultCard(true);
     } catch (err) {
       console.error('Error submitting exam:', err);
       alert('Gagal menyimpan hasil ujian. Hubungi pengawas.');
@@ -278,7 +287,85 @@ export default function UjianSiswa() {
     );
   }
 
-  // Pre-Start Overlay
+  // Result Card Overlay
+  if (showResultCard && resultData) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className="max-w-2xl w-full bg-white rounded-[3rem] overflow-hidden shadow-2xl relative print:shadow-none print:rounded-none"
+        >
+           {/* Certificate Header */}
+           <div className="bg-slate-900 p-8 text-center relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-16 -mt-16" />
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -ml-16 -mb-16" />
+              
+              <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/30">
+                 <Trophy className="w-8 h-8" />
+              </div>
+              <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Hasil Ujian Anda</h2>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1 italic">Certificate of Completion</p>
+           </div>
+
+           <div className="p-10 space-y-8">
+              <div className="grid grid-cols-2 gap-6 text-center">
+                 <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Nama Siswa</p>
+                    <p className="text-base font-black text-slate-800 uppercase italic">{studentName}</p>
+                 </div>
+                 <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">NISN Peserta</p>
+                    <p className="text-base font-black text-slate-800 uppercase italic">{studentNisn}</p>
+                 </div>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-100 rounded-[2rem] p-8 text-center relative">
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Mata Pelajaran: {resultData.subject}</p>
+                 <h3 className="text-xl font-black text-slate-800 uppercase italic tracking-tight mb-8">"{resultData.examName}"</h3>
+                 
+                 <div className="flex items-center justify-center gap-12">
+                    <div className="relative">
+                       <div className="text-6xl font-black text-slate-900 italic tracking-tighter">{resultData.score}</div>
+                       <div className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mt-2 italic">Skor Akhir</div>
+                    </div>
+                    <div className="w-px h-16 bg-slate-200" />
+                    <div className="space-y-3 text-left">
+                       <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <p className="text-xs font-bold text-slate-600">Benar: <span className="font-black text-slate-900">{resultData.correct}</span></p>
+                       </div>
+                       <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-red-400" />
+                          <p className="text-xs font-bold text-slate-600">Salah: <span className="font-black text-slate-900">{resultData.incorrect}</span></p>
+                       </div>
+                       <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-slate-300" />
+                          <p className="text-xs font-bold text-slate-600">Total: <span className="font-black text-slate-900">{resultData.total}</span></p>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 pt-4 no-print">
+                 <button 
+                  onClick={() => window.print()}
+                  className="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 shadow-xl shadow-black/10"
+                 >
+                    <Download className="w-4 h-4" /> Cetak Hasil Ujian
+                 </button>
+                 <button 
+                  onClick={() => navigate('/dashboard/ujian')}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20"
+                 >
+                    Kembali ke Dashboard <ChevronRight className="w-4 h-4" />
+                 </button>
+              </div>
+           </div>
+        </motion.div>
+      </div>
+    );
+  }
   if (!hasStarted) {
     return (
       <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6 text-center">
@@ -377,26 +464,26 @@ export default function UjianSiswa() {
       </header>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
         
         {/* Left Area - Question */}
-        <main className="flex-1 flex flex-col min-w-0 bg-slate-900 overflow-y-auto custom-scrollbar relative p-6 lg:p-10 hide-scrollbar">
+        <main className="flex-1 flex flex-col min-w-0 bg-slate-900 overflow-y-auto custom-scrollbar relative p-4 sm:p-6 lg:p-10 hide-scrollbar">
           <div className="max-w-4xl w-full mx-auto pb-32">
             
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-black text-white italic">Soal Nomor {currentIdx + 1}</h2>
-              <span className="text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border bg-slate-800/50 text-slate-400 border-slate-700 italic">
-                Sisa: {soalList.length - currentIdx - 1} Soal lagi
+            <div className="flex items-center justify-between mb-6 sm:mb-8">
+              <h2 className="text-xl sm:text-2xl font-black text-white italic">Soal Nomor {currentIdx + 1}</h2>
+              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-4 py-1.5 rounded-full border bg-slate-800/50 text-slate-400 border-slate-700 italic">
+                Sisa: {soalList.length - currentIdx - 1} Soal
               </span>
             </div>
 
             {activeSoal && (
               <>
-                <div className="text-lg md:text-xl font-bold text-slate-200 leading-relaxed mb-10 bg-slate-800/20 p-8 rounded-[2rem] border border-slate-800/50">
+                <div className="text-base sm:text-lg md:text-xl font-bold text-slate-200 leading-relaxed mb-6 sm:mb-10 bg-slate-800/20 p-5 sm:p-8 rounded-2xl sm:rounded-[2rem] border border-slate-800/50">
                   {activeSoal.pertanyaan}
                 </div>
 
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-3 sm:gap-4 pb-10">
                   {[
                     { id: 'A', teks: activeSoal.opsi_a },
                     { id: 'B', teks: activeSoal.opsi_b },
@@ -409,10 +496,10 @@ export default function UjianSiswa() {
                       <label 
                         key={opsi.id}
                         className={cn(
-                          "flex items-start gap-5 p-6 rounded-2xl border-2 transition-all cursor-pointer group relative overflow-hidden",
+                          "flex items-start gap-3 sm:gap-5 p-4 sm:p-6 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer group relative overflow-hidden select-none active:scale-[0.98]",
                           isSelected 
                             ? "bg-emerald-500/10 border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.1)]" 
-                            : "bg-slate-800/50 border-slate-800 hover:border-slate-700 hover:bg-slate-800"
+                            : "bg-slate-800/50 border-slate-800"
                         )}
                       >
                         <input 
@@ -424,16 +511,16 @@ export default function UjianSiswa() {
                           className="peer sr-only"
                         />
                         <div className={cn(
-                          "w-10 h-10 rounded-xl border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all text-sm font-black",
+                          "w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all text-xs sm:text-sm font-black",
                           isSelected 
                             ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20" 
-                            : "border-slate-700 text-slate-500 group-hover:border-slate-600 group-hover:text-slate-400"
+                            : "border-slate-700 text-slate-500"
                         )}>
-                          {isSelected ? <Check className="w-5 h-5" /> : opsi.id}
+                          {isSelected ? <Check className="w-4 h-4 sm:w-5 sm:h-5" /> : opsi.id}
                         </div>
                         <div className={cn(
-                          "text-base md:text-lg pt-2 transition-colors flex-1",
-                          isSelected ? "text-emerald-50 font-black italic" : "text-slate-400 font-bold group-hover:text-slate-300"
+                          "text-sm sm:text-base md:text-lg pt-1 sm:pt-2 transition-colors flex-1",
+                          isSelected ? "text-emerald-50 font-black italic" : "text-slate-400 font-bold"
                         )}>
                           {opsi.teks}
                         </div>
@@ -447,16 +534,16 @@ export default function UjianSiswa() {
         </main>
 
         {/* Right Area - Grid Navigation */}
-        <aside className="w-full lg:w-80 shrink-0 bg-slate-950 border-t lg:border-t-0 lg:border-l border-emerald-900/30 flex flex-col h-[300px] lg:h-auto overflow-hidden">
-          <div className="p-5 border-b border-emerald-900/30 bg-slate-900/50 flex items-center justify-between">
-            <h3 className="text-xs font-black text-slate-300 uppercase tracking-widest italic">Peta Navigasi</h3>
-            <div className="text-[10px] font-black text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full border border-emerald-400/20">
+        <aside className="w-full lg:w-80 shrink-0 bg-slate-950 border-t lg:border-t-0 lg:border-l border-emerald-900/30 flex flex-col h-[280px] sm:h-[320px] lg:h-auto overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-emerald-900/30 bg-slate-900/50 flex items-center justify-between">
+            <h3 className="text-[10px] sm:text-xs font-black text-slate-300 uppercase tracking-widest italic">Peta Navigasi</h3>
+            <div className="text-[9px] sm:text-[10px] font-black text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full border border-emerald-400/20 tracking-tighter">
               {Object.keys(answers).length} / {soalList.length} Terjawab
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-5 custom-scrollbar hide-scrollbar">
-            <div className="grid grid-cols-5 gap-3">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 custom-scrollbar hide-scrollbar">
+            <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-5 gap-2 sm:gap-3">
               {soalList.map((s, idx) => {
                 const isAnswered = !!answers[s.id];
                 const isRagu = !!raguRagu[s.id];
@@ -467,11 +554,11 @@ export default function UjianSiswa() {
                     key={s.id}
                     onClick={() => jumpTo(idx)}
                     className={cn(
-                      "aspect-square rounded-xl flex items-center justify-center text-xs font-black relative overflow-hidden transition-all shadow-sm",
+                      "aspect-square rounded-lg sm:rounded-xl flex items-center justify-center text-[10px] sm:text-xs font-black relative overflow-hidden transition-all shadow-sm active:scale-90",
                       isActive && !isAnswered && !isRagu ? "bg-blue-600 text-white ring-2 ring-blue-400 ring-offset-2 ring-offset-slate-950 scale-110 z-10" : "",
                       isAnswered && !isRagu ? "bg-emerald-500 text-white shadow-emerald-500/20" : "",
                       isRagu ? "bg-amber-500 text-white shadow-amber-500/20" : "",
-                      !isAnswered && !isRagu && !isActive ? "bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-slate-300" : "",
+                      !isAnswered && !isRagu && !isActive ? "bg-slate-800 text-slate-500 hover:bg-slate-700" : "",
                       isActive && (isAnswered || isRagu) ? "ring-2 ring-white ring-offset-2 ring-offset-slate-950 scale-110 z-10" : ""
                     )}
                   >
@@ -482,14 +569,14 @@ export default function UjianSiswa() {
             </div>
           </div>
           
-          <div className="p-6 border-t border-emerald-900/30 bg-slate-900/50 space-y-3">
-            <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-500 tracking-widest italic">
+          <div className="p-4 sm:p-6 border-t border-emerald-900/30 bg-slate-900/50 space-y-2 sm:space-y-3 hidden sm:block">
+            <div className="flex items-center gap-3 text-[9px] sm:text-[10px] font-black uppercase text-slate-500 tracking-widest italic">
               <div className="w-4 h-4 rounded-md bg-emerald-500 shadow-lg shadow-emerald-500/20" /> Sudah Dijawab
             </div>
-            <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-500 tracking-widest italic">
+            <div className="flex items-center gap-3 text-[9px] sm:text-[10px] font-black uppercase text-slate-500 tracking-widest italic">
               <div className="w-4 h-4 rounded-md bg-amber-500 shadow-lg shadow-amber-500/20" /> Ragu-ragu
             </div>
-            <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-500 tracking-widest italic">
+            <div className="flex items-center gap-3 text-[9px] sm:text-[10px] font-black uppercase text-slate-500 tracking-widest italic">
               <div className="w-4 h-4 rounded-md border border-slate-700 bg-slate-800 shadow-lg shadow-black/20" /> Belum Dijawab
             </div>
           </div>
@@ -498,46 +585,46 @@ export default function UjianSiswa() {
       </div>
 
       {/* Footer Navigation */}
-      <footer className="bg-slate-950 border-t border-emerald-900/50 h-24 shrink-0 flex items-center justify-between px-6 lg:px-10 z-50">
-        <div className="flex items-center gap-4">
+      <footer className="bg-slate-950 border-t border-emerald-900/50 h-20 sm:h-24 shrink-0 flex items-center justify-between px-4 sm:px-6 lg:px-10 z-50">
+        <div className="flex items-center gap-2 sm:gap-4">
           <button
             onClick={handlePrev}
             disabled={currentIdx === 0}
-            className="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-slate-900 border border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30 disabled:opacity-30 disabled:cursor-not-allowed group shadow-xl"
+            className="flex items-center gap-2 px-4 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all bg-slate-900 border border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30 disabled:opacity-30 disabled:cursor-not-allowed group shadow-xl"
           >
-            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> <span className="hidden sm:inline">Soal Sebelumnya</span>
+            <ChevronLeft className="w-4 h-4 sm:group-hover:-translate-x-1 transition-transform" /> <span className="hidden md:inline">Soal Sebelumnya</span>
           </button>
         </div>
 
         <button
           onClick={toggleRagu}
           className={cn(
-            "flex items-center gap-3 px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border-2 shadow-xl",
+            "flex items-center gap-2 sm:gap-3 px-4 sm:px-10 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all border-2 shadow-xl",
             activeSoal && raguRagu[activeSoal.id] 
-              ? "bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20" 
+              ? "bg-amber-500/10 text-amber-400 border-amber-500/30" 
               : "bg-transparent text-amber-500 border-amber-500/10 hover:bg-amber-500/10"
           )}
         >
-          <Flag className={cn("w-4 h-4", activeSoal && raguRagu[activeSoal.id] ? "fill-amber-400" : "")} /> 
-          <span className="hidden sm:inline">Ragu-ragu</span>
+          <Flag className={cn("w-3 h-3 sm:w-4 sm:h-4", activeSoal && raguRagu[activeSoal.id] ? "fill-amber-400" : "")} /> 
+          <span>Ragu-ragu</span>
         </button>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {currentIdx === soalList.length - 1 ? (
              <button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="flex items-center gap-3 px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all bg-emerald-600 text-white hover:bg-emerald-500 shadow-2xl shadow-emerald-600/30 active:scale-95 disabled:opacity-50"
+              className="flex items-center gap-3 px-6 sm:px-10 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-[9px] sm:text-[10px] uppercase tracking-[0.2em] transition-all bg-emerald-600 text-white hover:bg-emerald-500 shadow-2xl shadow-emerald-600/30 active:scale-95 disabled:opacity-50"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-              Selesai Ujian
+              Selesai
             </button>
           ) : (
             <button
               onClick={handleNext}
-              className="flex items-center gap-3 px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-slate-200 text-slate-900 hover:bg-white shadow-2xl shadow-white/10 active:scale-95 group"
+              className="flex items-center gap-2 sm:gap-3 px-6 sm:px-10 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all bg-slate-200 text-slate-900 hover:bg-white shadow-2xl shadow-white/10 active:scale-95 group"
             >
-              <span className="hidden sm:inline">Soal Selanjutnya</span> <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <span className="hidden md:inline">Selanjutnya</span> <ChevronRight className="w-4 h-4 sm:group-hover:translate-x-1 transition-transform" />
             </button>
           )}
         </div>

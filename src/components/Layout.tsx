@@ -149,7 +149,8 @@ export default function Layout() {
             subItems: [
               { icon: FileBarChart, label: 'Kelola Ujian', path: `${prefix}/dashboard/soal` },
               { icon: ClipboardCheck, label: 'Jadwal Ujian', path: `${prefix}/dashboard/ujian` },
-              { icon: Check, label: 'Hasil Ujian', path: `${prefix}/dashboard/hasil-ujian` },
+              { icon: Eye, label: 'Monitoring Live', path: `${prefix}/dashboard/hasil-ujian` },
+              { icon: Check, label: 'Riwayat Ujian', path: `${prefix}/dashboard/nilai` },
             ]
           },
           {
