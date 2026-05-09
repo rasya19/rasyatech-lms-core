@@ -88,10 +88,28 @@ export default function Layout() {
     setIsRoleMenuOpen(false);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('isDemoMode');
-    localStorage.removeItem('adminName');
+  const handleLogout = async () => {
+    // Clear storage first for immediate session termination in the browser
+    const keysToRemove = [
+      'userRole', 
+      'isDemoMode', 
+      'adminName', 
+      'teacherName', 
+      'studentName', 
+      'studentId', 
+      'studentNisn', 
+      'studentClass'
+    ];
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    
+    try {
+      // Attempt sign out but don't strictly await it to prevent "stuck" redirects
+      supabase.auth.signOut().catch(e => console.warn('Sign out error:', e));
+    } catch (err) {
+      console.warn('Logout try/catch error:', err);
+    }
+    
+    // Redirect immediately
     window.location.href = schoolSlug ? `/s/${schoolSlug}/login` : '/login';
   };
 
@@ -111,7 +129,7 @@ export default function Layout() {
   };
 
   const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
-  const adminName = localStorage.getItem('adminName') || (role === 'Admin' ? 'Administrator' : role);
+  const adminName = localStorage.getItem('adminName') || localStorage.getItem('teacherName') || localStorage.getItem('studentName') || (role === 'Admin' ? 'Administrator' : role);
 
   const getNavItems = (): (any & { isExternal?: boolean })[] => {
     const prefix = schoolSlug ? `/s/${schoolSlug}` : '';

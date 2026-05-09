@@ -37,6 +37,10 @@ export default function Login() {
     setIsLoading(true);
     setErrorMsg('');
 
+    // Clear previous session data
+    const keysToInitialClear = ['userRole', 'adminName', 'teacherName', 'studentName', 'studentId', 'studentNisn', 'studentClass', 'isDemoMode'];
+    keysToInitialClear.forEach(k => localStorage.removeItem(k));
+
     try {
       if (loginRole === 'Guru') {
         // Mock teacher login for demo
