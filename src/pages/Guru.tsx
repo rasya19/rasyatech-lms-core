@@ -100,7 +100,7 @@ export default function Guru() {
     try {
       const payload = {
         nama: formData.name,
-        mataPelajaran: formData.mataPelajaran,
+        mata_pelajaran: formData.mataPelajaran,
         nip: formData.nip,
         email: formData.email,
         phone: formData.phone,
@@ -124,8 +124,8 @@ export default function Guru() {
       await fetchGuru();
       setIsModalOpen(false);
     } catch (err: any) {
-      console.error(err);
-      alert('Gagal menyimpan data guru.');
+      console.error('Save error:', err);
+      alert('Gagal menyimpan data guru: ' + (err.message || 'Unknown error'));
     } finally {
       setIsSaving(false);
     }
@@ -186,7 +186,7 @@ export default function Guru() {
       const importedGuru = data.map((item, index) => ({
         nama: item.Nama || item.name || '',
         nip: String(item.NIP || item.nip || ''),
-        mataPelajaran: item["Mata Pelajaran"] || item.mataPelajaran || '',
+        mata_pelajaran: item["Mata Pelajaran"] || item.mataPelajaran || '',
         email: item.Email || item.email || '',
         phone: item.Telepon || item.phone || String(item.phone || '')
       }));
