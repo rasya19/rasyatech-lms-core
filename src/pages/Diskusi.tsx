@@ -83,13 +83,25 @@ export default function Diskusi() {
     ];
   });
 
+  const roomsRef = useRef(rooms);
+  const messagesRef = useRef(allMessages);
+  const globalChannelRef = useRef<any>(null);
+
   useEffect(() => {
+    roomsRef.current = rooms;
+    localStorage.setItem('diskusi_rooms', JSON.stringify(rooms));
+  }, [rooms]);
+
+  useEffect(() => {
+    messagesRef.current = allMessages;
     localStorage.setItem('diskusi_messages', JSON.stringify(allMessages));
   }, [allMessages]);
 
   useEffect(() => {
-    localStorage.setItem('diskusi_rooms', JSON.stringify(rooms));
-  }, [rooms]);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [activeRoom, allMessages, activeTab]);
 
   // Global Channel for Room Sync
   useEffect(() => {
@@ -97,7 +109,7 @@ export default function Diskusi() {
       config: { broadcast: { self: true } }
     })
       .on('broadcast', { event: 'sync_rooms' }, (payload) => {
-        const { type, roomName, newRoom } = payload.payload;
+        const { type, roomName, newRoom, state_rooms, state_messages } = payload.payload;
         if (type === 'DELETE') {
           setRooms(prev => prev.filter(r => r.name !== roomName));
           setAllMessages(prev => {
@@ -115,14 +127,36 @@ export default function Diskusi() {
             if (prev[newRoom.name]) return prev;
             return { ...prev, [newRoom.name]: [] };
           });
+        } else if (type === 'REQUEST_SYNC' && userRole === 'Guru') {
+           // Provide current state to the requesting client
+           globalChannel.send({
+             type: 'broadcast',
+             event: 'sync_rooms',
+             payload: { type: 'STATE_SYNC', state_rooms: roomsRef.current, state_messages: messagesRef.current }
+           });
+        } else if (type === 'STATE_SYNC' && userRole === 'Siswa') {
+           if (state_rooms) setRooms(state_rooms);
+           if (state_messages) setAllMessages(state_messages);
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED' && userRole === 'Siswa') {
+          // Ask for latest sync from guru when mounting
+          globalChannel.send({
+             type: 'broadcast',
+             event: 'sync_rooms',
+             payload: { type: 'REQUEST_SYNC' }
+          });
+        }
+      });
+      
+    globalChannelRef.current = globalChannel;
 
     return () => {
       supabase.removeChannel(globalChannel);
+      globalChannelRef.current = null;
     };
-  }, []);
+  }, [userRole]);
 
   const activeMessages = allMessages[activeRoom] || [];
 
@@ -172,16 +206,13 @@ export default function Diskusi() {
         setActiveRoom(name);
         
         try {
-          const globalChannel = supabase.channel('global_diskusi');
-          globalChannel.subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-              globalChannel.send({
-                type: 'broadcast',
-                event: 'sync_rooms',
-                payload: { type: 'ADD', roomName: name, newRoom },
-              });
-            }
-          });
+          if (globalChannelRef.current) {
+            globalChannelRef.current.send({
+              type: 'broadcast',
+              event: 'sync_rooms',
+              payload: { type: 'ADD', roomName: name, newRoom },
+            });
+          }
         } catch (err) {
           console.error(err);
         }
@@ -209,16 +240,13 @@ export default function Diskusi() {
       }
       
       try {
-        const globalChannel = supabase.channel('global_diskusi');
-        globalChannel.subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            globalChannel.send({
-              type: 'broadcast',
-              event: 'sync_rooms',
-              payload: { type: 'DELETE', roomName },
-            });
-          }
-        });
+        if (globalChannelRef.current) {
+          globalChannelRef.current.send({
+            type: 'broadcast',
+            event: 'sync_rooms',
+            payload: { type: 'DELETE', roomName },
+          });
+        }
       } catch (err) {
         console.error(err);
       }
