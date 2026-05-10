@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, Filter, Plus, Edit2, Trash2, 
   User, MapPin, GraduationCap, Upload, X, ShieldCheck, 
-  Phone, CheckCircle2, AlertCircle, Loader2
+  Phone, CheckCircle2, AlertCircle, Loader2, RefreshCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import * as XLSX from 'xlsx';
+import { toast } from 'sonner';
 
 export interface Student {
   id: string;
@@ -355,6 +356,23 @@ export default function DataSiswa() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={async () => {
+                          if(window.confirm('Reset Password / Sesi login siswa ini? (Mengizinkan login ulang jika akun nyangkut)')) {
+                            try {
+                              await supabase.from('profiles_siswa').update({ is_online: false }).eq('id', student.id);
+                              fetchStudents();
+                              toast.success('Password/Sesi berhasil direset. Siswa dapat login kembali.');
+                            } catch (e: any) {
+                              toast.error('Gagal mereset: ' + e.message);
+                            }
+                          }
+                        }}
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors tooltip tooltip-left"
+                        data-tip="Reset Password / Sesi"
+                      >
+                        <RefreshCcw className="w-4 h-4" />
+                      </button>
                       <button 
                         onClick={() => handleOpenModal(student)}
                         className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors tooltip tooltip-left"

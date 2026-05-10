@@ -2,20 +2,101 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Users, Clock, AlertCircle, CheckCircle2, 
-  Search, Power, RefreshCcw, Loader2 
+  Search, Power, RefreshCcw, Loader2, ListFilter
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function MonitoringUjian() {
+  const [activeTab, setActiveTab] = useState<'live'|'status'>('live');
   const [monitoringData, setMonitoringData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Status tab state
+  const [bankSoals, setBankSoals] = useState<any[]>([]);
+  const [selectedExamId, setSelectedExamId] = useState<string>('');
+  const [statusData, setStatusData] = useState<any[]>([]);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
 
   useEffect(() => {
     fetchMonitoring();
-    const interval = setInterval(fetchMonitoring, 30000); // Polling every 30s
+    const interval = setInterval(() => {
+      if (activeTab === 'live') fetchMonitoring();
+    }, 30000); // Polling every 30s
     return () => clearInterval(interval);
-  }, []);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'status') {
+      fetchBankSoal();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (selectedExamId) {
+      fetchStatusData();
+    }
+  }, [selectedExamId]);
+
+  const fetchBankSoal = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bank_soal')
+        .select('id, nama_ujian, kelas')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setBankSoals(data || []);
+      if (data && data.length > 0 && !selectedExamId) {
+        setSelectedExamId(data[0].id);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchStatusData = async () => {
+    try {
+      setIsLoadingStatus(true);
+      // 1. Get all students
+      const { data: students, error: errS } = await supabase.from('profiles_siswa').select('id, nama, nisn, class');
+      if (errS) throw errS;
+
+      // 2. Get nilai_ujian for selected exam
+      const { data: nilais, error: errN } = await supabase
+        .from('nilai_ujian')
+        .select('siswa_id, waktu_selesai')
+        .eq('bank_soal_id', selectedExamId);
+      if (errN) throw errN;
+
+      // 3. Get jawaban_siswa for selected exam
+      const { data: jawabans, error: errJ } = await supabase
+        .from('jawaban_siswa')
+        .select('student_id')
+        .eq('bank_soal_id', selectedExamId);
+      if (errJ) throw errJ;
+
+      const activeStudents = new Set(jawabans?.map(j => j.student_id) || []);
+
+      const combined = students?.map(s => {
+        const finished = nilais?.find(n => n.siswa_id === s.id);
+        let status = 'Belum Mulai';
+        if (finished) status = 'Selesai';
+        else if (activeStudents.has(s.id)) status = 'Sedang Mengerjakan';
+
+        return {
+          ...s,
+          status,
+          waktu_selesai: finished?.waktu_selesai
+        };
+      }) || [];
+
+      setStatusData(combined);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingStatus(false);
+    }
+  };
 
   const fetchMonitoring = async () => {
     try {
@@ -69,17 +150,20 @@ export default function MonitoringUjian() {
 
       alert('Siswa berhasil dipaksa selesai.');
       fetchMonitoring();
+      if (activeTab === 'status') fetchStatusData();
     } catch (err: any) {
       alert('Gagal: ' + err.message);
     }
   };
 
+  const filteredStatusData = statusData.filter(s => s.nama?.toLowerCase().includes(searchTerm.toLowerCase()));
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 uppercase italic tracking-tighter">Monitoring <span className="text-emerald-500">Ujian Live</span></h1>
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Pantau aktivitas pengerjaan siswa secara real-time</p>
+          <h1 className="text-2xl font-black text-slate-800 uppercase italic tracking-tighter">Monitoring <span className="text-emerald-500">Ujian {activeTab === 'live' ? 'Live' : 'Siswa'}</span></h1>
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Pantau aktivitas pengerjaan siswa secara mudah</p>
         </div>
         
         <div className="flex items-center gap-3 w-full md:w-auto">
@@ -87,82 +171,198 @@ export default function MonitoringUjian() {
              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
              <input 
                type="text" 
-               placeholder="Cari Siswa/Ujian..."
+               placeholder="Cari Siswa..."
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
                className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
              />
           </div>
           <button 
-            onClick={fetchMonitoring}
+            onClick={() => activeTab === 'live' ? fetchMonitoring() : fetchStatusData()}
             className="p-2.5 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition-colors"
           >
-            <RefreshCcw className={cn("w-5 h-5", isLoading && "animate-spin")} />
+            <RefreshCcw className={cn("w-5 h-5", (isLoading || isLoadingStatus) && "animate-spin")} />
           </button>
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200/60 rounded-3xl overflow-hidden shadow-sm">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-slate-50/50">
-            <tr>
-              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Siswa</th>
-              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ujian</th>
-              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Aktivitas Terakhir</th>
-              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {monitoringData.length === 0 ? (
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-px">
+        <button
+          onClick={() => setActiveTab('live')}
+          className={cn(
+            "px-4 py-2 font-bold text-xs uppercase tracking-widest transition-all border-b-2 rounded-t-lg",
+            activeTab === 'live' ? "border-emerald-500 text-emerald-600 bg-emerald-50/50" : "border-transparent text-slate-500 hover:bg-slate-50"
+          )}
+        >
+          Sesi Ujian Aktif
+        </button>
+        <button
+          onClick={() => setActiveTab('status')}
+          className={cn(
+            "px-4 py-2 font-bold text-xs uppercase tracking-widest transition-all border-b-2 rounded-t-lg",
+            activeTab === 'status' ? "border-emerald-500 text-emerald-600 bg-emerald-50/50" : "border-transparent text-slate-500 hover:bg-slate-50"
+          )}
+        >
+          Status Kelengkapan
+        </button>
+      </div>
+
+      {activeTab === 'status' && (
+        <div className="flex items-center gap-3">
+          <ListFilter className="w-4 h-4 text-slate-400" />
+          <select 
+            value={selectedExamId}
+            onChange={(e) => setSelectedExamId(e.target.value)}
+            className="bg-white border border-slate-200 text-xs font-bold rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-emerald-500/20"
+          >
+            <option value="">-- Pilih Ujian --</option>
+            {bankSoals.map(b => (
+              <option key={b.id} value={b.id}>{b.nama_ujian} (Kelas {b.kelas || 'Semua'})</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {activeTab === 'live' ? (
+        <div className="bg-white border border-slate-200/60 rounded-3xl overflow-hidden shadow-sm">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-slate-50/50">
               <tr>
-                <td colSpan={4} className="py-20 text-center">
-                   <div className="w-16 h-16 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-slate-50/50">
-                      <Users className="w-8 h-8" />
-                   </div>
-                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Belum ada aktivitas ujian yang terdeteksi.</p>
-                </td>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Siswa</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ujian</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Aktivitas Terakhir</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Aksi</th>
               </tr>
-            ) : (
-              monitoringData.map((session, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black text-xs border border-emerald-500/20">
-                        {session.profiles_siswa?.nama?.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-800">{session.profiles_siswa?.nama}</p>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{session.profiles_siswa?.nisn} • Kelas {session.profiles_siswa?.class}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-xs font-bold text-slate-700">{session.bank_soal?.nama_ujian}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                       <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                       <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Sedang Mengerjakan</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span className="text-xs font-bold">{new Date(session.updated_at).toLocaleTimeString('id-ID')}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => handleForceFinish(session.student_id, session.bank_soal_id)}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:border-red-500 transition-all shadow-lg shadow-black/10 group-hover:-translate-x-1"
-                    >
-                      <Power className="w-3.5 h-3.5" /> Paksa Selesai
-                    </button>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {monitoringData.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-20 text-center">
+                     <div className="w-16 h-16 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-slate-50/50">
+                        <Users className="w-8 h-8" />
+                     </div>
+                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Belum ada aktivitas ujian yang terdeteksi.</p>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : (
+                monitoringData.map((session, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black text-xs border border-emerald-500/20">
+                          {session.profiles_siswa?.nama?.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-800">{session.profiles_siswa?.nama}</p>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{session.profiles_siswa?.nisn} • Kelas {session.profiles_siswa?.class}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-xs font-bold text-slate-700">{session.bank_soal?.nama_ujian}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                         <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                         <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Sedang Mengerjakan</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span className="text-xs font-bold">{new Date(session.updated_at).toLocaleTimeString('id-ID')}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button 
+                        onClick={() => handleForceFinish(session.student_id, session.bank_soal_id)}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:border-red-500 transition-all shadow-lg shadow-black/10 group-hover:-translate-x-1"
+                      >
+                        <Power className="w-3.5 h-3.5" /> Paksa Selesai
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="bg-white border border-slate-200/60 rounded-3xl overflow-hidden shadow-sm">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-slate-50/50">
+              <tr>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Siswa</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Waktu Terakhir</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {!selectedExamId ? (
+                <tr>
+                  <td colSpan={4} className="py-20 text-center">
+                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Pilih ujian terlebih dahulu.</p>
+                  </td>
+                </tr>
+              ) : filteredStatusData.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-20 text-center">
+                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Siswa tidak ditemukan.</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredStatusData.map((s, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-600 flex items-center justify-center font-black text-xs border border-blue-500/20">
+                          {s.nama?.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-800">{s.nama}</p>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{s.nisn} • Kelas {s.class}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className={cn(
+                        "inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest",
+                        s.status === 'Selesai' && "bg-emerald-50 text-emerald-600 border-emerald-200",
+                        s.status === 'Sedang Mengerjakan' && "bg-amber-50 text-amber-600 border-amber-200",
+                        s.status === 'Belum Mulai' && "bg-slate-50 text-slate-500 border-slate-200"
+                      )}>
+                         {s.status === 'Selesai' && <CheckCircle2 className="w-3 h-3" />}
+                         {s.status === 'Sedang Mengerjakan' && <RefreshCcw className="w-3 h-3 animate-spin" />}
+                         {s.status === 'Belum Mulai' && <AlertCircle className="w-3 h-3" />}
+                         {s.status}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {s.waktu_selesai ? (
+                        <div className="flex items-center gap-2 text-slate-500">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                          <span className="text-xs font-bold">{new Date(s.waktu_selesai).toLocaleTimeString('id-ID')}</span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 text-sm font-bold">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {s.status === 'Sedang Mengerjakan' && (
+                        <button 
+                          onClick={() => handleForceFinish(s.id, selectedExamId)}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:border-red-500 transition-all shadow-lg"
+                        >
+                          <Power className="w-3.5 h-3.5" /> Paksa Selesai
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

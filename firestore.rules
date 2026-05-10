@@ -15,6 +15,10 @@ service cloud.firestore {
       return id is string && id.size() <= 64 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email != null && request.auth.token.email.lower() == 'ismanto095@gmail.com';
+    }
+
     // School validation helper
     function isValidSchool(data) {
       return data.keys().hasAll(['ownerUid', 'name', 'slug', 'adminEmail', 'adminName', 'whatsapp', 'packageId', 'status', 'createdAt']) &&
@@ -35,35 +39,36 @@ service cloud.firestore {
 
     match /schools/{schoolId} {
       allow get: if true;
-      allow list: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
+      allow list: if isAdmin();
       allow create: if isValidId(schoolId) && 
                       request.auth.uid == request.resource.data.ownerUid && 
                       !exists(/databases/$(database)/documents/schools/$(schoolId)) &&
                       isValidSchool(request.resource.data);
-      allow update: if request.auth.token.email.lower() == 'ismanto095@gmail.com' || (request.auth.uid == resource.data.ownerUid);
-      allow delete: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
+      allow update: if isAdmin() || (request.auth != null && request.auth.uid == resource.data.ownerUid);
+      allow delete: if isAdmin();
     }
 
     match /settings/{settingId} {
       allow get: if true;
-      allow write: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
+      allow write: if isAdmin();
     }
 
     match /payments/{paymentId} {
-      allow read, write: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
+      allow read, write: if isAdmin();
     }
 
     match /affiliates/{id} {
       allow read: if true;
-      allow write: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
+      allow create: if true;
+      allow update, delete: if isAdmin();
     }
 
     match /commissions/{id} {
       allow read: if true;
-      allow write: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
+      allow write: if isAdmin();
     }
     match /feedbacks/{id} {
-      allow read: if request.auth.token.email.lower() == 'ismanto095@gmail.com';
+      allow read: if isAdmin();
       allow create: if isSignedIn();
     }
     match /ppdb_registrations/{id} {
