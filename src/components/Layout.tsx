@@ -194,6 +194,7 @@ export default function Layout() {
       case 'Guru':
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
+          { icon: Users, label: 'Data Siswa', path: `${prefix}/data-siswa` },
           { icon: BookOpen, label: 'Materi Ajar', path: `${prefix}/dashboard/materi` },
           { icon: ClipboardCheck, label: 'Kelola Ujian', path: `${prefix}/dashboard/ujian` },
           { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },
