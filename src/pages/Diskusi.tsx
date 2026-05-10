@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Video, Send, Users, Shield, BookOpen, Clock, Heart } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
+import { supabase } from '../lib/supabase';
 
 export default function Diskusi() {
   const [activeTab, setActiveTab] = useState<'chat' | 'video'>('chat');
@@ -9,24 +10,51 @@ export default function Diskusi() {
   const [message, setMessage] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const [allMessages, setAllMessages] = useState<Record<string, { sender: string; text: string; time: string; isGuru?: boolean }[]>>({
+  const userRole = localStorage.getItem('userRole') || 'Siswa';
+  const userName = localStorage.getItem('adminName') || localStorage.getItem('teacherName') || localStorage.getItem('studentName') || 'Guest';
+
+  // Include id in the message type
+  const [allMessages, setAllMessages] = useState<Record<string, { id?: string | number; sender: string; text: string; time: string; isGuru?: boolean }[]>>({
     'Umum': [
-      { sender: 'Rasyid', text: 'Halo semuanya, ada yang bingung dengan materi Paket C tadi pagi?', time: '10:15 AM' },
-      { sender: 'Ibu Armilla', text: 'Silahkan ditanyakan bagian yang kurang jelas, bagian Ekonomi ya?', time: '10:16 AM', isGuru: true }
+      { id: 1, sender: 'Rasyid', text: 'Halo semuanya, ada yang bingung dengan materi Paket C tadi pagi?', time: '10:15 AM' },
+      { id: 2, sender: 'Ibu Armilla', text: 'Silahkan ditanyakan bagian yang kurang jelas, bagian Ekonomi ya?', time: '10:16 AM', isGuru: true }
     ],
     'Matematika': [
-      { sender: 'Budi', text: 'Bu, rumus pitagoras ini dipakai di soal nomor 5 ya?', time: '09:00 AM' },
-      { sender: 'Ibu Armilla', text: 'Betul Budi, perhatikan sisi miringnya.', time: '09:05 AM', isGuru: true }
+      { id: 3, sender: 'Budi', text: 'Bu, rumus pitagoras ini dipakai di soal nomor 5 ya?', time: '09:00 AM' },
+      { id: 4, sender: 'Ibu Armilla', text: 'Betul Budi, perhatikan sisi miringnya.', time: '09:05 AM', isGuru: true }
     ],
     'Bhs. Indonesia': [
-      { sender: 'Siti', text: 'Kapan batas akhir pengumpulan tugas resensi buku?', time: '11:20 AM' },
-      { sender: 'Ibu Armilla', text: 'Hari Jumat paling lambat jam 12 siang ya Siti.', time: '11:25 AM', isGuru: true }
+      { id: 5, sender: 'Siti', text: 'Kapan batas akhir pengumpulan tugas resensi buku?', time: '11:20 AM' },
+      { id: 6, sender: 'Ibu Armilla', text: 'Hari Jumat paling lambat jam 12 siang ya Siti.', time: '11:25 AM', isGuru: true }
     ],
     'Kewirausahaan': [
-      { sender: 'Andi', text: 'Ide bisnis cuci sepatu kira-kira prospeknya bagus gak ya?', time: '14:30 AM' },
-      { sender: 'Ibu Armilla', text: 'Bagus Andi, apalagi kalau targetnya anak muda.', time: '14:35 AM', isGuru: true }
+      { id: 7, sender: 'Andi', text: 'Ide bisnis cuci sepatu kira-kira prospeknya bagus gak ya?', time: '14:30 AM' },
+      { id: 8, sender: 'Ibu Armilla', text: 'Bagus Andi, apalagi kalau targetnya anak muda.', time: '14:35 AM', isGuru: true }
     ]
   });
+
+  // Supabase Realtime Subscription for Broadcasts
+  useEffect(() => {
+    const roomName = activeRoom.replace(/\s+/g, '_');
+    const channel = supabase.channel(`room_${roomName}`)
+      .on('broadcast', { event: 'new_message' }, (payload) => {
+        const incomingMsg = payload.payload;
+        setAllMessages(prev => {
+          const roomMsg = prev[activeRoom] || [];
+          // Avoid duplicate message if we sent it and it was optimistically added
+          if (roomMsg.some(m => m.id === incomingMsg.id)) return prev;
+          return {
+            ...prev,
+            [activeRoom]: [...roomMsg, incomingMsg]
+          };
+        });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeRoom]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -43,22 +71,43 @@ export default function Diskusi() {
 
   const activeMessages = allMessages[activeRoom] || [];
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
 
+    const newMessageId = Date.now() + Math.random();
     const newMessage = {
-      sender: 'Saya',
+      id: newMessageId,
+      sender: userName,
       text: message,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isGuru: userRole === 'Guru' || userRole === 'Admin'
     };
 
+    // Optimistic UI updates
     setAllMessages(prev => ({
       ...prev,
-      [activeRoom]: [...(prev[activeRoom] || []), newMessage]
+      [activeRoom]: [...(prev[activeRoom] || []), { ...newMessage, sender: 'Saya' }]
     }));
     
     setMessage('');
+
+    // Broadcast through Supabase
+    try {
+      const roomName = activeRoom.replace(/\s+/g, '_');
+      const channel = supabase.channel(`room_${roomName}`);
+      channel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          channel.send({
+            type: 'broadcast',
+            event: 'new_message',
+            payload: newMessage,
+          });
+        }
+      });
+    } catch (err) {
+      console.error('Failed to broadcast message:', err);
+    }
   };
 
   const handleAddTopic = () => {
