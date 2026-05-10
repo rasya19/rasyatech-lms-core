@@ -5,16 +5,18 @@ import {
   Search, Power, RefreshCcw, Loader2, ListFilter
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useLocation } from 'react-router-dom';
 
 export default function MonitoringUjian() {
-  const [activeTab, setActiveTab] = useState<'live'|'status'>('live');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<'live'|'status'>(location.state?.tab || 'live');
   const [monitoringData, setMonitoringData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Status tab state
   const [bankSoals, setBankSoals] = useState<any[]>([]);
-  const [selectedExamId, setSelectedExamId] = useState<string>('');
+  const [selectedExamId, setSelectedExamId] = useState<string>(location.state?.examId || '');
   const [statusData, setStatusData] = useState<any[]>([]);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
 

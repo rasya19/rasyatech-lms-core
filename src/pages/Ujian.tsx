@@ -88,12 +88,28 @@ export default function Ujian() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 relative z-10">
+              <div className="flex items-center gap-3 relative z-10">
+                {(userRole === 'Admin' || userRole === 'Guru') && (
+                  <button 
+                    onClick={() => {
+                      const prefix = window.location.pathname.startsWith('/s/') 
+                        ? `/s/${window.location.pathname.split('/')[2]}` 
+                        : '';
+                      navigate(`${prefix}/dashboard/hasil-ujian`, { 
+                        state: { examId: u.id, tab: 'status' } 
+                      });
+                    }}
+                    className="flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all border border-slate-200"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Monitor Status
+                  </button>
+                )}
+                
                 <button 
                   onClick={() => handleStartExam(u.id)}
                   className="flex items-center gap-2 bg-brand-accent text-white px-5 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-accent/90 transition-all shadow-lg shadow-brand-accent/20"
                 >
-                  <Rocket className="w-3.5 h-3.5" /> Kerjakan Sekarang
+                  <Rocket className="w-3.5 h-3.5" /> {userRole === 'Siswa' ? 'Kerjakan Sekarang' : 'Cek Tampilan'}
                 </button>
               </div>
             </div>
