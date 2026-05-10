@@ -91,6 +91,39 @@ export default function Diskusi() {
     localStorage.setItem('diskusi_rooms', JSON.stringify(rooms));
   }, [rooms]);
 
+  // Global Channel for Room Sync
+  useEffect(() => {
+    const globalChannel = supabase.channel('global_diskusi', {
+      config: { broadcast: { self: true } }
+    })
+      .on('broadcast', { event: 'sync_rooms' }, (payload) => {
+        const { type, roomName, newRoom } = payload.payload;
+        if (type === 'DELETE') {
+          setRooms(prev => prev.filter(r => r.name !== roomName));
+          setAllMessages(prev => {
+            const next = { ...prev };
+            delete next[roomName];
+            return next;
+          });
+          setActiveRoom(current => current === roomName ? 'Umum' : current);
+        } else if (type === 'ADD') {
+          setRooms(prev => {
+            if (prev.find(r => r.name === newRoom.name)) return prev;
+            return [...prev, newRoom];
+          });
+          setAllMessages(prev => {
+            if (prev[newRoom.name]) return prev;
+            return { ...prev, [newRoom.name]: [] };
+          });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(globalChannel);
+    };
+  }, []);
+
   const activeMessages = allMessages[activeRoom] || [];
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -128,21 +161,37 @@ export default function Diskusi() {
     }
   };
 
-  const handleAddTopic = () => {
+  const handleAddTopic = async () => {
     const topicName = prompt('Masukkan Judul Topik Baru:');
     if (topicName && topicName.trim()) {
       const name = topicName.trim();
       if (!rooms.find(r => r.name === name)) {
-        setRooms([...rooms, { name, students: 0 }]);
+        const newRoom = { name, students: 0 };
+        setRooms([...rooms, newRoom]);
         setAllMessages(prev => ({ ...prev, [name]: [] }));
         setActiveRoom(name);
+        
+        try {
+          const globalChannel = supabase.channel('global_diskusi');
+          globalChannel.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              globalChannel.send({
+                type: 'broadcast',
+                event: 'sync_rooms',
+                payload: { type: 'ADD', roomName: name, newRoom },
+              });
+            }
+          });
+        } catch (err) {
+          console.error(err);
+        }
       } else {
         alert('Topik ini sudah ada!');
       }
     }
   };
 
-  const handleDeleteTopic = (roomName: string, e: React.MouseEvent) => {
+  const handleDeleteTopic = async (roomName: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (roomName === 'Umum') {
       alert('Topik Umum tidak dapat dihapus.');
@@ -157,6 +206,21 @@ export default function Diskusi() {
       });
       if (activeRoom === roomName) {
         setActiveRoom('Umum');
+      }
+      
+      try {
+        const globalChannel = supabase.channel('global_diskusi');
+        globalChannel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            globalChannel.send({
+              type: 'broadcast',
+              event: 'sync_rooms',
+              payload: { type: 'DELETE', roomName },
+            });
+          }
+        });
+      } catch (err) {
+        console.error(err);
       }
     }
   };
