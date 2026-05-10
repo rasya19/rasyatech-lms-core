@@ -19,7 +19,9 @@ interface StudentAttendance {
 }
 
 export default function Presensi() {
+  const [activeTab, setActiveTab] = useState<'input' | 'rekap'>('input');
   const [students, setStudents] = useState<StudentAttendance[]>([]);
+  const [rekapData, setRekapData] = useState<any[]>([]);
   const [classes, setClasses] = useState<{id: string, name: string}[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -34,14 +36,17 @@ export default function Presensi() {
 
   useEffect(() => {
     if (selectedClass) {
-      fetchStudentsByClass();
+      if (activeTab === 'input') {
+        fetchStudentsByClass();
+      } else {
+        fetchRekapByClass();
+      }
     }
-  }, [selectedClass]);
+  }, [selectedClass, activeTab]);
 
   const fetchInitialData = async () => {
     try {
       setIsLoading(true);
-      // Fetch classes
       const { data: classData, error: classError } = await supabase
         .from('kelas')
         .select('id, nama_kelas')
@@ -55,7 +60,47 @@ export default function Presensi() {
       }
     } catch (err: any) {
       console.error('Error fetching initial data:', err);
-      toast.error('Gagal mengambil data kelas: ' + err.message);
+      toast.error('Gagal mengambil data kelas');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchRekapByClass = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('presensi')
+        .select(`
+          status,
+          siswa (id, nama, nisn)
+        `)
+        .eq('class_name', selectedClass);
+
+      if (error) {
+        setRekapData([]);
+      } else {
+        // Process data into a summary
+        const summary: Record<string, any> = {};
+        data?.forEach((row: any) => {
+          const student = row.siswa;
+          if (!student) return;
+          
+          if (!summary[student.id]) {
+            summary[student.id] = {
+              id: student.id,
+              nama: student.nama,
+              nisn: student.nisn,
+              Hadir: 0, Sakit: 0, Izin: 0, Alpa: 0, Total: 0
+            };
+          }
+          summary[student.id][row.status]++;
+          summary[student.id].Total++;
+        });
+        setRekapData(Object.values(summary));
+      }
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -176,6 +221,28 @@ export default function Presensi() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl w-fit">
+        <button 
+          onClick={() => setActiveTab('input')}
+          className={cn(
+            "px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+            activeTab === 'input' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
+          )}
+        >
+          Input Presensi
+        </button>
+        <button 
+          onClick={() => setActiveTab('rekap')}
+          className={cn(
+            "px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+            activeTab === 'rekap' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
+          )}
+        >
+          Rekapitulasi
+        </button>
+      </div>
+
       {/* Controls */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="md:col-span-1 space-y-2">
@@ -194,131 +261,186 @@ export default function Presensi() {
           </div>
         </div>
 
-        <div className="md:col-span-1 space-y-2">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Tanggal</label>
-          <div className="relative group">
-            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-            <input 
-              type="date" 
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all shadow-sm"
-            />
-          </div>
-        </div>
+        {activeTab === 'input' && (
+          <>
+            <div className="md:col-span-1 space-y-2">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Tanggal</label>
+              <div className="relative group">
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                <input 
+                  type="date" 
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all shadow-sm"
+                />
+              </div>
+            </div>
 
-        <div className="md:col-span-2 space-y-2">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Nama Sesi / Materi</label>
-          <div className="relative group">
-            <Book className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Contoh: Matematika - Logaritma"
-              value={sessionName}
-              onChange={(e) => setSessionName(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all shadow-sm"
-            />
-          </div>
-        </div>
+            <div className="md:col-span-2 space-y-2">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Nama Sesi / Materi</label>
+              <div className="relative group">
+                <Book className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                <input 
+                  type="text" 
+                  placeholder="Contoh: Matematika - Logaritma"
+                  value={sessionName}
+                  onChange={(e) => setSessionName(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all shadow-sm"
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Main List */}
       <div className="bg-white border border-slate-200/60 rounded-3xl shadow-sm overflow-hidden min-h-[400px]">
-        <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Cari nama atau NISN siswa..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none"
-            />
-          </div>
+        {activeTab === 'input' ? (
+          <>
+            <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
+              <div className="relative w-full md:w-96">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input 
+                  type="text" 
+                  placeholder="Cari nama atau NISN siswa..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                />
+              </div>
 
-          <button 
-            onClick={handleSaveAttendance}
-            disabled={isSaving || students.length === 0}
-            className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all shadow-xl shadow-black/10 disabled:opacity-50 disabled:hover:bg-slate-900"
-          >
-            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Simpan Presensi
-          </button>
-        </div>
+              <button 
+                onClick={handleSaveAttendance}
+                disabled={isSaving || students.length === 0}
+                className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all shadow-xl shadow-black/10 disabled:opacity-50 disabled:hover:bg-slate-900"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Simpan Presensi
+              </button>
+            </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-separate border-spacing-0">
-            <thead>
-              <tr className="bg-slate-50/50">
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">No</th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Siswa</th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Status Kehadiran</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-             {isLoading ? (
-                <tr>
-                  <td colSpan={3} className="py-20 text-center">
-                    <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-4" />
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Memuat Data Siswa...</p>
-                  </td>
-                </tr>
-              ) : classes.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="py-20 text-center">
-                    <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Belum ada data kelas. Silakan buat kelas terlebih dahulu.</p>
-                  </td>
-                </tr>
-              ) : filteredStudents.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="py-20 text-center">
-                    <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tidak ada siswa ditemukan di kelas {selectedClass}.</p>
-                  </td>
-                </tr>
-              ) : (
-                filteredStudents.map((student, idx) => (
-                  <tr key={student.id} className="group hover:bg-slate-50/50 transition-all">
-                    <td className="px-8 py-5 text-xs font-black text-slate-400 italic">{idx + 1}</td>
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-500 text-xs border border-slate-200 group-hover:border-emerald-500/20 group-hover:bg-emerald-50 transition-all">
-                          {student.nama?.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-bold text-sm text-slate-800 uppercase tracking-tight">{student.nama}</p>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{student.nisn}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-1.5">
-                        {(['Hadir', 'Sakit', 'Izin', 'Alpa'] as AttendanceStatus[]).map((status) => (
-                          <button
-                            key={status}
-                            onClick={() => handleStatusChange(student.id, status)}
-                            className={cn(
-                              "px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border",
-                              student.status === status
-                                ? status === 'Hadir' ? "bg-emerald-500 border-emerald-600 text-white shadow-lg shadow-emerald-500/20"
-                                  : status === 'Sakit' ? "bg-amber-500 border-amber-600 text-white shadow-lg shadow-amber-500/20"
-                                  : status === 'Izin' ? "bg-blue-500 border-blue-600 text-white shadow-lg shadow-blue-500/20"
-                                  : "bg-red-500 border-red-600 text-white shadow-lg shadow-red-500/20"
-                                : "bg-white border-slate-200 text-slate-500 hover:border-emerald-500/30 hover:text-emerald-500"
-                            )}
-                          >
-                            {status}
-                          </button>
-                        ))}
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-separate border-spacing-0">
+                <thead>
+                  <tr className="bg-slate-50/50">
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">No</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Siswa</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Status Kehadiran</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                {isLoading ? (
+                    <tr>
+                      <td colSpan={3} className="py-20 text-center">
+                        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-4" />
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Memuat Data Siswa...</p>
+                      </td>
+                    </tr>
+                  ) : classes.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="py-20 text-center">
+                        <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Belum ada data kelas. Silakan buat kelas terlebih dahulu.</p>
+                      </td>
+                    </tr>
+                  ) : filteredStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="py-20 text-center">
+                        <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tidak ada siswa ditemukan di kelas {selectedClass}.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredStudents.map((student, idx) => (
+                      <tr key={student.id} className="group hover:bg-slate-50/50 transition-all">
+                        <td className="px-8 py-5 text-xs font-black text-slate-400 italic">{idx + 1}</td>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-500 text-xs border border-slate-200 group-hover:border-emerald-500/20 group-hover:bg-emerald-50 transition-all">
+                              {student.nama?.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm text-slate-800 uppercase tracking-tight">{student.nama}</p>
+                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{student.nisn}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-1.5">
+                            {(['Hadir', 'Sakit', 'Izin', 'Alpa'] as AttendanceStatus[]).map((status) => (
+                              <button
+                                key={status}
+                                onClick={() => handleStatusChange(student.id, status)}
+                                className={cn(
+                                  "px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border",
+                                  student.status === status
+                                    ? status === 'Hadir' ? "bg-emerald-500 border-emerald-600 text-white shadow-lg shadow-emerald-500/20"
+                                      : status === 'Sakit' ? "bg-amber-500 border-amber-600 text-white shadow-lg shadow-amber-500/20"
+                                      : status === 'Izin' ? "bg-blue-500 border-blue-600 text-white shadow-lg shadow-blue-500/20"
+                                      : "bg-red-500 border-red-600 text-white shadow-lg shadow-red-500/20"
+                                    : "bg-white border-slate-200 text-slate-500 hover:border-emerald-500/30 hover:text-emerald-500"
+                                )}
+                              >
+                                {status}
+                              </button>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <div className="overflow-x-auto">
+             <table className="w-full text-left border-separate border-spacing-0">
+                <thead>
+                  <tr className="bg-slate-50/50">
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Siswa</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center">Hadir</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center">Izin/Sakit</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center">Alpa</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">% Kehadiran</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                   {isLoading ? (
+                     <tr><td colSpan={5} className="py-20 text-center text-xs font-bold text-slate-400">Memproses Rekapitulasi...</td></tr>
+                   ) : rekapData.length === 0 ? (
+                     <tr><td colSpan={5} className="py-20 text-center text-xs font-bold text-slate-400 italic">Belum ada riwayat presensi untuk kelas ini.</td></tr>
+                   ) : (
+                     rekapData.map((row) => {
+                       const percent = Math.round((row.Hadir / row.Total) * 100);
+                       return (
+                        <tr key={row.id} className="hover:bg-slate-50 transition-all">
+                           <td className="px-8 py-5">
+                             <p className="text-sm font-black text-slate-800 uppercase italic tracking-tight">{row.nama}</p>
+                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{row.nisn}</p>
+                           </td>
+                           <td className="px-8 py-5 text-center font-black text-emerald-600 italic text-lg">{row.Hadir}</td>
+                           <td className="px-8 py-5 text-center font-black text-amber-600 italic text-lg">{row.Izin + row.Sakit}</td>
+                           <td className="px-8 py-5 text-center font-black text-red-600 italic text-lg">{row.Alpa}</td>
+                           <td className="px-8 py-5 text-right">
+                              <div className="flex flex-col items-end">
+                                <span className={cn(
+                                  "text-lg font-black italic",
+                                  percent >= 80 ? "text-emerald-500" : percent >= 60 ? "text-amber-500" : "text-red-500"
+                                )}>{percent}%</span>
+                                <div className="w-24 h-1 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                                   <div className={cn("h-full rounded-full", percent >= 80 ? "bg-emerald-500" : "bg-amber-500")} style={{ width: `${percent}%` }} />
+                                </div>
+                              </div>
+                           </td>
+                        </tr>
+                       );
+                     })
+                   )}
+                </tbody>
+             </table>
+          </div>
+        )}
       </div>
     </div>
   );

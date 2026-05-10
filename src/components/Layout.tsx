@@ -197,15 +197,29 @@ export default function Layout() {
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
           { icon: Users, label: 'Data Siswa', path: `${prefix}/data-siswa` },
-          { icon: Book, label: 'Agenda Mengajar', path: `${prefix}/dashboard/agenda` },
-          { icon: UserCheck, label: 'Presensi Siswa', path: `${prefix}/dashboard/presensi` },
-          { icon: BookOpen, label: 'Materi Ajar', path: `${prefix}/dashboard/materi` },
-          { icon: FileBarChart, label: 'Bank Soal (Buat Ujian)', path: `${prefix}/dashboard/soal` },
-          { icon: ClipboardCheck, label: 'Jadwal Ujian', path: `${prefix}/dashboard/ujian` },
+          {
+            icon: BookOpen,
+            label: 'Akademik',
+            subItems: [
+              { icon: Calendar, label: 'Jadwal Pelajaran', path: `${prefix}/dashboard/akademik` },
+              { icon: Book, label: 'Agenda Mengajar', path: `${prefix}/dashboard/agenda` },
+              { icon: UserCheck, label: 'Presensi Siswa', path: `${prefix}/dashboard/presensi` },
+              { icon: BookOpen, label: 'Materi Ajar', path: `${prefix}/dashboard/materi` },
+              { icon: Link2, label: 'Relasi Mengajar', path: `${prefix}/dashboard/relasi` },
+              { icon: FileText, label: 'Cek Raport', path: `${prefix}/dashboard/raport` },
+            ]
+          },
+          {
+            icon: ClipboardCheck,
+            label: 'Ujian Online',
+            subItems: [
+              { icon: FileBarChart, label: 'Bank Soal (Buat Ujian)', path: `${prefix}/dashboard/soal` },
+              { icon: ClipboardCheck, label: 'Jadwal Ujian', path: `${prefix}/dashboard/ujian` },
+              { icon: Check, label: 'Input Nilai', path: `${prefix}/dashboard/nilai` },
+            ]
+          },
           { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },
           { icon: Sparkles, label: 'Asisten AI', path: `${prefix}/dashboard/ai-asisten` },
-          { icon: FileBarChart, label: 'Input Nilai', path: `${prefix}/dashboard/nilai` },
-          { icon: FileText, label: 'Cek Raport', path: `${prefix}/dashboard/raport` },
         ];
       default: // Siswa
         return [
