@@ -115,8 +115,8 @@ function AppContent() {
 
   return (
     <Routes>
-      {/* Root Path - Redirect to Dashboard */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      {/* Root Path - Portal Web */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/preview" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/ujian/:id" element={<UjianSiswa />} />

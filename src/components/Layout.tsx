@@ -115,8 +115,8 @@ export default function Layout() {
     ];
     keysToRemove.forEach(k => localStorage.removeItem(k));
     
-    // Redirect immediately
-    window.location.href = schoolSlug ? `/s/${schoolSlug}/login` : '/login';
+    // Redirect immediately to portal web
+    window.location.replace(schoolSlug ? `/s/${schoolSlug}/` : '/');
   };
 
   const handleUpdatePassword = (e: React.FormEvent) => {
