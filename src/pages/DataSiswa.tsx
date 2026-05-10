@@ -121,7 +121,7 @@ export default function DataSiswa() {
         const { error } = await supabase
           .from('profiles_siswa')
           .update({
-            nisn: formData.nisn,
+            nisn: formData.nisn || null,
             nama: formData.nama,
             class: formData.class,
             whatsapp: formData.whatsapp,
@@ -136,7 +136,7 @@ export default function DataSiswa() {
         const { data, error } = await supabase
           .from('profiles_siswa')
           .insert([{
-            nisn: formData.nisn,
+            nisn: formData.nisn || null,
             nama: formData.nama,
             class: formData.class,
             whatsapp: formData.whatsapp,
@@ -153,7 +153,13 @@ export default function DataSiswa() {
       setIsModalOpen(false);
     } catch (err: any) {
       console.error('Error saving student:', err);
-      alert('Gagal menyimpan data siswa: ' + (err.message || 'Unknown error'));
+      let errMsg = err.message || 'Unknown error';
+      if (errMsg.includes('unique constraint') && errMsg.includes('nisn')) {
+        errMsg = 'NISN sudah terdaftar untuk siswa lain. Silakan gunakan NISN yang berbeda.';
+      } else if (errMsg.includes('uuid')) {
+        errMsg = 'Terdapat data ID/Kelas yang tidak valid.';
+      }
+      alert('Gagal menyimpan data siswa: ' + errMsg);
     } finally {
       setIsSaving(false);
     }
@@ -184,7 +190,7 @@ export default function DataSiswa() {
         const data = XLSX.utils.sheet_to_json(ws) as any[];
 
         const toInsert = data.map(item => ({
-          nisn: String(item.NISN || item.nisn || ''),
+          nisn: String(item.NISN || item.nisn || '') || null,
           nama: item.Nama || item.nama || item.name || '',
           class: String(item.Kelas || item.class || item.kelas || ''),
           whatsapp: String(item.WhatsApp || item.whatsapp || item.noHp || ''),
