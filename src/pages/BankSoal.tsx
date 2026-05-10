@@ -229,8 +229,7 @@ export default function BankSoal() {
             opsi_d: getOpsi('Opsi_D'),
             opsi_e: getOpsi('Opsi_E'),
             kunci_jawaban: String(rowKunci).toUpperCase().charAt(0) || 'A',
-            tingkat_kesulitan: normalizedDiff
-          });
+                      });
         }
 
         if (newSoalsDb.length === 0) {

@@ -144,8 +144,7 @@ export default function ButirSoal() {
             opsi_d: getOpsi('Opsi_D'),
             opsi_e: getOpsi('Opsi_E'),
             kunci_jawaban: String(rowKunci).toUpperCase().charAt(0) || 'A',
-            tingkat_kesulitan: normalizedDiff
-          });
+                      });
         }
 
         // Simpan ke Supabase
@@ -228,8 +227,7 @@ export default function ButirSoal() {
         opsi_d: opsi.find(o => o.id === 'D')?.teks || '',
         opsi_e: opsi.find(o => o.id === 'E')?.teks || '',
         kunci_jawaban: kunciJawaban,
-        tingkat_kesulitan: tingkatKesulitan
-      };
+              };
 
       if (isEditing && editId) {
         const { error } = await supabase.from('butir_soal').update(payload).eq('id', editId);
