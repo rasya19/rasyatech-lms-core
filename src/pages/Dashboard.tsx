@@ -361,9 +361,6 @@ export default function Dashboard() {
                  </div>
               </div>
 
-              {/* Student Results List */}
-              <div className="bg-slate-900/50 p-8 rounded-[2.5rem] border border-slate-800">
-
             {/* Next Exam Card */}
             <div className="bg-emerald-600 p-8 rounded-3xl relative overflow-hidden group shadow-2xl shadow-emerald-600/20">
                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
@@ -379,8 +376,9 @@ export default function Dashboard() {
                  </Link>
                </div>
             </div>
-          </>
-        ) : (
+          </div>
+        </>
+      ) : (
           /* Admin View */
           <div className="lg:col-span-3 space-y-6">
              <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-10 bg-slate-900/80 rounded-[3rem] border border-slate-800 relative overflow-hidden group">

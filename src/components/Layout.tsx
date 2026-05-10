@@ -210,6 +210,7 @@ export default function Layout() {
       default: // Siswa
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
+          { icon: UserCheck, label: 'Presensi Saya', path: `${prefix}/dashboard/presensi` },
           { icon: BookOpen, label: 'Materi Saya', path: `${prefix}/dashboard/materi` },
           { icon: ClipboardCheck, label: 'Ikut Ujian', path: `${prefix}/dashboard/ujian` },
           { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },

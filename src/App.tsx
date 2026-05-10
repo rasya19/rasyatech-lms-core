@@ -44,6 +44,7 @@ import Analitik from './pages/Analitik';
 import Settings from './pages/Settings';
 import Presensi from './pages/Presensi';
 import AgendaGuru from './pages/AgendaGuru';
+import PresensiSiswa from './pages/PresensiSiswa';
 import { Toaster } from 'sonner';
 
 function SchoolLoader() {
@@ -142,7 +143,7 @@ function AppContent() {
              <Route path="data-guru" element={<Guru />} />
              <Route path="mata-pelajaran" element={<MataPelajaran />} />
              <Route path="akademik" element={<Akademik />} />
-             <Route path="presensi" element={<Presensi />} />
+             <Route path="presensi" element={<PresensiWrapper />} />
              <Route path="agenda" element={<AgendaGuru />} />
              <Route path="deteksi-objek" element={<DeteksiObjek />} />
              <Route path="relasi" element={<Relasi />} />
@@ -184,7 +185,7 @@ function AppContent() {
             <Route path="data-guru" element={<Guru />} />
             <Route path="mata-pelajaran" element={<MataPelajaran />} />
             <Route path="akademik" element={<Akademik />} />
-            <Route path="presensi" element={<Presensi />} />
+            <Route path="presensi" element={<PresensiWrapper />} />
             <Route path="agenda" element={<AgendaGuru />} />
             <Route path="relasi" element={<Relasi />} />
             <Route path="alumni" element={<Alumni />} />
@@ -227,7 +228,7 @@ function AppContent() {
         <Route path="data-guru" element={<Guru />} />
         <Route path="mata-pelajaran" element={<MataPelajaran />} />
         <Route path="akademik" element={<Akademik />} />
-        <Route path="presensi" element={<Presensi />} />
+        <Route path="presensi" element={<PresensiWrapper />} />
         <Route path="agenda" element={<AgendaGuru />} />
         <Route path="relasi" element={<Relasi />} />
         <Route path="alumni" element={<Alumni />} />
@@ -252,6 +253,11 @@ function AppContent() {
       </Route>
     </Routes>
   );
+}
+
+function PresensiWrapper() {
+  const role = localStorage.getItem('userRole') || 'Siswa';
+  return role === 'Siswa' ? <PresensiSiswa /> : <Presensi />;
 }
 
 export default function App() {

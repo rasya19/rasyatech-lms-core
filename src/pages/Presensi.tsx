@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, CheckCircle2, XCircle, Clock, AlertCircle, 
   Search, Filter, Calendar, Save, Loader2, Download,
-  ChevronRight, ListFilter
+  ChevronRight, ListFilter, Book
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
@@ -256,17 +256,25 @@ export default function Presensi() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {isLoading ? (
+             {isLoading ? (
                 <tr>
                   <td colSpan={3} className="py-20 text-center">
                     <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-4" />
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Memuat Data Siswa...</p>
                   </td>
                 </tr>
+              ) : classes.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="py-20 text-center">
+                    <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Belum ada data kelas. Silakan buat kelas terlebih dahulu.</p>
+                  </td>
+                </tr>
               ) : filteredStudents.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="py-20 text-center">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tidak ada siswa ditemukan.</p>
+                    <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tidak ada siswa ditemukan di kelas {selectedClass}.</p>
                   </td>
                 </tr>
               ) : (
