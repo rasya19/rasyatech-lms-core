@@ -385,11 +385,6 @@ export default function UjianSiswa() {
                  <h3 className="text-xl font-black text-slate-800 uppercase italic tracking-tight mb-8">"{resultData.examName}"</h3>
                  
                  <div className="flex items-center justify-center gap-12">
-                    <div className="relative">
-                       <div className="text-6xl font-black text-slate-900 italic tracking-tighter">{resultData.score}</div>
-                       <div className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mt-2 italic">Skor Akhir</div>
-                    </div>
-                    <div className="w-px h-16 bg-slate-200" />
                     <div className="space-y-3 text-left">
                        <div className="flex items-center gap-3">
                           <div className="w-2 h-2 rounded-full bg-emerald-500" />
