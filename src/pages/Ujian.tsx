@@ -8,6 +8,7 @@ export default function Ujian() {
   const navigate = useNavigate();
   const [exams, setExams] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const userRole = localStorage.getItem('userRole') || 'Siswa';
 
   useEffect(() => {
     fetchExams();
@@ -36,11 +37,24 @@ export default function Ujian() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4">
         <div>
           <h2 className="text-xl font-bold text-brand-text-main tracking-tight uppercase italic">Jadwal <span className="text-brand-accent">Ujian Aktif</span></h2>
           <p className="text-[10px] text-brand-text-muted font-bold uppercase tracking-widest italic opacity-70">Klik tombol pengerjaan untuk memulai ujian</p>
         </div>
+        {(userRole === 'Admin' || userRole === 'Guru') && (
+          <button 
+            onClick={() => {
+              const prefix = window.location.pathname.startsWith('/s/') 
+                ? `/s/${window.location.pathname.split('/')[2]}` 
+                : '';
+              navigate(`${prefix}/dashboard/soal`);
+            }}
+            className="flex items-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
+          >
+            <ClipboardCheck className="w-4 h-4" /> Tambah Ujian
+          </button>
+        )}
       </div>
 
       {isLoading ? (

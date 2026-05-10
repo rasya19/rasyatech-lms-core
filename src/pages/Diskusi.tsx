@@ -9,6 +9,7 @@ export default function Diskusi() {
   const [activeRoom, setActiveRoom] = useState('Umum');
   const [message, setMessage] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<any>(null);
 
   const userRole = localStorage.getItem('userRole') || 'Siswa';
   const userName = localStorage.getItem('adminName') || localStorage.getItem('teacherName') || localStorage.getItem('studentName') || 'Guest';
@@ -36,7 +37,9 @@ export default function Diskusi() {
   // Supabase Realtime Subscription for Broadcasts
   useEffect(() => {
     const roomName = activeRoom.replace(/\s+/g, '_');
-    const channel = supabase.channel(`room_${roomName}`)
+    const channel = supabase.channel(`room_${roomName}`, {
+      config: { broadcast: { self: true } }
+    })
       .on('broadcast', { event: 'new_message' }, (payload) => {
         const incomingMsg = payload.payload;
         setAllMessages(prev => {
@@ -50,9 +53,12 @@ export default function Diskusi() {
         });
       })
       .subscribe();
+      
+    channelRef.current = channel;
 
     return () => {
       supabase.removeChannel(channel);
+      channelRef.current = null;
     };
   }, [activeRoom]);
 
@@ -93,20 +99,16 @@ export default function Diskusi() {
     setMessage('');
 
     // Broadcast through Supabase
-    try {
-      const roomName = activeRoom.replace(/\s+/g, '_');
-      const channel = supabase.channel(`room_${roomName}`);
-      channel.subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          channel.send({
-            type: 'broadcast',
-            event: 'new_message',
-            payload: newMessage,
-          });
-        }
-      });
-    } catch (err) {
-      console.error('Failed to broadcast message:', err);
+    if (channelRef.current) {
+      try {
+        channelRef.current.send({
+          type: 'broadcast',
+          event: 'new_message',
+          payload: newMessage,
+        });
+      } catch (err) {
+        console.error('Failed to broadcast message:', err);
+      }
     }
   };
 
