@@ -67,8 +67,8 @@ export default function Kelas() {
 
   const handleUpdateWali = async (classId: string, w: string) => {
     try {
-      setClasses(classes.map(c => c.id === classId ? { ...c, wali: w } : c));
-      await supabase.from('kelas').update({ wali_kelas: w }).eq('id', classId);
+      setClasses(classes.map(c => c.id === classId ? { ...c, wali_kelas_id: w } : c));
+      await supabase.from('kelas').update({ wali_kelas_id: w ? w : null }).eq('id', classId);
     } catch (error) {
       console.error(error);
     }
@@ -109,11 +109,14 @@ export default function Kelas() {
   const handleAddClass = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { data, error } = await supabase.from('kelas').insert([{
+      const payload: any = {
         nama_kelas: formData.nama_kelas,
-        tingkat: formData.tingkat,
-        wali_kelas_id: formData.wali_kelas_id
-      }]).select();
+        tingkat: formData.tingkat
+      };
+      if (formData.wali_kelas_id) {
+         payload.wali_kelas_id = formData.wali_kelas_id;
+      }
+      const { data, error } = await supabase.from('kelas').insert([payload]).select();
       if (error) throw error;
       if (data) {
         const newClass = data[0];
@@ -126,9 +129,9 @@ export default function Kelas() {
       }
       setIsModalOpen(false);
       setFormData({ nama_kelas: '', tingkat: '', wali_kelas_id: '' });
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Gagal menambah kelas');
+      alert('Gagal menambah kelas: ' + error.message);
     }
   };
 
@@ -274,7 +277,7 @@ export default function Kelas() {
                          >
                            <option value="">-- Pilih Wali Kelas --</option>
                            {guruList.map(g => (
-                             <option key={g.id} value={g.nama}>{g.nama}</option>
+                             <option key={g.id} value={g.id}>{g.nama}</option>
                            ))}
                          </select>
                       </td>
@@ -420,7 +423,7 @@ export default function Kelas() {
                    >
                      <option value="">-- Pilih Wali Kelas --</option>
                      {guruList.map(guru => (
-                       <option key={guru.id} value={guru.nama}>{guru.nama}</option>
+                       <option key={guru.id} value={guru.id}>{guru.nama}</option>
                      ))}
                    </select>
                  </div>
