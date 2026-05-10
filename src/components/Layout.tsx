@@ -160,6 +160,8 @@ export default function Layout() {
             label: 'Akademik',
             subItems: [
               { icon: Calendar, label: 'Jadwal Pelajaran', path: `${prefix}/dashboard/akademik` },
+              { icon: Book, label: 'Agenda Mengajar', path: `${prefix}/dashboard/agenda` },
+              { icon: UserCheck, label: 'Presensi Siswa', path: `${prefix}/dashboard/presensi` },
               { icon: Link2, label: 'Relasi Mengajar', path: `${prefix}/dashboard/relasi` },
               { icon: ArrowUpCircle, label: 'Kenaikan Kelas', path: `${prefix}/dashboard/kenaikan` },
               { icon: FileText, label: 'Cek Raport', path: `${prefix}/dashboard/raport` },
@@ -195,6 +197,8 @@ export default function Layout() {
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
           { icon: Users, label: 'Data Siswa', path: `${prefix}/data-siswa` },
+          { icon: Book, label: 'Agenda Mengajar', path: `${prefix}/dashboard/agenda` },
+          { icon: UserCheck, label: 'Presensi Siswa', path: `${prefix}/dashboard/presensi` },
           { icon: BookOpen, label: 'Materi Ajar', path: `${prefix}/dashboard/materi` },
           { icon: FileBarChart, label: 'Bank Soal (Buat Ujian)', path: `${prefix}/dashboard/soal` },
           { icon: ClipboardCheck, label: 'Jadwal Ujian', path: `${prefix}/dashboard/ujian` },

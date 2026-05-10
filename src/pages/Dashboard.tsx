@@ -322,6 +322,72 @@ export default function Dashboard() {
                    </div>
                 </div>
              </div>
+
+             {/* Attendance & Agenda Section */}
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+                <div className="grid grid-cols-1 gap-4">
+                   <div className="bg-slate-900/50 p-8 rounded-[2.5rem] border border-slate-800 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center gap-3 mb-4">
+                           <div className="p-3 bg-blue-500/10 rounded-2xl">
+                              <Calendar className="w-6 h-6 text-blue-400" />
+                           </div>
+                           <h3 className="text-sm font-black text-white uppercase tracking-widest">Presensi Sesi Hari Ini</h3>
+                        </div>
+                        <p className="text-xs text-slate-400 leading-relaxed max-w-xs mb-8">
+                           Kelola kehadiran siswa untuk setiap mata pelajaran secara digital. Pantau statistik harian dengan satu klik.
+                        </p>
+                      </div>
+                      <Link 
+                        to="/dashboard/presensi" 
+                        className="bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest text-center transition-all shadow-xl shadow-blue-600/20"
+                      >
+                        Buka Portal Presensi
+                      </Link>
+                   </div>
+
+                   <div className="bg-slate-900/50 p-8 rounded-[2.5rem] border border-slate-800 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center gap-3 mb-4">
+                           <div className="p-3 bg-emerald-500/10 rounded-2xl">
+                              <ClipboardList className="w-6 h-6 text-emerald-400" />
+                           </div>
+                           <h3 className="text-sm font-black text-white uppercase tracking-widest">Agenda Mengajar</h3>
+                        </div>
+                        <p className="text-xs text-slate-400 leading-relaxed max-w-xs mb-8">
+                           Dokumentasikan materi, tugas, dan catatan pembelajaran setiap sesi kelas dengan rapi.
+                        </p>
+                      </div>
+                      <Link 
+                        to="/dashboard/agenda" 
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest text-center transition-all shadow-xl shadow-emerald-600/20"
+                      >
+                        Catat Agenda Baru
+                      </Link>
+                   </div>
+                </div>
+
+                <div className="bg-slate-900/50 p-8 rounded-[2.5rem] border border-slate-800">
+                   <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-emerald-400" /> Status Kehadiran Terakhir
+                   </h3>
+                   <div className="space-y-4">
+                      {[
+                        { label: 'Hadir', count: stats.totalSiswa, color: 'emerald' },
+                        { label: 'Sakit / Izin', count: '0', color: 'amber' },
+                        { label: 'Alpa', count: '0', color: 'red' },
+                      ].map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-4 bg-slate-800/30 rounded-2xl border border-slate-800/50">
+                           <div className="flex items-center gap-3">
+                              <div className={cn("w-2 h-2 rounded-full", `bg-${item.color}-400`)} />
+                              <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{item.label}</p>
+                           </div>
+                           <p className="text-lg font-black text-white italic">{item.count} <span className="text-[10px] text-slate-500 not-italic">Siswa</span></p>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+             </div>
           </div>
         )}
       </div>

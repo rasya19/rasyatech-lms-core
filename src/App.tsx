@@ -42,6 +42,8 @@ import SuperAdmin from './pages/SuperAdmin';
 import Feedback from './pages/Feedback';
 import Analitik from './pages/Analitik';
 import Settings from './pages/Settings';
+import Presensi from './pages/Presensi';
+import AgendaGuru from './pages/AgendaGuru';
 import { Toaster } from 'sonner';
 
 function SchoolLoader() {
@@ -140,6 +142,8 @@ function AppContent() {
              <Route path="data-guru" element={<Guru />} />
              <Route path="mata-pelajaran" element={<MataPelajaran />} />
              <Route path="akademik" element={<Akademik />} />
+             <Route path="presensi" element={<Presensi />} />
+             <Route path="agenda" element={<AgendaGuru />} />
              <Route path="deteksi-objek" element={<DeteksiObjek />} />
              <Route path="relasi" element={<Relasi />} />
              <Route path="alumni" element={<Alumni />} />
@@ -180,6 +184,8 @@ function AppContent() {
             <Route path="data-guru" element={<Guru />} />
             <Route path="mata-pelajaran" element={<MataPelajaran />} />
             <Route path="akademik" element={<Akademik />} />
+            <Route path="presensi" element={<Presensi />} />
+            <Route path="agenda" element={<AgendaGuru />} />
             <Route path="relasi" element={<Relasi />} />
             <Route path="alumni" element={<Alumni />} />
             <Route path="materi" element={<Materi />} />
@@ -221,6 +227,8 @@ function AppContent() {
         <Route path="data-guru" element={<Guru />} />
         <Route path="mata-pelajaran" element={<MataPelajaran />} />
         <Route path="akademik" element={<Akademik />} />
+        <Route path="presensi" element={<Presensi />} />
+        <Route path="agenda" element={<AgendaGuru />} />
         <Route path="relasi" element={<Relasi />} />
         <Route path="alumni" element={<Alumni />} />
         <Route path="materi" element={<Materi />} />
