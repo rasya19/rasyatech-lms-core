@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Search, Plus, Layers, Edit2, Trash2, 
-  FileText, CheckCircle2, MoreVertical, BookOpen, Clock, Settings, X, SearchIcon, ShieldCheck, Loader2
+  FileText, CheckCircle2, MoreVertical, BookOpen, Clock, Settings, X, SearchIcon, ShieldCheck, Loader2, Upload, Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 import { DUMMY_MAPEL } from './MataPelajaran';
@@ -22,6 +23,9 @@ interface BankSoalModel {
 
 export default function BankSoal() {
   const navigate = useNavigate();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [selectedBankSoalId, setSelectedBankSoalId] = useState<string | null>(null);
+  const [isLoadingExcel, setIsLoadingExcel] = useState(false);
   const [mapels] = useState<any[]>(() => {
     const saved = localStorage.getItem('school_mapel_list');
     if (saved) return JSON.parse(saved);
@@ -140,8 +144,126 @@ export default function BankSoal() {
     }
   };
 
+  const handleDownloadTemplate = () => {
+    const ws = XLSX.utils.json_to_sheet([
+      {
+        Pertanyaan: 'Siapakah presiden pertama Republik Indonesia?',
+        Opsi_A: 'Soeharto',
+        Opsi_B: 'B.J. Habibie',
+        Opsi_C: 'Soekarno',
+        Opsi_D: 'Joko Widodo',
+        Opsi_E: 'Susilo Bambang Yudhoyono',
+        Kunci_Jawaban: 'C',
+        Tingkat_Kesulitan: 'Mudah'
+      },
+      {
+        Pertanyaan: 'Berapakah hasil dari 5 + 7?',
+        Opsi_A: '10',
+        Opsi_B: '11',
+        Opsi_C: '12',
+        Opsi_D: '13',
+        Opsi_E: '14',
+        Kunci_Jawaban: 'C',
+        Tingkat_Kesulitan: 'Sedang'
+      }
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template_Soal");
+    XLSX.writeFile(wb, "Template_Import_Soal.xlsx");
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedBankSoalId) return;
+
+    setIsLoadingExcel(true);
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+        if (!data || data.length === 0) {
+          toast.error('File Excel kosong atau format tidak valid.');
+          return;
+        }
+
+        const newSoalsDb = [];
+
+        for (const row of data) {
+          const rowPertanyaan = row['Pertanyaan'] || row['pertanyaan'] || row['Question'] || row['question'];
+          const rowKunci = row['Kunci_Jawaban'] || row['Kunci Jawaban'] || row['kunci_jawaban'] || row['Answer'] || row['answer'] || row['Kunci'];
+          
+          if (!rowPertanyaan) continue;
+
+          const getOpsi = (key: string) => {
+             const keys = [
+               key, 
+               key.toLowerCase(), 
+               key.toUpperCase(), 
+               key.replace('_', ' '),
+               key.replace('_', ''),
+               `Option ${key.split('_')[1]}`,
+               `option ${key.split('_')[1]}`
+             ];
+             for (const k of keys) {
+               if (row[k] !== undefined) return String(row[k]);
+             }
+             return '';
+          };
+
+          const diffK = row['Tingkat_Kesulitan'] || row['Tingkat Kesulitan'] || row['Difficulty'] || 'Sedang';
+          let normalizedDiff = 'Sedang';
+          if (String(diffK).toLowerCase().includes('mudah')) normalizedDiff = 'Mudah';
+          if (String(diffK).toLowerCase().includes('sulit')) normalizedDiff = 'Sulit';
+
+          newSoalsDb.push({
+            bank_soal_id: selectedBankSoalId,
+            pertanyaan: String(rowPertanyaan),
+            opsi_a: getOpsi('Opsi_A'),
+            opsi_b: getOpsi('Opsi_B'),
+            opsi_c: getOpsi('Opsi_C'),
+            opsi_d: getOpsi('Opsi_D'),
+            opsi_e: getOpsi('Opsi_E'),
+            kunci_jawaban: String(rowKunci).toUpperCase().charAt(0) || 'A',
+            tingkat_kesulitan: normalizedDiff
+          });
+        }
+
+        if (newSoalsDb.length === 0) {
+           toast.error('Tidak ada data soal yang valid di file Excel.');
+           return;
+        }
+
+        const { error } = await supabase.from('butir_soal').insert(newSoalsDb);
+        if (error) throw error;
+        
+        toast.success(`Berhasil mengimpor ${newSoalsDb.length} soal baru`);
+        fetchBankSoal();
+      } catch (err: any) {
+        console.error('Upload Error:', err);
+        toast.error('Gagal mengimpor soal: ' + err.message);
+      } finally {
+        setIsLoadingExcel(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        setSelectedBankSoalId(null);
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   return (
     <div className="space-y-6 max-w-6xl">
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileUpload} 
+        accept=".xlsx, .xls" 
+        className="hidden" 
+      />
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-950 text-white p-8 rounded-3xl relative overflow-hidden group shadow-lg">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-125 transition-transform duration-700" />
@@ -247,6 +369,23 @@ export default function BankSoal() {
                       </td>
                       <td className="px-4 py-4 text-right">
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleDownloadTemplate()}
+                            className="p-2 text-slate-500 bg-slate-100 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors tooltip tooltip-left shadow-sm flex items-center gap-2 px-3 border border-slate-200 hover:border-emerald-200"
+                            title="Download Template Soal Excel"
+                          >
+                             <Download className="w-3.5 h-3.5" />
+                             <span className="text-[10px] font-bold uppercase tracking-widest hidden lg:inline">Template</span>
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedBankSoalId(bs.id); fileInputRef.current?.click(); }}
+                            disabled={isLoadingExcel}
+                            className="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-lg transition-colors tooltip tooltip-left shadow-sm flex items-center gap-2 px-3 border border-emerald-200 disabled:opacity-50"
+                            title="Import Soal dari Excel"
+                          >
+                             {isLoadingExcel && selectedBankSoalId === bs.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                             <span className="text-[10px] font-bold uppercase tracking-widest hidden lg:inline">{isLoadingExcel && selectedBankSoalId === bs.id ? 'Loading' : 'Import'}</span>
+                          </button>
                           <button 
                             onClick={(_) => {
                               const prefix = window.location.pathname.startsWith('/s/') 
