@@ -15,23 +15,27 @@ export default function Diskusi() {
   const userName = localStorage.getItem('adminName') || localStorage.getItem('teacherName') || localStorage.getItem('studentName') || 'Guest';
 
   // Include id in the message type
-  const [allMessages, setAllMessages] = useState<Record<string, { id?: string | number; sender: string; text: string; time: string; isGuru?: boolean }[]>>({
-    'Umum': [
-      { id: 1, sender: 'Rasyid', text: 'Halo semuanya, ada yang bingung dengan materi Paket C tadi pagi?', time: '10:15 AM' },
-      { id: 2, sender: 'Ibu Armilla', text: 'Silahkan ditanyakan bagian yang kurang jelas, bagian Ekonomi ya?', time: '10:16 AM', isGuru: true }
-    ],
-    'Matematika': [
-      { id: 3, sender: 'Budi', text: 'Bu, rumus pitagoras ini dipakai di soal nomor 5 ya?', time: '09:00 AM' },
-      { id: 4, sender: 'Ibu Armilla', text: 'Betul Budi, perhatikan sisi miringnya.', time: '09:05 AM', isGuru: true }
-    ],
-    'Bhs. Indonesia': [
-      { id: 5, sender: 'Siti', text: 'Kapan batas akhir pengumpulan tugas resensi buku?', time: '11:20 AM' },
-      { id: 6, sender: 'Ibu Armilla', text: 'Hari Jumat paling lambat jam 12 siang ya Siti.', time: '11:25 AM', isGuru: true }
-    ],
-    'Kewirausahaan': [
-      { id: 7, sender: 'Andi', text: 'Ide bisnis cuci sepatu kira-kira prospeknya bagus gak ya?', time: '14:30 AM' },
-      { id: 8, sender: 'Ibu Armilla', text: 'Bagus Andi, apalagi kalau targetnya anak muda.', time: '14:35 AM', isGuru: true }
-    ]
+  const [allMessages, setAllMessages] = useState<Record<string, { id?: string | number; sender: string; text: string; time: string; isGuru?: boolean }[]>>(() => {
+    const saved = localStorage.getItem('diskusi_messages');
+    if (saved) return JSON.parse(saved);
+    return {
+      'Umum': [
+        { id: 1, sender: 'Rasyid', text: 'Halo semuanya, ada yang bingung dengan materi Paket C tadi pagi?', time: '10:15 AM' },
+        { id: 2, sender: 'Ibu Armilla', text: 'Silahkan ditanyakan bagian yang kurang jelas, bagian Ekonomi ya?', time: '10:16 AM', isGuru: true }
+      ],
+      'Matematika': [
+        { id: 3, sender: 'Budi', text: 'Bu, rumus pitagoras ini dipakai di soal nomor 5 ya?', time: '09:00 AM' },
+        { id: 4, sender: 'Ibu Armilla', text: 'Betul Budi, perhatikan sisi miringnya.', time: '09:05 AM', isGuru: true }
+      ],
+      'Bhs. Indonesia': [
+        { id: 5, sender: 'Siti', text: 'Kapan batas akhir pengumpulan tugas resensi buku?', time: '11:20 AM' },
+        { id: 6, sender: 'Ibu Armilla', text: 'Hari Jumat paling lambat jam 12 siang ya Siti.', time: '11:25 AM', isGuru: true }
+      ],
+      'Kewirausahaan': [
+        { id: 7, sender: 'Andi', text: 'Ide bisnis cuci sepatu kira-kira prospeknya bagus gak ya?', time: '14:30 AM' },
+        { id: 8, sender: 'Ibu Armilla', text: 'Bagus Andi, apalagi kalau targetnya anak muda.', time: '14:35 AM', isGuru: true }
+      ]
+    };
   });
 
   // Supabase Realtime Subscription for Broadcasts
@@ -68,12 +72,24 @@ export default function Diskusi() {
     }
   }, [activeRoom, allMessages, activeTab]);
 
-  const [rooms, setRooms] = useState([
-    { name: 'Umum', students: 12 },
-    { name: 'Matematika', students: 8 },
-    { name: 'Bhs. Indonesia', students: 5 },
-    { name: 'Kewirausahaan', students: 15 }
-  ]);
+  const [rooms, setRooms] = useState(() => {
+    const saved = localStorage.getItem('diskusi_rooms');
+    if (saved) return JSON.parse(saved);
+    return [
+      { name: 'Umum', students: 12 },
+      { name: 'Matematika', students: 8 },
+      { name: 'Bhs. Indonesia', students: 5 },
+      { name: 'Kewirausahaan', students: 15 }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('diskusi_messages', JSON.stringify(allMessages));
+  }, [allMessages]);
+
+  useEffect(() => {
+    localStorage.setItem('diskusi_rooms', JSON.stringify(rooms));
+  }, [rooms]);
 
   const activeMessages = allMessages[activeRoom] || [];
 

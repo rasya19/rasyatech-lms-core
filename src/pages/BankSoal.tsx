@@ -53,7 +53,14 @@ export default function BankSoal() {
       if (error) {
         throw error;
       }
-      setBankSoals(data || []);
+      const mappedData = (data || []).map(row => ({
+        ...row,
+        mapel_id: mapels.find(m => m.nama === row.mata_pelajaran)?.id || row.mata_pelajaran,
+        durasi: row.waktu_pengerjaan || Number(row.durasi) || 60,
+        is_aktif: row.status === 'aktif' || row.is_aktif === true,
+        jumlah_soal: row.jumlah_soal || 0
+      }));
+      setBankSoals(mappedData);
     } catch (error: any) {
       console.error('Error fetching bank soal:', error);
       alert('Gagal mengambil data ujian. ' + (error.message || ''));
@@ -88,7 +95,7 @@ export default function BankSoal() {
 
   const handleToggleAktif = async (id: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase.from('bank_soal').update({ is_aktif: !currentStatus }).eq('id', id);
+      const { error } = await supabase.from('bank_soal').update({ status: !currentStatus ? 'aktif' : 'nonaktif' }).eq('id', id);
       if (error) throw error;
       setBankSoals(bankSoals.map(bs => 
         bs.id === id ? { ...bs, is_aktif: !currentStatus } : bs
@@ -106,22 +113,20 @@ export default function BankSoal() {
       if (isEditing && formData.id) {
          const { error } = await supabase.from('bank_soal').update({
             nama_ujian: formData.nama_ujian,
-            mapel_id: formData.mapel_id,
+            mata_pelajaran: mapels.find(m => String(m.id) === String(formData.mapel_id))?.nama || formData.mapel_id,
             jenjang: formData.jenjang,
-            jumlah_soal: formData.jumlah_soal,
-            durasi: formData.durasi,
-            is_aktif: formData.is_aktif
+            waktu_pengerjaan: parseInt(String(formData.durasi)) || 60,
+            status: formData.is_aktif ? 'aktif' : 'nonaktif'
          }).eq('id', formData.id);
          if (error) throw error;
          toast.success('Judul ujian berhasil diperbarui');
       } else {
          const { error } = await supabase.from('bank_soal').insert([{
             nama_ujian: formData.nama_ujian,
-            mapel_id: formData.mapel_id,
+            mata_pelajaran: mapels.find(m => String(m.id) === String(formData.mapel_id))?.nama || formData.mapel_id,
             jenjang: formData.jenjang,
-            jumlah_soal: formData.jumlah_soal,
-            durasi: formData.durasi,
-            is_aktif: formData.is_aktif
+            waktu_pengerjaan: parseInt(String(formData.durasi)) || 60,
+            status: formData.is_aktif ? 'aktif' : 'nonaktif'
          }]);
          if (error) throw error;
          toast.success('Judul ujian baru berhasil dibuat');
