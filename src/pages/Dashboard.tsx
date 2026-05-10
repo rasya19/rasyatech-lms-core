@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, UserCheck, CheckCircle2, Clock,
   ArrowUpRight, ArrowDownRight, Activity, XCircle, AlertCircle,
-  FileText, Wallet, Rocket, Trophy, Calendar, Download, RefreshCcw, RotateCcw
+  FileText, Wallet, Rocket, Trophy, Calendar, Download, RefreshCcw, RotateCcw,
+  BookOpen, MapPin, ClipboardList, ChevronRight
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { useSchool } from '../contexts/SchoolContext';
 import { supabase } from '../lib/supabase';
@@ -14,12 +15,63 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
 
+// Global Data (Dihuni dari Akademik.tsx)
+const DUMMY_SCHEDULE = [
+  {
+    id: 'J001',
+    hari: 'Senin',
+    mulai: '08:00',
+    selesai: '09:30',
+    kelas: 'Kelas 10 - Paket C',
+    mapel: 'Bahasa Indonesia',
+    guru: 'Budi Santoso, S.Pd'
+  },
+  {
+    id: 'J050',
+    hari: 'Minggu', // Untuk testing hari ini
+    mulai: '08:00',
+    selesai: '10:00',
+    kelas: 'Kelas 12 - Paket C',
+    mapel: 'Matematika Terapan',
+    guru: 'Ahmad Yani, S.S'
+  },
+  {
+    id: 'J051',
+    hari: 'Minggu',
+    mulai: '10:00',
+    selesai: '12:00',
+    kelas: 'Kelas 12 - Paket C',
+    mapel: 'Bahasa Inggris',
+    guru: 'Budi Santoso, S.Pd'
+  },
+  {
+    id: 'J002',
+    hari: 'Senin',
+    mulai: '09:45',
+    selesai: '11:15',
+    kelas: 'Kelas 10 - Paket C',
+    mapel: 'Matematika',
+    guru: 'Ahmad Yani, S.S'
+  },
+  {
+    id: 'J003',
+    hari: 'Senin',
+    mulai: '08:00',
+    selesai: '09:30',
+    kelas: 'Kelas 11 - Paket C',
+    mapel: 'Sosiologi',
+    guru: 'Drs. Joko Widodo'
+  }
+];
+
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { school } = useSchool();
   const userRole = localStorage.getItem('userRole') || 'Siswa';
   const adminName = localStorage.getItem('adminName') || localStorage.getItem('teacherName') || 'Staf Pengajar';
   const studentName = localStorage.getItem('studentName') || 'Budi Santoso';
   const studentId = localStorage.getItem('studentId');
+  const studentClass = localStorage.getItem('studentClass') || '12 - Paket C';
 
   const [studentResults, setStudentResults] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
@@ -30,6 +82,21 @@ export default function Dashboard() {
     mapelAktif: '0',
     tugasSelesai: '0'
   });
+
+  const getIndonesianDay = () => {
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    return days[new Date().getDay()];
+  };
+
+  const today = getIndonesianDay();
+  const currentTime = new Date().getHours() * 100 + new Date().getMinutes();
+
+  const todaySchedule = DUMMY_SCHEDULE.filter(s => s.hari === today);
+  
+  // Schedule for current user
+  const mySchedule = userRole === 'Siswa' 
+    ? todaySchedule.filter(s => s.kelas.includes(studentClass.split(' ')[0]))
+    : todaySchedule.filter(s => s.guru === adminName || userRole === 'Admin');
 
   useEffect(() => {
     if (userRole === 'Siswa' && studentId) {
@@ -226,43 +293,76 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {userRole === 'Siswa' ? (
           <>
-            {/* Student Results List */}
-            <div className="lg:col-span-2 bg-slate-900/50 p-6 rounded-3xl border border-slate-800">
-               <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-sm font-black text-slate-50 uppercase tracking-widest">Aktivitas Ujian Terakhir</h3>
-                 <Link to="/dashboard/ujian" className="text-[10px] font-black text-emerald-400 uppercase tracking-widest hover:underline">Lihat Semua</Link>
-               </div>
-               
-               <div className="space-y-4">
-                 {studentResults.length === 0 ? (
-                    <div className="py-10 text-center text-slate-500 italic text-xs">Belum ada data ujian.</div>
-                 ) : (
-                    studentResults.map((res) => (
-                      <div key={res.id} className="flex items-center justify-between p-4 bg-slate-800/30 rounded-2xl border border-slate-800/50 hover:border-emerald-500/30 transition-all">
-                        <div className="flex items-center gap-4">
-                          <div className={cn(
-                            "w-12 h-12 rounded-xl flex items-center justify-center",
-                            res.nilai >= 75 ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"
-                          )}>
-                            <Trophy className="w-6 h-6" />
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-bold text-white uppercase italic tracking-tight">{res.bank_soal?.nama_ujian}</h4>
-                            <div className="flex items-center gap-3 mt-1 text-[10px] font-bold text-slate-500 uppercase">
-                              <span>{res.bank_soal?.mata_pelajaran}</span>
-                              <span>• {new Date(res.end_time).toLocaleDateString('id-ID')}</span>
+            {/* Student Schedule & Results */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Today's Schedule for Student */}
+              <div className="bg-slate-900/50 p-8 rounded-[2.5rem] border border-slate-800 relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
+                 
+                 <div className="flex items-center justify-between mb-8 relative z-10">
+                    <div className="flex items-center gap-3">
+                       <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
+                          <Clock className="w-6 h-6 text-emerald-400" />
+                       </div>
+                       <div>
+                          <h3 className="text-sm font-black text-white uppercase tracking-widest">Jadwal Pelajaran Hari Ini</h3>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{today}, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}</p>
+                       </div>
+                    </div>
+                    <Link to="/dashboard/akademik" className="p-2 bg-white/5 rounded-xl border border-white/10 text-slate-400 hover:text-emerald-400 transition-colors">
+                       <ChevronRight className="w-5 h-5" />
+                    </Link>
+                 </div>
+
+                 <div className="space-y-4 relative z-10">
+                    {mySchedule.length === 0 ? (
+                       <div className="py-6 text-center bg-slate-800/20 rounded-2xl border border-dashed border-slate-800">
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tidak ada jadwal hari ini</p>
+                       </div>
+                    ) : (
+                       mySchedule.map((s, idx) => {
+                          const start = parseInt(s.mulai.replace(':', ''));
+                          const end = parseInt(s.selesai.replace(':', ''));
+                          const isNow = currentTime >= start && currentTime <= end;
+                          
+                          return (
+                            <div key={s.id} className={cn(
+                              "flex items-center justify-between p-5 rounded-2xl border transition-all",
+                              isNow ? "bg-emerald-500/10 border-emerald-500/30 shadow-lg shadow-emerald-500/5" : "bg-slate-800/30 border-slate-800/50 opacity-60"
+                            )}>
+                               <div className="flex items-center gap-5">
+                                  <div className={cn(
+                                    "w-12 h-12 rounded-xl flex flex-col items-center justify-center font-black",
+                                    isNow ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "bg-slate-700 text-slate-400"
+                                  )}>
+                                     <span className="text-[10px] leading-tight">{s.mulai.split(':')[0]}</span>
+                                     <span className="text-[10px] leading-tight">{s.mulai.split(':')[1]}</span>
+                                  </div>
+                                  <div>
+                                     <div className="flex items-center gap-2 mb-1">
+                                        <h4 className="text-sm font-black text-white italic uppercase tracking-tight">{s.mapel}</h4>
+                                        {isNow && (
+                                          <span className="px-2 py-0.5 bg-emerald-500 text-white text-[8px] font-black uppercase rounded-full animate-pulse">Berlangsung</span>
+                                        )}
+                                     </div>
+                                     <div className="flex items-center gap-3 text-[10px] font-bold text-slate-500 uppercase">
+                                        <span className="flex items-center gap-1"><UserCheck className="w-3 h-3" /> {s.guru}</span>
+                                        <span>• {s.mulai} - {s.selesai}</span>
+                                     </div>
+                                  </div>
+                               </div>
+                               <button className="text-emerald-400 hover:scale-110 transition-transform">
+                                  <ArrowUpRight className="w-5 h-5" />
+                                </button>
                             </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-black text-white italic">{res.nilai}</p>
-                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">SKOR AKHIR</p>
-                        </div>
-                      </div>
-                    ))
-                 )}
-               </div>
-            </div>
+                          );
+                       })
+                    )}
+                 </div>
+              </div>
+
+              {/* Student Results List */}
+              <div className="bg-slate-900/50 p-8 rounded-[2.5rem] border border-slate-800">
 
             {/* Next Exam Card */}
             <div className="bg-emerald-600 p-8 rounded-3xl relative overflow-hidden group shadow-2xl shadow-emerald-600/20">
@@ -325,44 +425,72 @@ export default function Dashboard() {
 
              {/* Attendance & Agenda Section */}
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
-                <div className="grid grid-cols-1 gap-4">
-                   <div className="bg-slate-900/50 p-8 rounded-[2.5rem] border border-slate-800 flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center gap-3 mb-4">
-                           <div className="p-3 bg-blue-500/10 rounded-2xl">
-                              <Calendar className="w-6 h-6 text-blue-400" />
+                <div className="bg-slate-900/50 p-8 rounded-[2.5rem] border border-slate-800 flex flex-col justify-between h-full">
+                   <div>
+                     <div className="flex items-center justify-between mb-8">
+                       <div className="flex items-center gap-3">
+                          <div className="p-3 bg-emerald-500/10 rounded-2xl">
+                             <Calendar className="w-6 h-6 text-emerald-400" />
+                          </div>
+                          <div>
+                             <h3 className="text-sm font-black text-white uppercase tracking-widest">Jadwal Mengajar Hari Ini</h3>
+                             <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{today}, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}</p>
+                          </div>
+                       </div>
+                       <Link to="/dashboard/akademik" className="text-[9px] font-black text-slate-500 tracking-widest uppercase hover:text-emerald-400 transition-colors">Lihat Semua</Link>
+                     </div>
+
+                     <div className="space-y-4 mb-8">
+                        {mySchedule.length === 0 ? (
+                           <div className="py-10 text-center border border-dashed border-slate-800 rounded-2xl">
+                              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic opacity-50">Tidak ada jadwal tercatat hari ini</p>
                            </div>
-                           <h3 className="text-sm font-black text-white uppercase tracking-widest">Presensi Sesi Hari Ini</h3>
-                        </div>
-                        <p className="text-xs text-slate-400 leading-relaxed max-w-xs mb-8">
-                           Kelola kehadiran siswa untuk setiap mata pelajaran secara digital. Pantau statistik harian dengan satu klik.
-                        </p>
-                      </div>
+                        ) : (
+                          mySchedule.map((s) => {
+                            const start = parseInt(s.mulai.replace(':', ''));
+                            const end = parseInt(s.selesai.replace(':', ''));
+                            const isNow = currentTime >= start && currentTime <= end;
+
+                            return (
+                              <div key={s.id} className={cn(
+                                "p-4 rounded-2xl border transition-all flex items-center justify-between group/item",
+                                isNow ? "bg-emerald-500/10 border-emerald-500/20" : "bg-slate-800/30 border-slate-800/50 opacity-60"
+                              )}>
+                                 <div className="flex items-center gap-4">
+                                    <div className={cn(
+                                      "w-10 h-10 rounded-xl flex items-center justify-center text-[10px] font-black",
+                                      isNow ? "bg-emerald-500 text-white" : "bg-slate-700 text-slate-400"
+                                    )}>
+                                       {s.mulai.split(':')[0]}
+                                    </div>
+                                    <div>
+                                       <h4 className="text-xs font-black text-white uppercase italic">{s.mapel}</h4>
+                                       <div className="flex items-center gap-2 mt-0.5">
+                                          <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">{s.kelas}</p>
+                                          <span className="text-[8px] text-slate-600 font-bold tracking-widest">• {s.mulai} - {s.selesai}</span>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <ChevronRight className="w-4 h-4 text-slate-500 group-hover/item:text-emerald-400 transform group-hover/item:translate-x-1 transition-all" />
+                              </div>
+                            );
+                          })
+                        )}
+                     </div>
+                   </div>
+                   
+                   <div className="grid grid-cols-2 gap-4">
                       <Link 
                         to="/dashboard/presensi" 
                         className="bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest text-center transition-all shadow-xl shadow-blue-600/20"
                       >
-                        Buka Portal Presensi
+                        Buka Presensi
                       </Link>
-                   </div>
-
-                   <div className="bg-slate-900/50 p-8 rounded-[2.5rem] border border-slate-800 flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center gap-3 mb-4">
-                           <div className="p-3 bg-emerald-500/10 rounded-2xl">
-                              <ClipboardList className="w-6 h-6 text-emerald-400" />
-                           </div>
-                           <h3 className="text-sm font-black text-white uppercase tracking-widest">Agenda Mengajar</h3>
-                        </div>
-                        <p className="text-xs text-slate-400 leading-relaxed max-w-xs mb-8">
-                           Dokumentasikan materi, tugas, dan catatan pembelajaran setiap sesi kelas dengan rapi.
-                        </p>
-                      </div>
                       <Link 
                         to="/dashboard/agenda" 
                         className="bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest text-center transition-all shadow-xl shadow-emerald-600/20"
                       >
-                        Catat Agenda Baru
+                        Catat Agenda
                       </Link>
                    </div>
                 </div>
