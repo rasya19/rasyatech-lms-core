@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Video, Send, Users, Shield, BookOpen, Clock, Heart } from 'lucide-react';
+import { MessageSquare, Video, Send, Users, Shield, BookOpen, Clock, Heart, Trash2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
@@ -126,6 +126,25 @@ export default function Diskusi() {
     }
   };
 
+  const handleDeleteTopic = (roomName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (roomName === 'Umum') {
+      alert('Topik Umum tidak dapat dihapus.');
+      return;
+    }
+    if (window.confirm(`Apakah Anda yakin ingin menghapus topik "${roomName}"?`)) {
+      setRooms(rooms.filter(r => r.name !== roomName));
+      setAllMessages(prev => {
+        const next = { ...prev };
+        delete next[roomName];
+        return next;
+      });
+      if (activeRoom === roomName) {
+        setActiveRoom('Umum');
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -175,22 +194,32 @@ export default function Diskusi() {
               </div>
               <div className="space-y-2">
                  {rooms.map((room) => (
-                   <button 
-                    key={room.name} 
-                    onClick={() => setActiveRoom(room.name)}
-                    className={cn(
-                      "w-full text-left p-3 rounded-xl border transition-all group",
-                      activeRoom === room.name 
-                        ? "bg-brand-accent/10 border-brand-accent/30 shadow-sm" 
-                        : "bg-slate-50 border-transparent hover:border-brand-accent/20"
-                    )}
-                   >
-                      <p className={cn(
-                        "text-xs font-bold transition-colors italic",
-                        activeRoom === room.name ? "text-brand-accent" : "text-brand-sidebar group-hover:text-brand-accent"
-                      )}># {room.name}</p>
-                      <p className="text-[8px] text-slate-400 font-bold uppercase mt-1">{room.students} Siswa Online</p>
-                   </button>
+                   <div key={room.name} className="relative group/room">
+                     <button 
+                      onClick={() => setActiveRoom(room.name)}
+                      className={cn(
+                        "w-full text-left p-3 pr-10 rounded-xl border transition-all group-hover/room:border-brand-accent/30",
+                        activeRoom === room.name 
+                          ? "bg-brand-accent/10 border-brand-accent/30 shadow-sm" 
+                          : "bg-slate-50 border-transparent"
+                      )}
+                     >
+                        <p className={cn(
+                          "text-xs font-bold transition-colors italic",
+                          activeRoom === room.name ? "text-brand-accent" : "text-brand-sidebar"
+                        )}># {room.name}</p>
+                        <p className="text-[8px] text-slate-400 font-bold uppercase mt-1">{room.students} Siswa Online</p>
+                     </button>
+                     {(userRole === 'Guru' || userRole === 'Admin') && room.name !== 'Umum' && (
+                       <button
+                         onClick={(e) => handleDeleteTopic(room.name, e)}
+                         className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-rose-500 opacity-0 group-hover/room:opacity-100 transition-opacity hover:bg-rose-50 rounded-lg"
+                         title="Hapus Topik"
+                       >
+                         <Trash2 className="w-3.5 h-3.5" />
+                       </button>
+                     )}
+                   </div>
                  ))}
               </div>
            </div>
