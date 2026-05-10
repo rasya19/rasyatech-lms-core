@@ -56,15 +56,12 @@ export default function MonitoringUjian() {
     try {
       // In a real app, we might set a 'status' in a sessions table.
       // Here, we'll mark the exam as finished in hasil_ujian to trigger completion on client.
-      const { error } = await supabase.from('hasil_ujian').upsert({
-        student_id: studentId,
+      const { error } = await supabase.from('nilai_ujian').upsert({
+        siswa_id: studentId,
         bank_soal_id: bankSoalId,
-        end_time: new Date().toISOString(),
-        nilai: 0, // Admin can set this or it can be auto-calculated
-        total_benar: 0,
-        total_soal: 0,
-        status: 'FORCED'
-      });
+        waktu_selesai: new Date().toISOString(),
+        skor_akhir: 0 // Admin can set this or it can be auto-calculated
+      }, { onConflict: 'siswa_id,bank_soal_id' });
       if (error) throw error;
 
       // also update profiles_siswa to unlock their device

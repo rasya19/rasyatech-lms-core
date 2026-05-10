@@ -5,6 +5,11 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import remarkGfm from 'remark-gfm';
+import 'katex/dist/katex.min.css';
 
 // Interfaces for real data
 interface Soal {
@@ -78,7 +83,9 @@ export default function UjianSiswa() {
         .order('id', { ascending: true });
 
       if (sError) throw sError;
-      setSoalList(sData || []);
+      
+      const soalCount = bData.jumlah_soal || sData?.length || 0;
+      setSoalList((sData || []).slice(0, soalCount));
 
       // 3. Fetch Existing Answers (Load Save State)
       const { data: aData, error: aError } = await supabase
@@ -297,14 +304,12 @@ export default function UjianSiswa() {
 
       // 2. Save result to database
       const { error } = await supabase
-        .from('hasil_ujian')
+        .from('nilai_ujian')
         .insert([{
-          student_id: studentId,
+          siswa_id: studentId,
           bank_soal_id: bankSoalId,
-          nilai: Math.round(score),
-          total_benar: correctCount,
-          total_soal: totalSoal,
-          end_time: new Date().toISOString()
+          skor_akhir: Math.round(score),
+          waktu_selesai: new Date().toISOString()
         }]);
 
       if (error) throw error;
@@ -535,7 +540,13 @@ export default function UjianSiswa() {
             {activeSoal && (
               <>
                 <div className="text-base sm:text-lg md:text-xl font-bold text-slate-200 leading-relaxed mb-6 sm:mb-10 bg-slate-800/20 p-5 sm:p-8 rounded-2xl sm:rounded-[2rem] border border-slate-800/50">
-                  {activeSoal.pertanyaan}
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkMath, remarkGfm]}
+                    rehypePlugins={[rehypeKatex]}
+                    className="prose prose-invert max-w-none"
+                  >
+                    {activeSoal.pertanyaan}
+                  </ReactMarkdown>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:gap-4 pb-10">
@@ -574,10 +585,15 @@ export default function UjianSiswa() {
                           {isSelected ? <Check className="w-4 h-4 sm:w-5 sm:h-5" /> : opsi.id}
                         </div>
                         <div className={cn(
-                          "text-sm sm:text-base md:text-lg pt-1 sm:pt-2 transition-colors flex-1",
+                          "text-sm sm:text-base md:text-lg pt-1 sm:pt-2 transition-colors flex-1 m-markdown-container",
                           isSelected ? "text-emerald-50 font-black italic" : "text-slate-400 font-bold"
                         )}>
-                          {opsi.teks}
+                          <ReactMarkdown 
+                            remarkPlugins={[remarkMath, remarkGfm]}
+                            rehypePlugins={[rehypeKatex]}
+                          >
+                            {opsi.teks}
+                          </ReactMarkdown>
                         </div>
                       </label>
                     )

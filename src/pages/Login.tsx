@@ -47,6 +47,17 @@ export default function Login() {
       await supabase.auth.signOut().catch(() => {});
 
       if (loginRole === 'Guru') {
+        // Real static guru
+        if (formData.email === 'guru@pkbmarmillanusa.com' && formData.password === 'Guru123!') {
+           localStorage.setItem('userRole', 'Guru');
+           localStorage.setItem('teacherName', 'Guru PKBM');
+           // Removes demo flag so it behaves as real
+           localStorage.removeItem('isDemoMode');
+           setIsLoading(false);
+           navigate('/dashboard');
+           return;
+        }
+
         // Mock teacher login for demo
         if (formData.email === 'demo_guru' && formData.password === 'teacher123') {
            localStorage.setItem('userRole', 'Guru');
@@ -109,6 +120,16 @@ export default function Login() {
         localStorage.setItem('studentNisn', data.nisn);
         localStorage.setItem('studentId', data.id);
         localStorage.setItem('studentClass', data.class);
+        navigate('/dashboard');
+        return;
+      }
+
+      // Real static admin
+      if (formData.email === 'pkbmarmillanusa@gmail.com' && formData.password === 'Anlebakwangi19%') {
+        localStorage.setItem('userRole', 'Admin');
+        localStorage.setItem('adminName', 'Admin PKBM Armillanusa');
+        localStorage.removeItem('isDemoMode');
+        setIsLoading(false);
         navigate('/dashboard');
         return;
       }

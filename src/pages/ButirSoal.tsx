@@ -8,6 +8,11 @@ import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import remarkGfm from 'remark-gfm';
+import 'katex/dist/katex.min.css';
 
 // Helper local types (DB mapping happens on submit)
 interface OpsiJawaban {
@@ -475,9 +480,14 @@ export default function ButirSoal() {
                     {soals.length - idx}
                   </div>
                   <div className="flex-1 min-w-0 pt-1.5 flex flex-col items-start gap-1">
-                    <p className="text-sm font-bold text-slate-200 line-clamp-2 leading-snug">
-                      {soal.pertanyaan}
-                    </p>
+                    <div className="text-sm font-bold text-slate-200 line-clamp-2 leading-snug m-markdown-container">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkMath, remarkGfm]}
+                        rehypePlugins={[rehypeKatex]}
+                      >
+                        {soal.pertanyaan}
+                      </ReactMarkdown>
+                    </div>
                     <span className={cn(
                       "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border",
                       soal.tingkatKesulitan === 'Mudah' ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
@@ -519,7 +529,14 @@ export default function ButirSoal() {
                               )}>
                                 {o.id}
                               </div>
-                              <span className="flex-1">{o.teks}</span>
+                              <div className="flex-1 m-markdown-container">
+                                <ReactMarkdown 
+                                  remarkPlugins={[remarkMath, remarkGfm]}
+                                  rehypePlugins={[rehypeKatex]}
+                                >
+                                  {o.teks}
+                                </ReactMarkdown>
+                              </div>
                               {soal.kunciJawabanId === o.id && (
                                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                               )}
