@@ -50,13 +50,13 @@ export default function SKL() {
               </div>
 
               <div className="pt-4 mt-auto">
-                 <Link to="/dashboard/diskusi" className="block p-4 bg-brand-sidebar rounded-lg text-white hover:bg-slate-800 transition-colors">
+                 <div className="p-4 bg-brand-sidebar rounded-lg text-white">
                     <div className="flex gap-2 items-center mb-2">
                        <HelpCircle className="w-3.5 h-3.5 text-brand-accent" />
                        <span className="text-[9px] font-bold uppercase italic tracking-widest">Perlu Bantuan?</span>
                     </div>
-                    <p className="text-[9px] text-slate-400 italic">Hubungi tim kurikulum via Chat jika terdapat ketidaksesuaian data pada SKL Anda.</p>
-                 </Link>
+                    <p className="text-[9px] text-slate-400 italic">Hubungi tim kurikulum sekolah jika terdapat ketidaksesuaian data pada SKL Anda.</p>
+                 </div>
               </div>
            </div>
         </div>

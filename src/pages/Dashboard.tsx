@@ -101,7 +101,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (userRole === 'Siswa' && studentId) {
       fetchStudentDashboardData();
-    } else {
+    } else if (userRole === 'Admin' || userRole === 'Guru') {
       fetchAdminDashboardData();
     }
   }, [userRole, studentId]);
@@ -261,37 +261,62 @@ export default function Dashboard() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: 'TOTAL SISWA', value: stats.totalSiswa, icon: Users, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
-          { label: 'TOTAL GURU', value: stats.totalGuru, icon: UserCheck, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
-          ...(userRole !== 'Siswa' ? [
-            { label: 'TOTAL UJIAN', value: stats.totalUjian, icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
-            { label: 'RATA-RATA SKOR', value: stats.rataNilai, icon: Trophy, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' }
-          ] : [
-            { label: 'MAPEL AKTIF', value: stats.mapelAktif, icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
-            { label: 'UJIAN SELESAI', value: stats.tugasSelesai, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' }
-          ])
-        ].map((stat, i) => (
-          <div
-            key={i}
-            className={cn("bg-slate-900/50 p-6 rounded-3xl border flex flex-col justify-between group hover:border-emerald-500/50 transition-colors", stat.border)}
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div className={cn("p-3 rounded-2xl", stat.bg)}>
-                <stat.icon className={cn("w-6 h-6", stat.color)} />
+      {userRole !== 'Tamu' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: 'TOTAL SISWA', value: stats.totalSiswa, icon: Users, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
+            { label: 'TOTAL GURU', value: stats.totalGuru, icon: UserCheck, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
+            ...(userRole !== 'Siswa' ? [
+              { label: 'TOTAL UJIAN', value: stats.totalUjian, icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
+              { label: 'RATA-RATA SKOR', value: stats.rataNilai, icon: Trophy, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' }
+            ] : [
+              { label: 'MAPEL AKTIF', value: stats.mapelAktif, icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' },
+              { label: 'UJIAN SELESAI', value: stats.tugasSelesai, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-500/20' }
+            ])
+          ].map((stat, i) => (
+            <div
+              key={i}
+              className={cn("bg-slate-900/50 p-6 rounded-3xl border flex flex-col justify-between group hover:border-emerald-500/50 transition-colors", stat.border)}
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className={cn("p-3 rounded-2xl", stat.bg)}>
+                  <stat.icon className={cn("w-6 h-6", stat.color)} />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-slate-50 tracking-tight">{stat.value}</h3>
+                <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mt-1">{stat.label}</p>
               </div>
             </div>
-            <div>
-              <h3 className="text-2xl font-black text-slate-50 tracking-tight">{stat.value}</h3>
-              <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mt-1">{stat.label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {userRole === 'Siswa' ? (
+        {userRole === 'Tamu' ? (
+          <div className="lg:col-span-3">
+             <div className="bg-slate-900/80 p-12 rounded-[3.5rem] border border-slate-800 text-center relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
+                <div className="relative z-10 max-w-2xl mx-auto py-12">
+                   <div className="w-24 h-24 bg-slate-950 rounded-[2rem] border border-emerald-500/20 flex items-center justify-center mx-auto mb-8 shadow-2xl">
+                      <Rocket className="w-10 h-10 text-emerald-400 animate-pulse" />
+                   </div>
+                   <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-tight mb-4">ANDA MASUK SEBAGAI <span className="text-emerald-400">TAMU</span></h3>
+                   <p className="text-sm font-medium text-slate-400 mb-10 leading-relaxed">
+                      Selamat datang di portal dashboard. Sebagai pengunjung tamu, akses Anda terbatas pada fitur komunikasi dan manajemen profil dasar. Untuk fitur akademik lengkap, silakan hubungi administrator sekolah.
+                   </p>
+                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                      <Link to="/dashboard/diskusi" className="bg-emerald-600 text-white px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-emerald-600/20 hover:scale-105 active:scale-95 transition-all">
+                         Lihat Diskusi & Bantuan
+                      </Link>
+                      <Link to="/dashboard/settings" className="bg-slate-800 text-white px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-700 transition-all">
+                         Pengaturan Akun
+                      </Link>
+                   </div>
+                </div>
+             </div>
+          </div>
+        ) : userRole === 'Siswa' ? (
           <>
             {/* Student Schedule & Results */}
             <div className="lg:col-span-2 space-y-6">

@@ -46,7 +46,40 @@ import AgendaGuru from './pages/AgendaGuru';
 import PresensiSiswa from './pages/PresensiSiswa';
 import SuperAdmin from './pages/SuperAdmin';
 import AffiliateDashboard from './pages/AffiliateDashboard';
-import { Toaster } from 'sonner';
+import { toast, Toaster } from 'sonner';
+
+function GuestGuard({ children }: { children: React.ReactNode }) {
+  const role = localStorage.getItem('userRole');
+  const location = useLocation();
+  const allowedPaths = [
+    '/dashboard/diskusi', 
+    '/dashboard/settings', 
+    '/dashboard/feedback', 
+    '/dashboard/profile'
+  ];
+
+  useEffect(() => {
+    if (role === 'Tamu') {
+      const isDashboardRoot = location.pathname.endsWith('/dashboard') || location.pathname.endsWith('/dashboard/');
+      const isAllowed = allowedPaths.some(path => location.pathname.startsWith(path)) || isDashboardRoot;
+      
+      if (!isAllowed) {
+        toast.error('Akses Terbatas untuk Tamu');
+      }
+    }
+  }, [location, role]);
+
+  if (role === 'Tamu') {
+    const isDashboardRoot = location.pathname.endsWith('/dashboard') || location.pathname.endsWith('/dashboard/');
+    const isAllowed = allowedPaths.some(path => location.pathname.startsWith(path)) || isDashboardRoot;
+    
+    if (!isAllowed) {
+      return <Navigate to="/dashboard/diskusi" replace />;
+    }
+  }
+
+  return <>{children}</>;
+}
 
 function SchoolLoader() {
   const { schoolSlug } = useParams();
@@ -134,7 +167,7 @@ function AppContent() {
         <>
           <Route path="login" element={<Login />} />
           <Route path="ujian/:id" element={<UjianSiswa />} />
-          <Route path="dashboard" element={<Layout />}>
+          <Route path="dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
              <Route index element={<Dashboard />} />
              <Route path="course/:id" element={<CourseDetail />} />
              <Route path="data-siswa" element={<DataSiswa />} />
@@ -175,7 +208,7 @@ function AppContent() {
          <Route index element={<LandingPage />} />
          <Route path="login" element={<Login />} />
          <Route path="ujian/:id" element={<UjianSiswa />} />
-         <Route path="dashboard" element={<Layout />}>
+         <Route path="dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
             <Route index element={<Dashboard />} />
             {/* ... other child routes ... */}
             <Route path="course/:id" element={<CourseDetail />} />
@@ -210,14 +243,14 @@ function AppContent() {
          </Route>
       </Route>
 
-      <Route element={<Layout />}>
+      <Route element={<GuestGuard><Layout /></GuestGuard>}>
         <Route path="/data-siswa" element={<DataSiswa />} />
         <Route path="/data-guru" element={<Guru />} />
         <Route path="/keuangan/tagihan" element={<Tagihan />} />
         <Route path="*" element={<ComingSoon />} />
       </Route>
 
-      <Route path="/dashboard" element={<Layout />}>
+      <Route path="/dashboard" element={<GuestGuard><Layout /></GuestGuard>}>
         {/* These might be global dashboard or school dashboard if context exists */}
         <Route index element={<Dashboard />} />
         {/* ... */}

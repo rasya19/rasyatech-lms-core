@@ -498,7 +498,7 @@ export default function LandingPage() {
                   <ul className="text-xs text-slate-500 font-bold space-y-2 uppercase leading-none italic">
                      <li><Link to={school ? "/dashboard/ppdb" : "/ppdb"} className="hover:text-brand-accent">PPDB Online</Link></li>
                      <li><Link to="/login" className="hover:text-brand-accent">Cek Sertifikat (Portal)</Link></li>
-                     <li><Link to="/dashboard/diskusi" className="hover:text-brand-accent">Bantuan Siswa (Chat)</Link></li>
+                     <li><a href="https://wa.me/6285225025555?text=Halo%20Rasyatech,%20saya%20ingin%20bertanya%20mengenai%20layanan%20PKBM." className="hover:text-brand-accent">Bantuan (WhatsApp)</a></li>
                   </ul>
                </div>
             </div>
@@ -521,15 +521,17 @@ export default function LandingPage() {
       </footer>
 
       {/* Floating Consultation Button */}
-      <Link 
-        to="/dashboard/diskusi"
+      <a 
+        href="https://wa.me/6285225025555?text=Halo%20Rasyatech,%20saya%20ingin%20konsultasi%20mengenai%20layanan%20PKBM."
+        target="_blank"
+        rel="noopener noreferrer"
         className="fixed bottom-8 right-8 bg-brand-sidebar text-white p-4 rounded-full shadow-2xl shadow-brand-sidebar/40 z-50 hover:scale-110 transition-all group flex items-center gap-3 overflow-hidden"
       >
          <div className="max-w-0 group-hover:max-w-[200px] overflow-hidden transition-all duration-500 whitespace-nowrap">
-            <span className="text-xs font-black uppercase tracking-widest italic pr-2">Butuh Konsultasi? (Chat)</span>
+            <span className="text-xs font-black uppercase tracking-widest italic pr-2">Butuh Konsultasi? (WA)</span>
          </div>
          <MessageCircle className="w-6 h-6 text-brand-accent" />
-      </Link>
+      </a>
    </div>
 );
 }

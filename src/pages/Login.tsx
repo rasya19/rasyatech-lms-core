@@ -18,7 +18,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [loginRole, setLoginRole] = useState<'Admin' | 'Guru' | 'Siswa'>('Admin');
+  const [loginRole, setLoginRole] = useState<'Admin' | 'Guru' | 'Siswa' | 'Tamu'>('Admin');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -238,9 +238,41 @@ export default function Login() {
               >
                 Siswa
               </button>
+              <button 
+                type="button"
+                onClick={() => setLoginRole('Tamu')}
+                className={cn(
+                  "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                  loginRole === 'Tamu' ? "bg-emerald-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
+                )}
+              >
+                Tamu
+              </button>
             </div>
 
-            <div className="flex items-center gap-4 mb-8">
+            {loginRole === 'Tamu' ? (
+              <div className="text-center py-4">
+                <div className="p-4 bg-slate-900 rounded-2xl border border-slate-700 text-emerald-400 w-16 h-16 flex items-center justify-center mx-auto mb-6">
+                  <ShieldCheck className="w-8 h-8" />
+                </div>
+                <h3 className="font-black text-white uppercase italic tracking-widest text-lg mb-2">MASUK SEBAGAI <span className="text-emerald-400">TAMU</span></h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-8 leading-relaxed px-4">
+                  Anda akan masuk dengan akses terbatas ke fitur diskusi dan profil publik.
+                </p>
+                <button 
+                  onClick={() => {
+                    localStorage.setItem('userRole', 'Tamu');
+                    localStorage.setItem('adminName', 'Pengunjung Tamu');
+                    navigate('/dashboard/diskusi');
+                  }}
+                  className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                >
+                  Masuk Sekarang <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-4 mb-8">
               <div className="p-3 bg-slate-900 rounded-2xl border border-slate-700 text-emerald-400">
                 <ShieldCheck className="w-6 h-6" />
               </div>
@@ -382,8 +414,10 @@ export default function Login() {
                 )}
               </button>
             </form>
-          </div>
-        </motion.div>
+          </>
+        )}
+      </div>
+    </motion.div>
 
         {/* Footer Help */}
         <div className="pt-8 border-t border-slate-800 text-center">

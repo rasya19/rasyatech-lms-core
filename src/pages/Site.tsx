@@ -58,7 +58,7 @@ export default function Site() {
   const [isSavingContact, setIsSavingContact] = useState(false);
 
   const [consultationLink, setConsultationLink] = useState(
-    localStorage.getItem('school_consultation_link') || '/dashboard/diskusi'
+    localStorage.getItem('school_consultation_link') || 'https://wa.me/6285225025555?text=Halo%20Rasyatech,%20saya%20ingin%20konsultasi.'
   );
 
   const [beritaList, setBeritaList] = useState<Berita[]>(() => {
@@ -799,25 +799,25 @@ export default function Site() {
           <div className="bg-white border border-brand-border rounded-[2rem] p-8 shadow-sm">
             <div className="flex justify-between items-start mb-8">
               <div>
-                <h3 className="text-sm font-black text-brand-sidebar uppercase italic tracking-widest leading-none">LAYANAN <span className="text-brand-accent">KONSULTASI CHAT</span></h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-2">Atur tujuan link tombol "Buka Konsultasi" dalam aplikasi</p>
+                <h3 className="text-sm font-black text-brand-sidebar uppercase italic tracking-widest leading-none">LAYANAN <span className="text-brand-accent">KONSULTASI</span></h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-2">Atur tujuan link tombol "Buka Konsultasi" (WhatsApp/Eksternal)</p>
               </div>
             </div>
             
             <div className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Link Tujuan Konsultasi (Default: In-App Chat)</label>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Link WhatsApp/Tujuan Konsultasi</label>
                 <input 
                   type="text"
                   className="w-full bg-slate-50 border border-brand-border rounded-xl p-4 text-xs font-bold focus:border-brand-accent outline-none"
                   value={consultationLink}
                   onChange={e => setConsultationLink(e.target.value)}
-                  placeholder="Gunakan /dashboard/diskusi untuk chat internal"
+                  placeholder="Contoh: https://wa.me/628..."
                 />
               </div>
               <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl">
                 <p className="text-[10px] text-amber-700 font-bold italic leading-relaxed">
-                   * Gunakan <span className="text-brand-sidebar">/dashboard/diskusi</span> agar pengguna tetap di aplikasi (Tanpa WhatsApp).
+                   * Tautan ini akan digunakan sebagai jalur komunikasi teknis antara Admin Sekolah ke Super Admin.
                 </p>
               </div>
               <button 

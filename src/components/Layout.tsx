@@ -45,7 +45,7 @@ import { cn } from '../lib/utils';
 
 import { supabase } from '../lib/supabase';
 
-type Role = 'Admin' | 'Guru' | 'Siswa';
+type Role = 'Admin' | 'Guru' | 'Siswa' | 'Tamu';
 
 export default function Layout() {
   const { schoolSlug } = useParams();
@@ -221,6 +221,11 @@ export default function Layout() {
           },
           { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },
           { icon: Sparkles, label: 'Asisten AI', path: `${prefix}/dashboard/ai-asisten` },
+        ];
+      case 'Tamu':
+        return [
+          { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },
+          { icon: UserCheck, label: 'Profil Tamu', path: `${prefix}/dashboard/settings` },
         ];
       default: // Siswa
         return [
@@ -520,7 +525,7 @@ export default function Layout() {
                       <div className="p-2 bg-slate-50 border-b border-brand-border">
                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Simulasi Role</p>
                       </div>
-                      {(['Admin', 'Guru', 'Siswa'] as Role[]).map((r) => (
+                      {(['Admin', 'Guru', 'Siswa', 'Tamu'] as Role[]).map((r) => (
                         <button
                           key={r}
                           onClick={() => handleRoleChange(r)}
