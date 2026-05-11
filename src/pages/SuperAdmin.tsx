@@ -3,7 +3,7 @@ import {
   Building2, Users, Rocket, Zap, Search, 
   Plus, Edit2, Trash2, ShieldCheck, ExternalLink,
   Loader2, CheckCircle2, AlertCircle, TrendingUp,
-  DollarSign, Globe, Settings, Lock
+  DollarSign, Globe, Settings, Lock, Database
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { supabase } from '../lib/supabase';
@@ -149,9 +149,18 @@ export default function SuperAdmin() {
         
         <div className="relative z-10 flex gap-4 w-full md:w-auto">
            <button 
+             onClick={async () => {
+               const { seedDemoData } = await import('../lib/seedDemoData');
+               await seedDemoData();
+             }}
+             className="p-4 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-all"
+           >
+             <Database className="w-5 h-5" />
+           </button>
+           <button 
              onClick={() => {
                setEditingSchool(null);
-               setFormData({ name: '', slug: '', npsn: '', adminEmail: '', packageId: 'basic', status: 'active', expiryDate: '' });
+               setFormData({ name: '', slug: '', npsn: '', adminEmail: '', packageId: 'basic', subscription_plan: 'Silver', status: 'active', expiryDate: '' });
                setIsModalOpen(true);
              }}
              className="flex-1 md:flex-none bg-brand-accent text-brand-sidebar px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest italic flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-accent/20"
@@ -273,7 +282,7 @@ export default function SuperAdmin() {
                                     setFormData({
                                       ...formData,
                                       ...school,
-                                      subscription_plan: school.subscription_plan || 'Silver'
+                                      subscription_plan: (school as any).subscription_plan || 'Silver'
                                     });
                                     setIsModalOpen(true);
                                   }}

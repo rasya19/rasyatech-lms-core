@@ -43,6 +43,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
+import UpgradeModal from './UpgradeModal';
 
 import { supabase } from '../lib/supabase';
 
@@ -58,6 +59,8 @@ export default function Layout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [lockedFeatureName, setLockedFeatureName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
@@ -94,20 +97,38 @@ export default function Layout() {
       const plan = school.subscription_plan || 'Silver';
       
       const goldFeatures = ['/dashboard/keuangan', '/keuangan/tagihan', '/dashboard/raport', '/dashboard/analitik'];
-      const platinumFeatures = ['/dashboard/aset', '/dashboard/statistik']; // Hypothetical paths
+      const platinumFeatures = ['/dashboard/aset', '/dashboard/statistik']; 
       
       const isGoldPath = goldFeatures.some(p => currentPath.includes(p));
       const isPlatinumPath = platinumFeatures.some(p => currentPath.includes(p));
 
+      let featureName = '';
+      if (isPlatinumPath) featureName = currentPath.includes('aset') ? 'Manajemen Aset' : 'Statistik Eksekutif';
+      if (isGoldPath) featureName = currentPath.includes('keuangan') ? 'Manajemen Keuangan' : 'E-Rapor';
+
       if (plan === 'Silver' && (isGoldPath || isPlatinumPath)) {
-        toast.error('Gagal: Paket Silver tidak memiliki akses. Upgrade ke Gold/Platinum.');
+        setLockedFeatureName(featureName);
+        setIsUpgradeModalOpen(true);
         navigate(prefix + '/dashboard');
       } else if (plan === 'Gold' && isPlatinumPath) {
-        toast.error('Gagal: Fitur ini hanya tersedia di Paket Platinum.');
+        setLockedFeatureName(featureName);
+        setIsUpgradeModalOpen(true);
         navigate(prefix + '/dashboard');
       }
     }
   }, [role, location.pathname, navigate, schoolSlug, school]);
+
+  // Dynamic Theme Logic
+  useEffect(() => {
+    if (school?.subscription_plan === 'Platinum') {
+      document.documentElement.style.setProperty('--color-brand-accent', '#D4AF37');
+      document.documentElement.style.setProperty('--color-brand-sidebar', '#1a1a1a');
+      document.body.style.transition = 'all 0.5s ease-in-out';
+    } else {
+      document.documentElement.style.setProperty('--color-brand-accent', '#3b82f6');
+      document.documentElement.style.setProperty('--color-brand-sidebar', '#0f172a');
+    }
+  }, [school?.subscription_plan]);
 
   const toggleMenu = (label: string) => {
     setOpenMenus(prev => ({ ...prev, [label]: !prev[label] }));
@@ -181,70 +202,85 @@ export default function Layout() {
     const prefix = schoolSlug ? `/s/${schoolSlug}` : '';
     const plan = school?.subscription_plan || 'Silver';
     
+    const getPlanRank = (p: string) => {
+      if (p === 'Platinum') return 3;
+      if (p === 'Gold') return 2;
+      return 1;
+    };
+
+    const currentRank = getPlanRank(plan);
+
+    const checkLocked = (minPlan: 'Silver' | 'Gold' | 'Platinum') => {
+      return currentRank < getPlanRank(minPlan);
+    };
+
     switch (role) {
       case 'Admin':
-        const items = [
-          { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
+        return [
+          { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard`, minPlan: 'Silver' },
           { 
             icon: FolderOpen, 
             label: 'Master Data', 
             subItems: [
-              { icon: Users, label: 'Data Siswa', path: `${prefix}/data-siswa` },
-              { icon: UserCheck, label: 'Data Guru', path: `${prefix}/data-guru` },
-              { icon: Book, label: 'Mata Pelajaran', path: `${prefix}/dashboard/mata-pelajaran` },
-              { icon: Layers, label: 'Kelola Kelas', path: `${prefix}/dashboard/kelas` },
-              ...(plan !== 'Silver' ? [{ icon: GraduationCap, label: 'Data Alumni', path: `${prefix}/dashboard/alumni` }] : []),
-              { icon: UserPlus, label: 'Data Pendaftar', path: `${prefix}/dashboard/ppdb` },
+              { icon: Users, label: 'Data Siswa', path: `${prefix}/data-siswa`, minPlan: 'Silver' },
+              { icon: UserCheck, label: 'Data Guru', path: `${prefix}/data-guru`, minPlan: 'Silver' },
+              { icon: Book, label: 'Mata Pelajaran', path: `${prefix}/dashboard/mata-pelajaran`, minPlan: 'Silver' },
+              { icon: Layers, label: 'Kelola Kelas', path: `${prefix}/dashboard/kelas`, minPlan: 'Silver' },
+              { icon: UserPlus, label: 'Data Pendaftar', path: `${prefix}/dashboard/ppdb`, minPlan: 'Silver' },
             ]
           },
           {
             icon: BookOpen,
             label: 'Akademik',
             subItems: [
-              { icon: Calendar, label: 'Jadwal Pelajaran', path: `${prefix}/dashboard/akademik` },
-              { icon: Book, label: 'Agenda Mengajar', path: `${prefix}/dashboard/agenda` },
-              { icon: UserCheck, label: 'Presensi Siswa', path: `${prefix}/dashboard/presensi` },
-              { icon: Link2, label: 'Relasi Mengajar', path: `${prefix}/dashboard/relasi` },
-              ...(plan !== 'Silver' ? [
-                { icon: ArrowUpCircle, label: 'Kenaikan Kelas', path: `${prefix}/dashboard/kenaikan` },
-                { icon: FileText, label: 'Cek Raport', path: `${prefix}/dashboard/raport` },
-                { icon: FileBarChart, label: 'Analitik e-Rapor', path: `${prefix}/dashboard/analitik` },
-              ] : []),
-              { icon: BookOpen, label: 'Materi Ajar (E-Modul)', path: `${prefix}/dashboard/materi` },
-              { icon: ScanFace, label: 'Deteksi Objek AI', path: `${prefix}/dashboard/deteksi-objek` },
+              { icon: Calendar, label: 'Jadwal Pelajaran', path: `${prefix}/dashboard/akademik`, minPlan: 'Silver' },
+              { icon: Book, label: 'Agenda Mengajar', path: `${prefix}/dashboard/agenda`, minPlan: 'Silver' },
+              { icon: UserCheck, label: 'Presensi Siswa', path: `${prefix}/dashboard/presensi`, minPlan: 'Silver' },
+              { icon: BookOpen, label: 'Materi Ajar (E-Modul)', path: `${prefix}/dashboard/materi`, minPlan: 'Silver' },
+              { icon: ScanFace, label: 'Deteksi Objek AI', path: `${prefix}/dashboard/deteksi-objek`, minPlan: 'Silver' },
+              { icon: GraduationCap, label: 'Data Alumni', path: `${prefix}/dashboard/alumni`, minPlan: 'Gold' },
+              { icon: ArrowUpCircle, label: 'Kenaikan Kelas', path: `${prefix}/dashboard/kenaikan`, minPlan: 'Gold' },
+              { icon: FileText, label: 'Cek Raport', path: `${prefix}/dashboard/raport`, minPlan: 'Gold' },
+              { icon: FileBarChart, label: 'Analitik e-Rapor', path: `${prefix}/dashboard/analitik`, minPlan: 'Gold' },
             ]
           },
           {
             icon: ClipboardCheck,
             label: 'Ujian Online',
+            minPlan: 'Silver',
             subItems: [
-              { icon: FileBarChart, label: 'Kelola Ujian', path: `${prefix}/dashboard/soal` },
-              { icon: ClipboardCheck, label: 'Jadwal Ujian', path: `${prefix}/dashboard/ujian` },
-              { icon: Eye, label: 'Monitoring Live', path: `${prefix}/dashboard/hasil-ujian` },
-              { icon: Check, label: 'Riwayat Ujian', path: `${prefix}/dashboard/nilai` },
-              { icon: Settings, label: 'Pengaturan', path: `${prefix}/dashboard/settings` },
+              { icon: FileBarChart, label: 'Kelola Ujian', path: `${prefix}/dashboard/soal`, minPlan: 'Silver' },
+              { icon: ClipboardCheck, label: 'Jadwal Ujian', path: `${prefix}/dashboard/ujian`, minPlan: 'Silver' },
+              { icon: Eye, label: 'Monitoring Live', path: `${prefix}/dashboard/hasil-ujian`, minPlan: 'Silver' },
+              { icon: Check, label: 'Riwayat Ujian', path: `${prefix}/dashboard/nilai`, minPlan: 'Silver' },
+              { icon: Settings, label: 'Pengaturan', path: `${prefix}/dashboard/settings`, minPlan: 'Silver' },
             ]
           },
-          ...(plan !== 'Silver' ? [
-            {
-              icon: Wallet,
-              label: 'Keuangan',
-              subItems: [
-                { icon: Wallet, label: 'Pembayaran', path: `${prefix}/dashboard/keuangan` },
-                { icon: FileText, label: 'Tagihan', path: `${prefix}/keuangan/tagihan` },
-              ]
-            }
-          ] : []),
-          { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },
-          { icon: Sparkles, label: 'Asisten AI', path: `${prefix}/dashboard/ai-asisten` },
-          { icon: Settings, label: 'Manajemen Web', path: `${prefix}/dashboard/site` },
-          ...(plan === 'Platinum' ? [
-            { icon: FileBarChart, label: 'Statistik Eksekutif', path: `${prefix}/dashboard/statistik` },
-            { icon: Layers, label: 'Manajemen Aset', path: `${prefix}/dashboard/aset` },
-          ] : []),
+          {
+            icon: Wallet,
+            label: 'Keuangan',
+            minPlan: 'Gold',
+            subItems: [
+              { icon: Wallet, label: 'Pembayaran', path: `${prefix}/dashboard/keuangan`, minPlan: 'Gold' },
+              { icon: FileText, label: 'Tagihan', path: `${prefix}/keuangan/tagihan`, minPlan: 'Gold' },
+            ]
+          },
+          { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi`, minPlan: 'Silver' },
+          { icon: Sparkles, label: 'Asisten AI', path: `${prefix}/dashboard/ai-asisten`, minPlan: 'Silver' },
+          { icon: Settings, label: 'Manajemen Web', path: `${prefix}/dashboard/site`, minPlan: 'Silver' },
+          { icon: FileBarChart, label: 'Statistik Eksekutif', path: `${prefix}/dashboard/statistik`, minPlan: 'Platinum' },
+          { icon: Layers, label: 'Manajemen Aset', path: `${prefix}/dashboard/aset`, minPlan: 'Platinum' },
+          { icon: GraduationCap, label: 'Kartu Digital QR', path: `${prefix}/dashboard/kartu-qr`, minPlan: 'Platinum' },
           { icon: Globe, label: 'Web Utama', path: schoolSlug ? `/s/${schoolSlug}` : '/', isExternal: true },
-        ];
-        return items;
+        ].map(item => ({
+          ...item,
+          isLocked: item.minPlan ? checkLocked(item.minPlan as any) : false,
+          subItems: item.subItems?.map((sub: any) => ({
+            ...sub,
+            isLocked: sub.minPlan ? checkLocked(sub.minPlan) : false
+          }))
+        }));
+
       case 'Guru':
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
@@ -358,22 +394,32 @@ export default function Layout() {
         <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto custom-scrollbar">
           <p className="text-[10px] font-bold text-slate-500 px-3 py-2 uppercase tracking-widest lg:hidden xl:block">Utama</p>
           {navItems.map((item) => {
+            const handleLockedClick = (e: React.MouseEvent, label: string) => {
+              e.preventDefault();
+              setLockedFeatureName(label);
+              setIsUpgradeModalOpen(true);
+            };
+
             if (item.subItems) {
               const isOpen = openMenus[item.label];
               return (
                 <div key={item.label} className="space-y-1">
                   <button
-                    onClick={() => toggleMenu(item.label)}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 group text-slate-400 hover:bg-white/10 hover:text-white"
+                    onClick={() => item.isLocked ? handleLockedClick(null as any, item.label) : toggleMenu(item.label)}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 group text-slate-400 hover:bg-white/10 hover:text-white",
+                      item.isLocked && "opacity-60 grayscale-[0.5]"
+                    )}
                   >
                     <div className="flex items-center gap-3">
                       <item.icon className="w-5 h-5 shrink-0" />
                       <span className="font-medium text-sm lg:hidden xl:block">{item.label}</span>
+                      {item.isLocked && <Lock className="w-3 h-3 text-brand-accent ml-auto lg:hidden xl:block" />}
                     </div>
-                    <ChevronDown className={cn("w-4 h-4 transition-transform lg:hidden xl:block", isOpen && "rotate-180")} />
+                    {!item.isLocked && <ChevronDown className={cn("w-4 h-4 transition-transform lg:hidden xl:block", isOpen && "rotate-180")} />}
                   </button>
                   <AnimatePresence>
-                    {isOpen && (
+                    {isOpen && !item.isLocked && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
@@ -384,19 +430,27 @@ export default function Layout() {
                           {item.subItems.map((sub: any) => (
                             <NavLink
                               key={sub.path}
-                              to={sub.path}
-                              onClick={() => setIsMobileMenuOpen(false)}
+                              to={sub.isLocked ? '#' : sub.path}
+                              onClick={(e) => {
+                                if (sub.isLocked) {
+                                  handleLockedClick(e, sub.label);
+                                } else {
+                                  setIsMobileMenuOpen(false);
+                                }
+                              }}
                               className={({ isActive }) => cn(
-                                "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group",
-                                isActive 
+                                "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group relative",
+                                isActive && !sub.isLocked
                                   ? "bg-brand-accent text-white" 
-                                  : "text-slate-400 hover:text-white hover:bg-white/5"
+                                  : "text-slate-400 hover:text-white hover:bg-white/5",
+                                sub.isLocked && "opacity-60 grayscale-[0.5]"
                               )}
                             >
                               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                                 {sub.icon && <sub.icon className="w-4 h-4 transition-transform group-hover:scale-110" />}
                               </div>
                               <span className="font-medium text-xs lg:hidden xl:block">{sub.label}</span>
+                              {sub.isLocked && <Lock className="w-3 h-3 text-brand-accent absolute right-3 lg:hidden xl:block" />}
                             </NavLink>
                           ))}
                         </div>
@@ -421,17 +475,25 @@ export default function Layout() {
             ) : (
               <NavLink
                 key={item.path}
-                to={item.path}
-                onClick={() => setIsMobileMenuOpen(false)}
+                to={item.isLocked ? '#' : item.path}
+                onClick={(e) => {
+                  if (item.isLocked) {
+                    handleLockedClick(e, item.label);
+                  } else {
+                    setIsMobileMenuOpen(false);
+                  }
+                }}
                 className={({ isActive }) => cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group justify-start",
-                  isActive 
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group justify-start relative",
+                  isActive && !item.isLocked
                     ? "bg-brand-accent text-white" 
-                    : "text-slate-400 hover:bg-white/10 hover:text-white"
+                    : "text-slate-400 hover:bg-white/10 hover:text-white",
+                  item.isLocked && "opacity-60 grayscale-[0.5]"
                 )}
               >
                 <item.icon className="w-5 h-5 shrink-0" />
                 <span className="font-medium text-sm lg:hidden xl:block">{item.label}</span>
+                {item.isLocked && <Lock className="w-3 h-3 text-brand-accent absolute right-3 lg:hidden xl:block" />}
               </NavLink>
             );
           })}
@@ -743,6 +805,11 @@ export default function Layout() {
             </div>
           )}
         </AnimatePresence>
+        <UpgradeModal 
+          isOpen={isUpgradeModalOpen} 
+          onClose={() => setIsUpgradeModalOpen(false)} 
+          featureName={lockedFeatureName}
+        />
       </section>
 
       {/* Right Panel - Dense Info (Visible on Large Screens) */}
