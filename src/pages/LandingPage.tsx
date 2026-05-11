@@ -507,7 +507,7 @@ export default function LandingPage() {
          <div className="max-w-7xl mx-auto px-6 mt-20 pt-8 border-t border-brand-border flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
                <span>© 2026 {schoolName}. All Rights Reserved.</span>
-               <Link to="/admin" className="opacity-10 hover:opacity-100 transition-opacity lowercase italic tracking-tighter text-[6px] ml-1">System Entry</Link>
+               <Link to="/admin" className="opacity-20 hover:opacity-100 transition-opacity lowercase italic tracking-tighter text-[9px] ml-2 border-l border-slate-300 pl-2">System Entry</Link>
                <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-100 rounded-lg shadow-sm">
                   <Activity className="w-3 h-3 text-brand-accent" />
                   <span className="text-[9px] font-black italic tracking-tighter text-slate-600">{visitorCount.toLocaleString()} PENGUNJUNG</span>
