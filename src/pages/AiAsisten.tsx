@@ -8,10 +8,9 @@ type Mode = 'RPP' | 'RAPORT';
 
 export default function AiAsisten() {
   const getAiClient = () => {
-    const processApiKey = typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '';
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || processApiKey || '';
-    if (!isValidGeminiKey(apiKey)) {
-      throw new Error("API Key Gemini tidak valid atau belum diatur. Silakan dapatkan API Key di aistudio.google.com dan pastikan di awali dengan 'AIza'.");
+    const apiKey = (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '') || '';
+    if (!apiKey) {
+      throw new Error("API Key Gemini tidak ditemukan. Pastikan environment variable GEMINI_API_KEY sudah diatur di sisi server/environment.");
     }
     return new GoogleGenAI({ apiKey });
   };
@@ -59,17 +58,14 @@ export default function AiAsisten() {
 
       const ai = getAiClient();
       const response = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: [{
-          role: 'user',
-          parts: [{ text: prompt }]
-        }]
+        model: "gemini-3-flash-preview",
+        contents: prompt
       });
 
       setResult(response.text || 'Gagal menghasilkan RPP.');
     } catch (error: any) {
       console.error('AI Error:', error);
-      setResult(`Terjadi kesalahan saat menghubungi AI: ${error.message || 'Error tidak dikenal'}. Pastikan API Key diatur dengan benar.`);
+      setResult(`Terjadi kesalahan saat menghubungi AI: ${error.message || 'Error tidak dikenal'}.`);
     } finally {
       setLoading(false);
     }
@@ -97,17 +93,14 @@ export default function AiAsisten() {
 
       const ai = getAiClient();
       const response = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: [{
-          role: 'user',
-          parts: [{ text: prompt }]
-        }]
+        model: "gemini-3-flash-preview",
+        contents: prompt
       });
 
       setResult(response.text || 'Gagal menghasilkan narasi raport.');
     } catch (error: any) {
       console.error('AI Error:', error);
-      setResult(`Terjadi kesalahan saat menghubungi AI: ${error.message || 'Error tidak dikenal'}. Pastikan API Key diatur dengan benar.`);
+      setResult(`Terjadi kesalahan saat menghubungi AI: ${error.message || 'Error tidak dikenal'}.`);
     } finally {
       setLoading(false);
     }
