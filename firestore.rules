@@ -57,6 +57,17 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    match /affiliates/{id} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    match /commissions/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /feedbacks/{id} {
       allow read: if isAdmin();
       allow create: if isSignedIn();

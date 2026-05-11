@@ -43,6 +43,8 @@ import Settings from './pages/Settings';
 import Presensi from './pages/Presensi';
 import AgendaGuru from './pages/AgendaGuru';
 import PresensiSiswa from './pages/PresensiSiswa';
+import SuperAdmin from './pages/SuperAdmin';
+import AffiliateDashboard from './pages/AffiliateDashboard';
 import { Toaster } from 'sonner';
 
 function SchoolLoader() {
@@ -122,6 +124,8 @@ function AppContent() {
       <Route path="/login" element={<Login />} />
       <Route path="/ujian/:id" element={<UjianSiswa />} />
       <Route path="/purchase" element={<Purchase />} />
+      <Route path="/super-admin" element={<SuperAdmin />} />
+      <Route path="/affiliate" element={<AffiliateDashboard />} />
       
       {/* If subdomain/custom domain is detected, allow accessing dashboard routes at root */}
       {school && (
