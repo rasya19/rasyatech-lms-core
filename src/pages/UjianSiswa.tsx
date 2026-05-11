@@ -535,13 +535,14 @@ export default function UjianSiswa() {
             {activeSoal && (
               <>
                 <div className="text-base sm:text-lg md:text-xl font-bold text-slate-200 leading-relaxed mb-6 sm:mb-10 bg-slate-800/20 p-5 sm:p-8 rounded-2xl sm:rounded-[2rem] border border-slate-800/50">
-                  <ReactMarkdown 
-                    remarkPlugins={[remarkMath, remarkGfm]}
-                    rehypePlugins={[rehypeKatex]}
-                    className="prose prose-invert max-w-none"
-                  >
-                    {activeSoal.pertanyaan}
-                  </ReactMarkdown>
+                  <div className="prose prose-invert max-w-none">
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkMath, remarkGfm]}
+                      rehypePlugins={[rehypeKatex]}
+                    >
+                      {activeSoal.pertanyaan}
+                    </ReactMarkdown>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:gap-4 pb-10">

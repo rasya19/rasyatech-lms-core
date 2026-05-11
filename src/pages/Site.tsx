@@ -195,16 +195,6 @@ export default function Site() {
     ];
   });
 
-  const [partnerships, setPartnerships] = useState(() => {
-    const saved = localStorage.getItem('school_partnerships');
-    if (saved) return JSON.parse(saved);
-    return [
-      { tier: 'Starter', title: 'LISENSI SITUS', desc: 'Penggunaan sistem standar untuk manajemen 1 PKBM/Satuan Pendidikan.', features: ['Dashboard Admin/Siswa', 'Database Cloud Terpusat', 'Domain Subarmilla.com'] },
-      { tier: 'White Label', title: 'White Label', desc: 'Bangun brand sekolah Anda sendiri dengan infrastruktur teknologi kami.', features: ['Custom Domain Sekolah', 'Logo & Warna Custom', 'Prioritas Support 24/7', 'Modul AI Terintegrasi'], isFeatured: true },
-      { tier: 'Corporate', title: 'CUSTOM SISTEM', desc: 'Pengembangan fitur khusus sesuai kebutuhan operasional unik institusi Anda.', features: ['Source Code Berlisensi', 'Integrasi API Pihak ke-3', 'On-Premise Deployment'] },
-    ];
-  });
-
   const [contactInfo, setContactInfo] = useState(() => {
     const saved = localStorage.getItem('school_contact');
     if (saved) return JSON.parse(saved);
@@ -235,10 +225,6 @@ export default function Site() {
   useEffect(() => {
     localStorage.setItem('school_programs', JSON.stringify(programs));
   }, [programs]);
-
-  useEffect(() => {
-    localStorage.setItem('school_partnerships', JSON.stringify(partnerships));
-  }, [partnerships]);
 
   useEffect(() => {
     localStorage.setItem('school_contact', JSON.stringify(contactInfo));
@@ -686,59 +672,6 @@ export default function Site() {
                         setPrograms(newP);
                       }}
                     />
-                 </div>
-               ))}
-            </div>
-          </div>
-
-          <div className="bg-white border border-brand-border rounded-[2rem] p-8 shadow-sm">
-            <div className="flex justify-between items-start mb-8">
-              <div>
-                <h3 className="text-sm font-black text-brand-sidebar uppercase italic tracking-widest leading-none">KERJASAMA <span className="text-brand-accent">& LISENSI</span></h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-2">Atur penawaran kerjasama B2B / SaaS</p>
-              </div>
-            </div>
-            <div className="space-y-6">
-               {partnerships.map((tier: any, i: number) => (
-                 <div key={i} className="p-6 border border-brand-border rounded-[1.5rem] bg-slate-50 relative">
-                    <div className="flex gap-4 mb-4">
-                       <div className="flex-1 space-y-1">
-                          <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Nama Paket</label>
-                          <input 
-                            className="w-full bg-white border border-brand-border rounded-lg p-2 text-[10px] font-bold"
-                            value={tier.title}
-                            onChange={(e) => {
-                               const newT = [...partnerships];
-                               newT[i].title = e.target.value;
-                               setPartnerships(newT);
-                            }}
-                          />
-                       </div>
-                       <div className="w-32 space-y-1">
-                          <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Tier Badge</label>
-                          <input 
-                            className="w-full bg-white border border-brand-border rounded-lg p-2 text-[10px] font-bold"
-                            value={tier.tier}
-                            onChange={(e) => {
-                               const newT = [...partnerships];
-                               newT[i].tier = e.target.value;
-                               setPartnerships(newT);
-                            }}
-                          />
-                       </div>
-                    </div>
-                    <div className="space-y-1">
-                       <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Deskripsi Singkat</label>
-                       <input 
-                         className="w-full bg-white border border-brand-border rounded-lg p-2 text-[10px] font-bold"
-                         value={tier.desc}
-                         onChange={(e) => {
-                            const newT = [...partnerships];
-                            newT[i].desc = e.target.value;
-                            setPartnerships(newT);
-                         }}
-                       />
-                    </div>
                  </div>
                ))}
             </div>

@@ -43,7 +43,6 @@ export default function LandingPage() {
     { name: 'Fasilitas', href: '#fasilitas' },
     { name: 'Program', href: '#program' },
     { name: 'Berita', href: '#berita' },
-    { name: 'Kerjasama', href: '#kerjasama' },
     { name: 'Kontak', href: '#kontak' },
   ];
 
@@ -91,14 +90,9 @@ export default function LandingPage() {
               </a>
             ))}
             {!school && (
-              <Link id="nav-affiliate-link" to="/affiliate" className="bg-slate-100 text-slate-600 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-200 transition-all italic flex items-center gap-2">
-                Daftar Affiliate <Users className="w-3 h-3 text-brand-sidebar" />
-              </Link>
-            )}
-            {!school && (
-              <Link to="/purchase" className="bg-white border-2 border-brand-sidebar text-brand-sidebar px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-50 transition-all italic flex items-center gap-2">
+              <a href="https://rasyatech.rsch.my.id/#daftar" className="bg-white border-2 border-brand-sidebar text-brand-sidebar px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-50 transition-all italic flex items-center gap-2">
                 Daftar Sekolah <Rocket className="w-3 h-3 text-brand-accent" />
-              </Link>
+              </a>
             )}
             <Link to={school ? "/login" : "/login"} className="bg-brand-sidebar text-white px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-accent hover:scale-105 transition-all shadow-xl shadow-brand-sidebar/20 italic">
               Portal Masuk
@@ -137,23 +131,13 @@ export default function LandingPage() {
                 ))}
                 <div className="flex flex-col gap-3 pt-4 mt-4 border-t border-brand-border">
                   {!school && (
-                    <Link 
-                      id="mobile-nav-affiliate-link"
-                      to="/affiliate" 
-                      onClick={() => setIsMenuOpen(false)}
-                      className="w-full bg-slate-100 text-slate-600 py-4 rounded-xl text-center text-xs font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 italic"
-                    >
-                      Daftar Affiliate <Users className="w-4 h-4 text-brand-sidebar" />
-                    </Link>
-                  )}
-                  {!school && (
-                    <Link 
-                      to="/purchase" 
+                    <a 
+                      href="https://rasyatech.rsch.my.id/#daftar" 
                       onClick={() => setIsMenuOpen(false)}
                       className="w-full bg-white border-2 border-brand-sidebar text-brand-sidebar py-4 rounded-xl text-center text-xs font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 italic"
                     >
                       Daftar Sekolah <Rocket className="w-4 h-4 text-brand-accent" />
-                    </Link>
+                    </a>
                   )}
                   <Link 
                     to="/login" 
@@ -200,9 +184,9 @@ export default function LandingPage() {
                      Portal Masuk <ShieldCheck className="w-5 h-5 group-hover/btn:translate-x-2 transition-transform" />
                    </Link>
                  ) : (
-                   <Link to="/purchase" className="bg-brand-sidebar text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] shadow-2xl shadow-brand-sidebar/40 flex items-center justify-center gap-4 group/btn hover:scale-105 active:scale-95 transition-all italic">
+                   <a href="https://rasyatech.rsch.my.id/#daftar" className="bg-brand-sidebar text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] shadow-2xl shadow-brand-sidebar/40 flex items-center justify-center gap-4 group/btn hover:scale-105 active:scale-95 transition-all italic">
                      Daftar Sekarang <Rocket className="w-5 h-5 group-hover/btn:translate-x-2 transition-transform" />
-                   </Link>
+                   </a>
                  )}
                  <Link to={school ? "/dashboard/ppdb" : "/ppdb"} className="bg-white border-2 border-brand-sidebar text-brand-sidebar px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] hover:bg-slate-50 transition-all flex items-center justify-center italic">
                    PPDB Online
@@ -417,135 +401,6 @@ export default function LandingPage() {
          </div>
       </section>
 
-      {/* Point 5: Partnership & SaaS Solution Section */}
-      <section id="kerjasama" className="py-32 px-6 bg-slate-900 text-white overflow-hidden relative">
-         <div className="absolute top-0 right-0 w-1/2 h-full bg-brand-accent/5 skew-x-12 translate-x-32" />
-         <div className="max-w-7xl mx-auto relative z-10">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-               <div className="max-w-2xl">
-                  <p className="text-brand-accent font-black uppercase tracking-[0.3em] text-[10px] mb-4">LMS For Partners</p>
-                  <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-[0.9]">
-                     Infrastruktur LMS <br />
-                     <span className="text-brand-accent">Untuk Institusi Anda.</span>
-                  </h2>
-               </div>
-               <p className="text-slate-400 italic font-medium max-w-sm border-l border-brand-accent pl-6">
-                  Jadikan PKBM atau sekolah Anda lebih modern dengan sistem manajemen pendidikan terpadu dari Armilla Nusa.
-               </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-               {(() => {
-                 const savedPartnerships = localStorage.getItem('school_partnerships');
-                 const partnerships = savedPartnerships ? JSON.parse(savedPartnerships) : [
-                   { tier: 'Starter', title: 'LISENSI SITUS', desc: 'Penggunaan sistem standar untuk manajemen 1 PKBM/Satuan Pendidikan.', features: ['Dashboard Admin/Siswa', 'Database Cloud Terpusat', 'Domain Subarmilla.com'] },
-                   { tier: 'White Label', title: 'White Label', desc: 'Bangun brand sekolah Anda sendiri dengan infrastruktur teknologi kami.', features: ['Custom Domain Sekolah', 'Logo & Warna Custom', 'Prioritas Support 24/7', 'Modul AI Terintegrasi'], isFeatured: true },
-                   { tier: 'Corporate', title: 'CUSTOM SISTEM', desc: 'Pengembangan fitur khusus sesuai kebutuhan operasional unik institusi Anda.', features: ['Source Code Berlisensi', 'Integrasi API Pihak ke-3', 'On-Premise Deployment'] },
-                 ];
-                 const tierIcons = [BookOpen, Users, Zap];
-
-                 return partnerships.map((tier: any, i: number) => {
-                    const Icon = tierIcons[i % tierIcons.length];
-                    return (
-                      <div 
-                        key={i} 
-                        className={cn(
-                          "p-10 rounded-[2.5rem] transition-all relative overflow-hidden",
-                          tier.isFeatured 
-                            ? "bg-brand-accent shadow-2xl shadow-brand-accent/20 scale-105 z-20" 
-                            : "bg-white/5 border border-white/10 backdrop-blur-sm group hover:border-brand-accent"
-                        )}
-                      >
-                        {tier.isFeatured && (
-                          <div className="absolute top-6 right-6">
-                             <div className="bg-white/20 px-3 py-1 rounded-full text-[8px] font-black uppercase text-white tracking-widest flex items-center gap-1.5 animate-pulse">
-                                <div className="w-1.5 h-1.5 bg-white rounded-full" /> Paling Populer
-                             </div>
-                          </div>
-                        )}
-                        <div className="flex justify-between items-start mb-10">
-                           <div className={cn("p-3 rounded-2xl", tier.isFeatured ? "bg-white/20" : "bg-white/10")}>
-                            <Icon className={cn("w-6 h-6", tier.isFeatured ? "text-white" : "text-brand-accent")} />
-                           </div>
-                           <span className={cn("text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest", tier.isFeatured ? "bg-white/20 text-white" : "bg-white/10 text-white")}>
-                            {tier.tier}
-                           </span>
-                        </div>
-                        <h3 className={cn("text-2xl font-black italic tracking-tighter mb-4 uppercase", tier.isFeatured ? "text-white" : "text-white")}>
-                          {tier.title.split(' ')[0]} <span className={tier.isFeatured ? "text-slate-900" : "text-brand-accent"}>{tier.title.split(' ').slice(1).join(' ')}</span>
-                        </h3>
-                        <p className={cn("text-sm mb-8 italic", tier.isFeatured ? "text-brand-sidebar font-bold" : "text-slate-400")}>
-                          {tier.desc}
-                        </p>
-                        <ul className={cn("space-y-4 mb-10 text-xs font-bold italic uppercase tracking-wider", tier.isFeatured ? "text-white" : "text-slate-300")}>
-                           {tier.features?.map((f: string, idx: number) => (
-                             <li key={idx} className="flex items-center gap-3">
-                                {tier.isFeatured ? <ArrowRight className="w-4 h-4 text-slate-900" /> : <ShieldCheck className="w-4 h-4 text-brand-accent" />}
-                                {f}
-                             </li>
-                           ))}
-                        </ul>
-                        <Link 
-                          to="/purchase"
-                          className={cn(
-                            "w-full py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all italic",
-                            tier.isFeatured 
-                              ? "bg-slate-900 text-white shadow-xl hover:scale-105 flex items-center justify-center gap-2" 
-                              : "border border-white/20 hover:bg-white hover:text-slate-900 flex items-center justify-center"
-                          )}
-                        >
-                          {tier.isFeatured ? (
-                            <>Beli Lisensi Sekarang <Rocket className="w-4 h-4" /></>
-                          ) : 'Cek Detail Paket'}
-                        </Link>
-                      </div>
-                    );
-                 });
-               })()}
-            </div>
-         </div>
-      </section>
-
-      {/* Affiliate Card Section */}
-      <section className="py-20 px-6">
-         <div className="max-w-7xl mx-auto">
-            <div className="bg-brand-sidebar rounded-[4rem] p-12 md:p-20 relative overflow-hidden group border-4 border-brand-accent/20">
-               <div className="absolute top-0 right-0 w-1/3 h-full bg-brand-accent/10 -skew-x-12 translate-x-12" />
-               <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-brand-accent/5 rounded-full blur-[100px]" />
-               
-               <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                  <div>
-                    <div className="inline-flex items-center gap-2 bg-brand-accent/20 text-brand-accent px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest mb-6 italic">
-                       <Award className="w-4 h-4" /> Affiliate Program 2026
-                    </div>
-                    <h2 className="text-4xl md:text-6xl font-black italic text-white tracking-tighter uppercase leading-none mb-8">
-                       Jadi Mitra <span className="text-brand-accent">Afiliasi</span>
-                    </h2>
-                    <p className="text-xl text-slate-300 italic mb-10 max-w-xl font-medium">
-                       Dapatkan penghasilan tambahan dengan merekomendasikan Armilla LMS kepada rekan sekolah, PKBM, atau institusi pendidikan lainnya.
-                    </p>
-                    <Link 
-                      to="/affiliasi"
-                      className="inline-flex items-center gap-4 bg-brand-accent text-brand-sidebar px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-brand-accent/40 hover:scale-105 active:scale-95 transition-all italic"
-                    >
-                       Daftar Afiliasi <ArrowRight className="w-5 h-5" />
-                    </Link>
-                  </div>
-                  <div className="relative hidden md:block">
-                     <div className="aspect-square bg-white/5 rounded-full flex items-center justify-center p-12 border border-white/10 relative">
-                        <Users className="w-full h-full text-brand-accent opacity-20" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                           <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl rotate-3 group-hover:rotate-6 transition-transform">
-                              <DollarSign className="w-16 h-16 text-brand-sidebar" />
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-            </div>
-         </div>
-      </section>
-
       {/* Footer */}
       <footer id="kontak" className="bg-slate-50 border-t border-brand-border py-20 px-6">
          <AdBanner className="w-full mb-16 opacity-80" slot="Footer Banner" />
@@ -615,9 +470,6 @@ export default function LandingPage() {
          <div className="max-w-7xl mx-auto px-6 mt-20 pt-8 border-t border-brand-border flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
                <span>© 2026 {schoolName}. All Rights Reserved.</span>
-               <Link to="/super-admin" className="text-slate-300 hover:text-brand-accent transition-colors flex items-center gap-1.5 border-l border-slate-200 pl-8 ml-4 hidden md:flex">
-                  <ShieldCheck className="w-3 h-3" /> Super Admin Portal
-               </Link>
             </div>
             <div className="flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-full">
                <span className="text-slate-500">Official Tech Partner:</span>

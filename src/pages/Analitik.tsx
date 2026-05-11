@@ -109,7 +109,7 @@ export default function Analitik() {
                    </linearGradient>
                  </defs>
                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
-                 <XAxis dataKey="bulan" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700, textTransform: 'uppercase' }} dy={10} />
+                 <XAxis dataKey="bulan" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} dy={10} />
                  <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} />
                  <Tooltip 
                    contentStyle={{ borderRadius: '16px', border: '1px solid #1e293b', backgroundColor: '#0f172a', fontSize: '10px', textTransform: 'uppercase', fontWeight: 900, color: '#f8fafc', padding: '12px' }}

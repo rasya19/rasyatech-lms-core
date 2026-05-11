@@ -37,8 +37,6 @@ import Tagihan from './pages/Tagihan';
 import Diskusi from './pages/Diskusi';
 import AiAsisten from './pages/AiAsisten';
 import Purchase from './pages/Purchase';
-import AffiliateDashboard from './pages/AffiliateDashboard';
-import SuperAdmin from './pages/SuperAdmin';
 import Feedback from './pages/Feedback';
 import Analitik from './pages/Analitik';
 import Settings from './pages/Settings';
@@ -124,9 +122,6 @@ function AppContent() {
       <Route path="/login" element={<Login />} />
       <Route path="/ujian/:id" element={<UjianSiswa />} />
       <Route path="/purchase" element={<Purchase />} />
-      <Route path="/super-admin" element={<SuperAdmin />} />
-      <Route path="/affiliate" element={<AffiliateDashboard />} />
-      <Route path="/affiliasi" element={<AffiliateDashboard />} />
       
       {/* If subdomain/custom domain is detected, allow accessing dashboard routes at root */}
       {school && (
