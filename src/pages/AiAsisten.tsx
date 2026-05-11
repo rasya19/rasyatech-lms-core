@@ -8,9 +8,18 @@ type Mode = 'RPP' | 'RAPORT';
 
 export default function AiAsisten() {
   const getAiClient = () => {
-    const apiKey = (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '') || '';
+    // In Vite, process.env might not be available directly in all contexts.
+    // Try both process.env and a fallback to provide the best compatibility.
+    let apiKey = '';
+    try {
+      apiKey = (process.env.GEMINI_API_KEY) || '';
+    } catch (e) {
+      // Fallback if process is not defined
+      console.warn("Process is not defined, unable to access GEMINI_API_KEY via process.env");
+    }
+
     if (!apiKey) {
-      throw new Error("API Key Gemini tidak ditemukan. Pastikan environment variable GEMINI_API_KEY sudah diatur di sisi server/environment.");
+      throw new Error("API Key Gemini tidak ditemukan. Pastikan environment variable GEMINI_API_KEY sudah diatur.");
     }
     return new GoogleGenAI({ apiKey });
   };
@@ -65,7 +74,8 @@ export default function AiAsisten() {
       setResult(response.text || 'Gagal menghasilkan RPP.');
     } catch (error: any) {
       console.error('AI Error:', error);
-      setResult(`Terjadi kesalahan saat menghubungi AI: ${error.message || 'Error tidak dikenal'}.`);
+      const msg = error.message || 'Error tidak dikenal';
+      setResult(`Terjadi kesalahan saat menghubungi AI: ${msg}. Pastikan koneksi internet stabil dan kunci API valid.`);
     } finally {
       setLoading(false);
     }
@@ -100,7 +110,8 @@ export default function AiAsisten() {
       setResult(response.text || 'Gagal menghasilkan narasi raport.');
     } catch (error: any) {
       console.error('AI Error:', error);
-      setResult(`Terjadi kesalahan saat menghubungi AI: ${error.message || 'Error tidak dikenal'}.`);
+      const msg = error.message || 'Error tidak dikenal';
+      setResult(`Terjadi kesalahan saat menghubungi AI: ${msg}. Pastikan koneksi internet stabil dan kunci API valid.`);
     } finally {
       setLoading(false);
     }

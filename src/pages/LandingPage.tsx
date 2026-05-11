@@ -32,6 +32,14 @@ export default function LandingPage() {
   const [visitorCount, setVisitorCount] = useState<number>(0);
 
   useEffect(() => {
+    // Detect referral code from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref');
+    if (ref) {
+      sessionStorage.setItem('rasya_ref', ref);
+      console.log('Referral code detected and stored:', ref);
+    }
+
     const trackVisitor = async () => {
       try {
         const statsRef = doc(db, 'settings', 'stats');
@@ -508,7 +516,7 @@ export default function LandingPage() {
                   <ul className="text-xs text-slate-500 font-bold space-y-2 uppercase leading-none italic">
                      <li><Link to={school ? "/dashboard/ppdb" : "/ppdb"} className="hover:text-brand-accent">PPDB Online</Link></li>
                      <li><Link to="/login" className="hover:text-brand-accent">Cek Sertifikat (Portal)</Link></li>
-                     <li><a href={localStorage.getItem('school_consultation_link') || `https://wa.me/${phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-brand-accent">Bantuan Siswa</a></li>
+                     <li><Link to="/dashboard/diskusi" className="hover:text-brand-accent">Bantuan Siswa (Chat)</Link></li>
                   </ul>
                </div>
             </div>
@@ -530,17 +538,15 @@ export default function LandingPage() {
       </footer>
 
       {/* Floating Consultation Button */}
-      <a 
-        href={localStorage.getItem('school_consultation_link') || `https://wa.me/${phone.replace(/[^0-9]/g, '')}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-8 right-8 bg-brand-accent text-white p-4 rounded-full shadow-2xl shadow-brand-accent/40 z-50 hover:scale-110 transition-all group flex items-center gap-3 overflow-hidden"
+      <Link 
+        to="/dashboard/diskusi"
+        className="fixed bottom-8 right-8 bg-brand-sidebar text-white p-4 rounded-full shadow-2xl shadow-brand-sidebar/40 z-50 hover:scale-110 transition-all group flex items-center gap-3 overflow-hidden"
       >
          <div className="max-w-0 group-hover:max-w-[200px] overflow-hidden transition-all duration-500 whitespace-nowrap">
-            <span className="text-xs font-black uppercase tracking-widest italic pr-2">Butuh Konsultasi?</span>
+            <span className="text-xs font-black uppercase tracking-widest italic pr-2">Butuh Konsultasi? (Chat)</span>
          </div>
-         <MessageCircle className="w-6 h-6" />
-      </a>
+         <MessageCircle className="w-6 h-6 text-brand-accent" />
+      </Link>
    </div>
 );
 }

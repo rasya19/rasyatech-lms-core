@@ -254,7 +254,7 @@ export default function Materi() {
           <p className="text-[10px] text-brand-text-muted font-bold uppercase tracking-[0.2em]">PKBM Armilla Nusa Digital Library</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {userRole === 'Admin' && (
+          {(userRole === 'Admin' || userRole === 'Guru') && (
             <>
               <button 
                 onClick={downloadTemplate}
@@ -324,7 +324,7 @@ export default function Materi() {
               className="bg-white rounded-[2rem] border border-brand-border overflow-hidden group hover:border-brand-accent transition-all flex flex-col p-6 shadow-sm relative"
             >
               <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                {userRole === 'Admin' && (
+                {(userRole === 'Admin' || userRole === 'Guru') && (
                   <>
                     <button 
                       onClick={() => handleOpenModal(m)}
