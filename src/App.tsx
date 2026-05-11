@@ -261,6 +261,10 @@ function PresensiWrapper() {
 }
 
 export default function App() {
+  useEffect(() => {
+    document.title = 'PKBM Armilla Nusa';
+  }, []);
+
   return (
     <BrowserRouter>
       <Toaster position="top-right" richColors />
