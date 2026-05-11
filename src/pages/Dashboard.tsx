@@ -3,7 +3,7 @@ import {
   Users, UserCheck, CheckCircle2, Clock,
   ArrowUpRight, ArrowDownRight, Activity, XCircle, AlertCircle,
   FileText, Wallet, Rocket, Trophy, Calendar, Download, RefreshCcw, RotateCcw,
-  BookOpen, MapPin, ClipboardList, ChevronRight
+  BookOpen, MapPin, ClipboardList, ChevronRight, ShieldCheck
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -11,6 +11,7 @@ import { cn } from '../lib/utils';
 import { useSchool } from '../contexts/SchoolContext';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
+import StudentCard from '../components/StudentCard';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
@@ -74,6 +75,7 @@ export default function Dashboard() {
   const studentClass = localStorage.getItem('studentClass') || '12 - Paket C';
 
   const [studentResults, setStudentResults] = useState<any[]>([]);
+  const [studentProfile, setStudentProfile] = useState<any>(null);
   const [stats, setStats] = useState<any>({
     totalSiswa: '0',
     totalGuru: '0',
@@ -101,10 +103,27 @@ export default function Dashboard() {
   useEffect(() => {
     if (userRole === 'Siswa' && studentId) {
       fetchStudentDashboardData();
+      fetchStudentProfile();
     } else if (userRole === 'Admin' || userRole === 'Guru') {
       fetchAdminDashboardData();
     }
   }, [userRole, studentId]);
+
+  const fetchStudentProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles_siswa')
+        .select('*')
+        .eq('id', studentId)
+        .single();
+      
+      if (!error && data) {
+        setStudentProfile(data);
+      }
+    } catch (err) {
+      console.error('Error fetching student profile:', err);
+    }
+  };
 
   const handleResetAll = async () => {
     if (!window.confirm('Hapus SEMUA jawaban siswa dan hasil ujian sekarang? Tujuannya untuk memulai simulasi dari awal.')) return;
@@ -400,6 +419,47 @@ export default function Dashboard() {
                    Ikut Ujian Sekarang <ArrowUpRight className="w-4 h-4" />
                  </Link>
                </div>
+            </div>
+          </div>
+
+          {school?.subscription_plan === 'Platinum' && (
+            <div className="space-y-6">
+              <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4" /> Kartu Pelajar Digital
+              </h3>
+              <StudentCard 
+                student={{
+                  id: studentProfile?.id || studentId || 'unknown',
+                  nisn: studentProfile?.nisn || localStorage.getItem('studentNisn') || '0000000000',
+                  nama: studentProfile?.nama || studentName,
+                  class: studentProfile?.class || studentClass,
+                  photourl: studentProfile?.photourl
+                }}
+                schoolName={school?.name || "PKBM ARMILLA NUSA"}
+              />
+            </div>
+          )}
+
+          <div className="space-y-6">
+            <div className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800 space-y-4">
+              <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                <Activity className="w-4 h-4 text-emerald-400" /> Skor Terkini
+              </h4>
+              {studentResults.length === 0 ? (
+                <p className="text-xs text-slate-500 italic">Belum ada skor ujian.</p>
+              ) : (
+                <div className="space-y-3">
+                  {studentResults.map((res: any) => (
+                    <div key={res.id} className="flex items-center justify-between p-3 bg-slate-800/30 rounded-xl border border-slate-800/50">
+                      <div>
+                        <p className="text-[10px] font-black text-white uppercase truncate max-w-[120px]">{res.bank_soal?.nama_ujian}</p>
+                        <p className="text-[8px] font-bold text-slate-500 uppercase">{res.bank_soal?.mata_pelajaran}</p>
+                      </div>
+                      <div className="text-lg font-black text-emerald-400 italic">{res.nilai}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </>

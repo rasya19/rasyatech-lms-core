@@ -29,6 +29,7 @@ export default function SuperAdmin() {
     npsn: '',
     adminEmail: '',
     packageId: 'basic',
+    subscription_plan: 'Silver',
     status: 'active',
     expiryDate: ''
   });
@@ -253,9 +254,33 @@ export default function SuperAdmin() {
                           </td>
                           <td className="px-6 py-6">
                              <div className="flex items-center gap-1.5"><div className={cn("w-1.5 h-1.5 rounded-full", school.status === 'active' ? 'bg-emerald-500' : 'bg-red-500')} /><span className={cn("text-[11px] font-black uppercase tracking-widest", school.status === 'active' ? 'text-emerald-500' : 'text-red-500')}>{school.status}</span></div>
+                             <div className="mt-1">
+                                <span className={cn(
+                                  "text-[7px] font-black px-1.5 py-0.5 rounded uppercase",
+                                  school.subscription_plan === 'Platinum' ? "bg-brand-accent text-white" :
+                                  school.subscription_plan === 'Gold' ? "bg-amber-400 text-slate-900" :
+                                  "bg-slate-200 text-slate-600"
+                                )}>
+                                  {school.subscription_plan || 'SILVER'}
+                                </span>
+                             </div>
                           </td>
                           <td className="px-6 py-6 text-right">
                              <div className="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button 
+                                  onClick={() => {
+                                    setEditingSchool(school);
+                                    setFormData({
+                                      ...formData,
+                                      ...school,
+                                      subscription_plan: school.subscription_plan || 'Silver'
+                                    });
+                                    setIsModalOpen(true);
+                                  }}
+                                  className="p-2.5 bg-white border border-brand-border rounded-xl text-slate-400 hover:text-brand-accent transition-all"
+                                >
+                                   <Edit2 className="w-4 h-4" />
+                                </button>
                                 <button className="p-2.5 bg-white border border-brand-border rounded-xl text-slate-400 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
                              </div>
                           </td>
@@ -280,10 +305,13 @@ export default function SuperAdmin() {
                        <tr><td colSpan={4} className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin text-brand-accent mx-auto" /></td></tr>
                      ) : registrations.filter(r => r.status === 'pending').map((reg) => (
                        <tr key={reg.id} className="group hover:bg-slate-50/50 transition-colors">
-                          <td className="px-6 py-6">
-                             <p className="text-xs font-black text-brand-sidebar uppercase italic tracking-tight">{reg.name}</p>
-                             <p className="text-[10px] font-black text-brand-accent uppercase tracking-widest italic mt-1">{reg.packageId} Plan</p>
-                          </td>
+                              <td className="px-6 py-6">
+                                 <p className="text-xs font-black text-brand-sidebar uppercase italic tracking-tight">{reg.name}</p>
+                                 <div className="flex items-center gap-2 mt-1">
+                                   <p className="text-[10px] font-black text-brand-accent uppercase tracking-widest italic">{reg.packageId} Plan</p>
+                                   <span className="text-[9px] bg-slate-900 text-slate-100 px-1.5 py-0.5 rounded font-bold uppercase">{reg.subscription_plan || 'Silver'}</span>
+                                 </div>
+                              </td>
                           <td className="px-6 py-6">
                              <p className="text-[10px] font-bold text-slate-500 uppercase">{reg.adminName}</p>
                              <p className="text-[10px] font-bold text-slate-400">{reg.adminEmail}</p>
@@ -401,15 +429,15 @@ export default function SuperAdmin() {
 
                     <div className="grid grid-cols-2 gap-6">
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Tipe Paket</label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Subscription Plan</label>
                           <select 
-                            value={formData.packageId} 
-                            onChange={(e) => setFormData({...formData, packageId: e.target.value})}
+                            value={formData.subscription_plan} 
+                            onChange={(e) => setFormData({...formData, subscription_plan: e.target.value as any})}
                             className="w-full bg-slate-50 border border-brand-border rounded-2xl p-4 text-xs font-bold outline-none"
                           >
-                             <option value="basic">Startup (Basic)</option>
-                             <option value="standard">Business (Standard)</option>
-                             <option value="enterprise">Enterprise (Premium)</option>
+                             <option value="Silver">SILVER</option>
+                             <option value="Gold">GOLD</option>
+                             <option value="Platinum">PLATINUM</option>
                           </select>
                        </div>
                        <div className="space-y-2">

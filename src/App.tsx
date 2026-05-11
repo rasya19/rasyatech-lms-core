@@ -32,6 +32,8 @@ import SKL from './pages/SKL';
 import PPDB from './pages/PPDB';
 import Pengumuman from './pages/Pengumuman';
 import Site from './pages/Site';
+import Statistik from './pages/Statistik';
+import Aset from './pages/Aset';
 import Relasi from './pages/Relasi';
 import Keuangan from './pages/Keuangan';
 import Tagihan from './pages/Tagihan';
@@ -192,6 +194,8 @@ function AppContent() {
              <Route path="ppdb" element={<PPDB />} />
              <Route path="pengumuman" element={<Pengumuman />} />
              <Route path="site" element={<Site />} />
+             <Route path="statistik" element={<Statistik />} />
+             <Route path="aset" element={<Aset />} />
              <Route path="keuangan" element={<Keuangan />} />
              <Route path="tagihan" element={<Tagihan />} />
              <Route path="analitik" element={<Analitik />} />
@@ -233,6 +237,8 @@ function AppContent() {
             <Route path="ppdb" element={<PPDB />} />
             <Route path="pengumuman" element={<Pengumuman />} />
             <Route path="site" element={<Site />} />
+            <Route path="statistik" element={<Statistik />} />
+            <Route path="aset" element={<Aset />} />
             <Route path="keuangan" element={<Keuangan />} />
             <Route path="tagihan" element={<Tagihan />} />
             <Route path="analitik" element={<Analitik />} />
@@ -276,6 +282,8 @@ function AppContent() {
         <Route path="ppdb" element={<PPDB />} />
         <Route path="pengumuman" element={<Pengumuman />} />
         <Route path="site" element={<Site />} />
+        <Route path="statistik" element={<Statistik />} />
+        <Route path="aset" element={<Aset />} />
         <Route path="keuangan" element={<Keuangan />} />
         <Route path="tagihan" element={<Tagihan />} />
         <Route path="analitik" element={<Analitik />} />

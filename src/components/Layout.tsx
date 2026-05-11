@@ -72,23 +72,42 @@ export default function Layout() {
     'Keuangan': false
   });
 
-  // URL Guard for Tamu/Guest Role
+  // URL Guard for Tamu/Guest Role & Subscription Plan
   useEffect(() => {
+    const prefix = schoolSlug ? `/s/${schoolSlug}` : '';
+    const currentPath = location.pathname;
+
     if (role === 'Tamu') {
       const allowedPaths = ['/dashboard/diskusi', '/dashboard/settings', '/login'];
-      const currentPath = location.pathname;
-      const prefix = schoolSlug ? `/s/${schoolSlug}` : '';
-      
       const normalizedAllowed = allowedPaths.map(p => prefix + p);
-      
       const isAllowed = normalizedAllowed.some(p => currentPath === p) || currentPath === '/' || currentPath === prefix + '/';
       
       if (!isAllowed) {
         toast.error('Akses Terbatas: Anda login sebagai Tamu.');
         navigate(prefix + '/dashboard/diskusi');
       }
+      return;
     }
-  }, [role, location.pathname, navigate, schoolSlug]);
+
+    // Subscription Plan Guard
+    if (school && role === 'Admin') {
+      const plan = school.subscription_plan || 'Silver';
+      
+      const goldFeatures = ['/dashboard/keuangan', '/keuangan/tagihan', '/dashboard/raport', '/dashboard/analitik'];
+      const platinumFeatures = ['/dashboard/aset', '/dashboard/statistik']; // Hypothetical paths
+      
+      const isGoldPath = goldFeatures.some(p => currentPath.includes(p));
+      const isPlatinumPath = platinumFeatures.some(p => currentPath.includes(p));
+
+      if (plan === 'Silver' && (isGoldPath || isPlatinumPath)) {
+        toast.error('Gagal: Paket Silver tidak memiliki akses. Upgrade ke Gold/Platinum.');
+        navigate(prefix + '/dashboard');
+      } else if (plan === 'Gold' && isPlatinumPath) {
+        toast.error('Gagal: Fitur ini hanya tersedia di Paket Platinum.');
+        navigate(prefix + '/dashboard');
+      }
+    }
+  }, [role, location.pathname, navigate, schoolSlug, school]);
 
   const toggleMenu = (label: string) => {
     setOpenMenus(prev => ({ ...prev, [label]: !prev[label] }));
@@ -160,9 +179,11 @@ export default function Layout() {
 
   const getNavItems = (): (any & { isExternal?: boolean })[] => {
     const prefix = schoolSlug ? `/s/${schoolSlug}` : '';
+    const plan = school?.subscription_plan || 'Silver';
+    
     switch (role) {
       case 'Admin':
-        return [
+        const items = [
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
           { 
             icon: FolderOpen, 
@@ -172,7 +193,7 @@ export default function Layout() {
               { icon: UserCheck, label: 'Data Guru', path: `${prefix}/data-guru` },
               { icon: Book, label: 'Mata Pelajaran', path: `${prefix}/dashboard/mata-pelajaran` },
               { icon: Layers, label: 'Kelola Kelas', path: `${prefix}/dashboard/kelas` },
-              { icon: GraduationCap, label: 'Data Alumni', path: `${prefix}/dashboard/alumni` },
+              ...(plan !== 'Silver' ? [{ icon: GraduationCap, label: 'Data Alumni', path: `${prefix}/dashboard/alumni` }] : []),
               { icon: UserPlus, label: 'Data Pendaftar', path: `${prefix}/dashboard/ppdb` },
             ]
           },
@@ -184,9 +205,11 @@ export default function Layout() {
               { icon: Book, label: 'Agenda Mengajar', path: `${prefix}/dashboard/agenda` },
               { icon: UserCheck, label: 'Presensi Siswa', path: `${prefix}/dashboard/presensi` },
               { icon: Link2, label: 'Relasi Mengajar', path: `${prefix}/dashboard/relasi` },
-              { icon: ArrowUpCircle, label: 'Kenaikan Kelas', path: `${prefix}/dashboard/kenaikan` },
-              { icon: FileText, label: 'Cek Raport', path: `${prefix}/dashboard/raport` },
-              { icon: FileBarChart, label: 'Analitik e-Rapor', path: `${prefix}/dashboard/analitik` },
+              ...(plan !== 'Silver' ? [
+                { icon: ArrowUpCircle, label: 'Kenaikan Kelas', path: `${prefix}/dashboard/kenaikan` },
+                { icon: FileText, label: 'Cek Raport', path: `${prefix}/dashboard/raport` },
+                { icon: FileBarChart, label: 'Analitik e-Rapor', path: `${prefix}/dashboard/analitik` },
+              ] : []),
               { icon: BookOpen, label: 'Materi Ajar (E-Modul)', path: `${prefix}/dashboard/materi` },
               { icon: ScanFace, label: 'Deteksi Objek AI', path: `${prefix}/dashboard/deteksi-objek` },
             ]
@@ -202,19 +225,26 @@ export default function Layout() {
               { icon: Settings, label: 'Pengaturan', path: `${prefix}/dashboard/settings` },
             ]
           },
-          {
-            icon: Wallet,
-            label: 'Keuangan',
-            subItems: [
-              { icon: Wallet, label: 'Pembayaran', path: `${prefix}/dashboard/keuangan` },
-              { icon: FileText, label: 'Tagihan', path: `${prefix}/keuangan/tagihan` },
-            ]
-          },
+          ...(plan !== 'Silver' ? [
+            {
+              icon: Wallet,
+              label: 'Keuangan',
+              subItems: [
+                { icon: Wallet, label: 'Pembayaran', path: `${prefix}/dashboard/keuangan` },
+                { icon: FileText, label: 'Tagihan', path: `${prefix}/keuangan/tagihan` },
+              ]
+            }
+          ] : []),
           { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },
           { icon: Sparkles, label: 'Asisten AI', path: `${prefix}/dashboard/ai-asisten` },
           { icon: Settings, label: 'Manajemen Web', path: `${prefix}/dashboard/site` },
+          ...(plan === 'Platinum' ? [
+            { icon: FileBarChart, label: 'Statistik Eksekutif', path: `${prefix}/dashboard/statistik` },
+            { icon: Layers, label: 'Manajemen Aset', path: `${prefix}/dashboard/aset` },
+          ] : []),
           { icon: Globe, label: 'Web Utama', path: schoolSlug ? `/s/${schoolSlug}` : '/', isExternal: true },
         ];
+        return items;
       case 'Guru':
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
@@ -304,8 +334,18 @@ export default function Layout() {
               </div>
             )}
             <div className="flex flex-col lg:hidden xl:flex">
-               <h1 className="text-lg font-black text-white tracking-tighter uppercase italic leading-none">
-                 {schoolFirst} <span className="text-brand-accent">{schoolRest}</span>
+               <h1 className="text-lg font-black text-white tracking-tighter uppercase italic leading-none flex items-center gap-2">
+                 <span>{schoolFirst} <span className="text-brand-accent">{schoolRest}</span></span>
+                 {school?.subscription_plan && (
+                   <span className={cn(
+                     "text-[8px] px-1.5 py-0.5 rounded-md font-black uppercase tracking-widest",
+                     school.subscription_plan === 'Platinum' ? "bg-brand-accent text-brand-sidebar shadow-[0_0_10px_rgba(var(--brand-accent),0.3)]" :
+                     school.subscription_plan === 'Gold' ? "bg-amber-400 text-slate-900" :
+                     "bg-slate-700 text-slate-300"
+                   )}>
+                     {school.subscription_plan}
+                   </span>
+                 )}
                </h1>
                <span className="text-[7px] font-black text-slate-500 uppercase tracking-[0.2em] leading-none mt-1.5">By <span className="text-brand-accent">Rasyacomp</span></span>
             </div>

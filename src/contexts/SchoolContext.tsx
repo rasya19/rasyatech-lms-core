@@ -17,6 +17,7 @@ interface School {
   expiryDate?: string;
   studentLimit?: number;
   custom_domain?: string;
+  subscription_plan?: 'Silver' | 'Gold' | 'Platinum';
 }
 
 interface SchoolContextType {
