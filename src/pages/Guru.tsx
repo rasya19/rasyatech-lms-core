@@ -128,15 +128,29 @@ export default function Guru() {
     if (!window.confirm(`Reset password ${teacher.name} ke default "12345678"?`)) return;
     
     try {
+      const payload: any = { password: '12345678' };
+      // Try to include must_change_password if supported by DB
+      payload.must_change_password = true;
+
       const { error } = await supabase
         .from('profiles_guru')
-        .update({ 
-          password: '12345678',
-          must_change_password: true 
-        })
+        .update(payload)
         .eq('id', teacher.id);
 
-      if (error) throw error;
+      if (error) {
+        // If column missing, try without it
+        if (error.message.includes("must_change_password")) {
+          delete payload.must_change_password;
+          const { error: retryError } = await supabase
+            .from('profiles_guru')
+            .update(payload)
+            .eq('id', teacher.id);
+          if (retryError) throw retryError;
+        } else {
+          throw error;
+        }
+      }
+      
       alert('Password berhasil direset ke 12345678');
       fetchGuru();
     } catch (error: any) {
@@ -163,16 +177,40 @@ export default function Guru() {
         payload.must_change_password = false;
       }
 
-      if (editingGuru && editingGuru.id && !editingGuru.id.startsWith('temp')) {
-        const { error } = await supabase.from('profiles_guru').update(payload).eq('id', editingGuru.id);
-        if (error) throw error;
-        if (userRole === 'Guru') setShowForcePasswordChange(false);
-      } else {
-        // New teachers must change password on first login
-        payload.must_change_password = true;
-        const { error } = await supabase.from('profiles_guru').insert([payload]);
-        if (error) throw error;
-      }
+      const performSave = async (data: any) => {
+        if (editingGuru && editingGuru.id && !editingGuru.id.startsWith('temp')) {
+          const { error } = await supabase.from('profiles_guru').update(data).eq('id', editingGuru.id);
+          if (error) {
+            // Graceful degradation if column missing
+            if (error.message.includes("must_change_password")) {
+              const cleanedData = { ...data };
+              delete cleanedData.must_change_password;
+              const { error: retryError } = await supabase.from('profiles_guru').update(cleanedData).eq('id', editingGuru.id);
+              if (retryError) throw retryError;
+            } else {
+              throw error;
+            }
+          }
+          if (userRole === 'Guru') setShowForcePasswordChange(false);
+        } else {
+          // New teachers must change password on first login
+          data.must_change_password = true;
+          const { error } = await supabase.from('profiles_guru').insert([data]);
+          if (error) {
+            // Graceful degradation if column missing
+            if (error.message.includes("must_change_password")) {
+              const cleanedData = { ...data };
+              delete cleanedData.must_change_password;
+              const { error: retryError } = await supabase.from('profiles_guru').insert([cleanedData]);
+              if (retryError) throw retryError;
+            } else {
+              throw error;
+            }
+          }
+        }
+      };
+
+      await performSave(payload);
       
       await fetchGuru();
       setIsModalOpen(false);
