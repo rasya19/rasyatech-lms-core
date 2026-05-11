@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mail, Phone, MoreVertical, Plus, Download, X, Check, FileUp, FileDown, Edit2, Trash2, Sparkles, Loader2, CloudUpload } from 'lucide-react';
+import { Mail, Phone, MoreVertical, Plus, Download, X, Check, FileUp, FileDown, Edit2, Trash2, Sparkles, Loader2, CloudUpload, ShieldAlert, RefreshCw } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
+import { cn } from '../lib/utils';
 
 interface Teacher {
   id: string;
@@ -12,12 +13,15 @@ interface Teacher {
   email?: string;
   phone?: string;
   alamat?: string;
+  password?: string;
+  must_change_password?: boolean;
 }
 
 export default function Guru() {
   const [guruList, setGuruList] = useState<Teacher[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+  const [showForcePasswordChange, setShowForcePasswordChange] = useState(false);
   const userRole = localStorage.getItem('userRole');
   const [mapels] = useState<any[]>(() => {
     const saved = localStorage.getItem('school_mapel_list');
@@ -58,9 +62,20 @@ export default function Guru() {
           nip: item.nip || '',
           email: item.email || '',
           phone: item.phone || item.whatsapp || '',
-          alamat: item.alamat || ''
+          alamat: item.alamat || '',
+          password: item.password || '',
+          must_change_password: item.must_change_password || false
         }));
         setGuruList(formattedData);
+
+        // Check if current user needs to change password
+        if (userRole === 'Guru' && currentUserEmail) {
+          const me = formattedData.find(g => g.email === currentUserEmail);
+          if (me && me.must_change_password) {
+            setShowForcePasswordChange(true);
+            handleOpenModal(me);
+          }
+        }
       } else {
         // Fallback for demo or first load if no table/data
         setGuruList([]);
@@ -83,7 +98,8 @@ export default function Guru() {
     nip: '',
     email: '',
     phone: '',
-    alamat: ''
+    alamat: '',
+    password: ''
   });
 
   const handleOpenModal = (teacher?: Teacher) => {
@@ -95,7 +111,8 @@ export default function Guru() {
         nip: teacher.nip,
         email: teacher.email || '',
         phone: teacher.phone || '',
-        alamat: teacher.alamat || ''
+        alamat: teacher.alamat || '',
+        password: teacher.password || ''
       });
     } else {
       setEditingGuru(null);
@@ -105,10 +122,31 @@ export default function Guru() {
         nip: '',
         email: '',
         phone: '',
-        alamat: ''
+        alamat: '',
+        password: ''
       });
     }
     setIsModalOpen(true);
+  };
+
+  const handleResetPassword = async (teacher: Teacher) => {
+    if (!window.confirm(`Reset password ${teacher.name} ke default "12345678"?`)) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles_guru')
+        .update({ 
+          password: '12345678',
+          must_change_password: true 
+        })
+        .eq('id', teacher.id);
+
+      if (error) throw error;
+      alert('Password berhasil direset ke 12345678');
+      fetchGuru();
+    } catch (error: any) {
+      alert('Gagal reset password: ' + error.message);
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -116,27 +154,30 @@ export default function Guru() {
     setIsSaving(true);
     
     try {
-      const payload = {
+      const payload: any = {
         nama: formData.name,
         mata_pelajaran: formData.mataPelajaran,
         nip: formData.nip,
         email: formData.email,
         phone: formData.phone,
-        alamat: formData.alamat
+        alamat: formData.alamat,
+        password: formData.password
       };
+
+      // If Guru edits their own profile, clear the force change flag
+      if (userRole === 'Guru' && showForcePasswordChange) {
+        payload.must_change_password = false;
+      }
 
       if (editingGuru && editingGuru.id && !editingGuru.id.startsWith('temp')) {
         const { error } = await supabase.from('profiles_guru').update(payload).eq('id', editingGuru.id);
-        if (error) {
-           if (error.message.includes('Could not find the table')) alert('Simulasi sukses, namun tabel profiles_guru belum ada di database.');
-           else throw error;
-        }
+        if (error) throw error;
+        if (userRole === 'Guru') setShowForcePasswordChange(false);
       } else {
+        // New teachers must change password on first login
+        payload.must_change_password = true;
         const { error } = await supabase.from('profiles_guru').insert([payload]);
-        if (error) {
-           if (error.message.includes('Could not find the table')) alert('Simulasi sukses, namun tabel profiles_guru belum ada di database.');
-           else throw error;
-        }
+        if (error) throw error;
       }
       
       await fetchGuru();
@@ -228,14 +269,35 @@ export default function Guru() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const filteredGuruList = userRole === 'Guru' && currentUserEmail 
+    ? guruList.filter(g => g.email === currentUserEmail)
+    : guruList;
+
   return (
     <div className="space-y-6 max-w-5xl">
       <input type="file" ref={fileInputRef} onChange={handleImport} className="hidden" accept=".xlsx, .xls" />
       
+      {userRole === 'Guru' && showForcePasswordChange && (
+        <div className="bg-red-50 border border-red-200 p-4 rounded-xl flex items-center gap-4 animate-pulse">
+          <ShieldAlert className="w-6 h-6 text-red-500" />
+          <div>
+            <p className="text-xs font-black text-red-600 uppercase tracking-widest italic">Keamanan Akun: Password Default Terdeteksi</p>
+            <p className="text-[10px] text-red-500 font-bold">Wajib ganti password sekarang demi keamanan data Anda.</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-xl font-bold text-brand-text-main">Tenaga Pengajar</h2>
-          <p className="text-xs text-brand-text-muted">Total {guruList.length} Guru dan Staf Terdaftar</p>
+          <h2 className="text-xl font-bold text-brand-text-main">
+            {userRole === 'Guru' ? 'Profil Saya' : 'Tenaga Pengajar'}
+          </h2>
+          <p className="text-xs text-brand-text-muted">
+            {userRole === 'Guru' 
+              ? 'Data pribadi dan profil pengajar Anda' 
+              : `Total ${guruList.length} Guru dan Staf Terdaftar`
+            }
+          </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {userRole === 'Admin' && (
@@ -272,8 +334,11 @@ export default function Guru() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {guruList.map((g) => (
+      <div className={cn(
+        "grid grid-cols-1 gap-4",
+        userRole === 'Admin' ? "md:grid-cols-2 lg:grid-cols-4" : "max-w-md"
+      )}>
+        {filteredGuruList.map((g) => (
           <motion.div 
             layout
             key={g.id} 
@@ -281,13 +346,24 @@ export default function Guru() {
           >
             <div className="absolute top-2 right-2 flex gap-2">
                        {(userRole === 'Admin' || currentUserEmail === g.email) && (
-                         <button 
-                           onClick={() => handleOpenModal(g)} 
-                           className="p-1.5 bg-white border border-brand-border rounded-md transition-all text-slate-400 hover:text-brand-accent shadow-sm"
-                           title="Edit Guru"
-                         >
-                           <Edit2 className="w-3 h-3" />
-                         </button>
+                         <div className="flex gap-2">
+                           {userRole === 'Admin' && (
+                             <button 
+                               onClick={() => handleResetPassword(g)} 
+                               className="p-1.5 bg-white border border-brand-border rounded-md transition-all text-slate-400 hover:text-orange-500 shadow-sm"
+                               title="Reset Password"
+                             >
+                               <RefreshCw className="w-3 h-3" />
+                             </button>
+                           )}
+                           <button 
+                             onClick={() => handleOpenModal(g)} 
+                             className="p-1.5 bg-white border border-brand-border rounded-md transition-all text-slate-400 hover:text-brand-accent shadow-sm"
+                             title="Edit Guru"
+                           >
+                             <Edit2 className="w-3 h-3" />
+                           </button>
+                         </div>
                        )}
                        {userRole === 'Admin' && (
                          <button 
@@ -365,6 +441,12 @@ export default function Guru() {
                 </div>
 
                 <form onSubmit={handleSave} className="space-y-4">
+                  {showForcePasswordChange && userRole === 'Guru' && (
+                    <div className="bg-red-50 p-3 rounded-lg border border-red-100 flex items-center gap-3 mb-2">
+                       <ShieldAlert className="w-4 h-4 text-red-500" />
+                       <p className="text-[10px] font-bold text-red-600 uppercase">Wajib perbarui password Anda sebelum melanjutkan!</p>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Nama Lengkap</label>
@@ -420,6 +502,17 @@ export default function Guru() {
                         className="w-full bg-slate-50 border border-brand-border rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Password Akses Portal</label>
+                    <input 
+                      type="text"
+                      placeholder="Gunakan NIP atau buat password unik"
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      className="w-full bg-slate-50 border border-brand-border rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
+                    />
                   </div>
 
                   <div className="space-y-1">

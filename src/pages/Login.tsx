@@ -70,18 +70,32 @@ export default function Login() {
            return;
         }
 
-        // Real teacher login (usually via Auth but could be via profile check)
-        const { data, error: authError } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        });
+        const { data: guruData, error: dbError } = await supabase
+          .from('profiles_guru')
+          .select('*')
+          .eq('email', formData.email)
+          .eq('password', formData.password)
+          .single();
 
-        if (authError) throw authError;
+        if (dbError || !guruData) {
+          // If not found in profiles_guru, try real Auth as fallback
+          const { data, error: authError } = await supabase.auth.signInWithPassword({
+            email: formData.email,
+            password: formData.password,
+          });
 
-        if (data.user) {
+          if (authError) throw new Error('Email atau password salah.');
+
+          if (data.user) {
+            localStorage.setItem('userRole', 'Guru');
+            localStorage.setItem('teacherName', data.user.email?.split('@')[0] || 'Guru');
+            localStorage.setItem('teacherEmail', data.user.email || '');
+            navigate('/dashboard');
+          }
+        } else {
           localStorage.setItem('userRole', 'Guru');
-          localStorage.setItem('teacherName', data.user.email?.split('@')[0] || 'Guru');
-          localStorage.setItem('teacherEmail', data.user.email || '');
+          localStorage.setItem('teacherName', guruData.nama || guruData.name || 'Guru');
+          localStorage.setItem('teacherEmail', guruData.email || '');
           navigate('/dashboard');
         }
         return;
