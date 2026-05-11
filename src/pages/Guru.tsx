@@ -8,7 +8,6 @@ import { cn } from '../lib/utils';
 interface Teacher {
   id: string;
   name: string;
-  mataPelajaran: string;
   nip: string;
   email?: string;
   phone?: string;
@@ -58,7 +57,6 @@ export default function Guru() {
         const formattedData: Teacher[] = data.map(item => ({
           id: item.id,
           name: item.nama || item.name || '',
-          mataPelajaran: item.mataPelajaran || item.mata_pelajaran || '',
           nip: item.nip || '',
           email: item.email || '',
           phone: item.phone || item.whatsapp || '',
@@ -94,7 +92,6 @@ export default function Guru() {
 
   const [formData, setFormData] = useState({
     name: '',
-    mataPelajaran: '',
     nip: '',
     email: '',
     phone: '',
@@ -107,7 +104,6 @@ export default function Guru() {
       setEditingGuru(teacher);
       setFormData({
         name: teacher.name,
-        mataPelajaran: teacher.mataPelajaran,
         nip: teacher.nip,
         email: teacher.email || '',
         phone: teacher.phone || '',
@@ -118,7 +114,6 @@ export default function Guru() {
       setEditingGuru(null);
       setFormData({
         name: '',
-        mataPelajaran: '',
         nip: '',
         email: '',
         phone: '',
@@ -156,7 +151,6 @@ export default function Guru() {
     try {
       const payload: any = {
         nama: formData.name,
-        mata_pelajaran: formData.mataPelajaran,
         nip: formData.nip,
         email: formData.email,
         phone: formData.phone,
@@ -207,8 +201,8 @@ export default function Guru() {
 
   const downloadTemplate = () => {
     const data = [
-      ["Nama", "NIP", "Email", "Telepon", "Mata Pelajaran"],
-      ["Dra. Siti Aminah", "19700512...", "siti@email.com", "08123456789", "Bahasa Indonesia"]
+      ["Nama", "NIP", "Email", "Telepon"],
+      ["Dra. Siti Aminah", "19700512...", "siti@email.com", "08123456789"]
     ];
     const ws = XLSX.utils.aoa_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -221,8 +215,7 @@ export default function Guru() {
       Nama: g.name,
       NIP: g.nip,
       Email: g.email,
-      Telepon: g.phone,
-      "Mata Pelajaran": g.mataPelajaran
+      Telepon: g.phone
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -245,7 +238,6 @@ export default function Guru() {
       const importedGuru = data.map((item, index) => ({
         nama: item.Nama || item.name || '',
         nip: String(item.NIP || item.nip || ''),
-        mata_pelajaran: item["Mata Pelajaran"] || item.mataPelajaran || '',
         email: item.Email || item.email || '',
         phone: item.Telepon || item.phone || String(item.phone || '')
       }));
@@ -384,7 +376,7 @@ export default function Guru() {
             
             <div className="min-h-[40px]">
               <h3 className="font-bold text-xs text-brand-text-main uppercase mb-0.5">{g.name}</h3>
-              <p className="text-[9px] text-brand-accent font-bold tracking-widest uppercase">{g.mataPelajaran}</p>
+              <p className="text-[9px] text-brand-accent font-bold tracking-widest uppercase">ID: {g.nip}</p>
             </div>
 
             <div className="w-full mt-4 pt-4 border-t border-brand-border space-y-1.5">
@@ -449,7 +441,7 @@ export default function Guru() {
                   )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Nama Lengkap</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic text-brand-accent">Nama Lengkap</label>
                       <input 
                         type="text" required
                         value={formData.name}
@@ -458,7 +450,7 @@ export default function Guru() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">NIP / ID Guru</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic text-brand-accent">NIP / ID Guru</label>
                       <input 
                         type="text" required
                         value={formData.nip}
@@ -466,21 +458,6 @@ export default function Guru() {
                         className="w-full bg-slate-50 border border-brand-border rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none"
                       />
                     </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Mata Pelajaran</label>
-                    <select 
-                      required
-                      value={formData.mataPelajaran}
-                      onChange={(e) => setFormData({...formData, mataPelajaran: e.target.value})}
-                      className="w-full bg-slate-50 border border-brand-border rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none cursor-pointer"
-                    >
-                      <option value="" disabled>-- Pilih Mata Pelajaran --</option>
-                      {mapels.map((m: any) => (
-                        <option key={m.id} value={m.nama}>{m.nama} ({m.jenjang})</option>
-                      ))}
-                    </select>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
