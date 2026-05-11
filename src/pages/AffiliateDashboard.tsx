@@ -33,15 +33,14 @@ export default function AffiliateDashboard() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // Simulate fetching from Firestore
-      const q = query(collection(db, 'schools'), where('referralCode', '==', affiliateId));
+      const q = query(collection(db, 'registrations'), where('referralCode', '==', affiliateId));
       const querySnapshot = await getDocs(q);
       const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
       
       setReferrals(data);
       setStats({
         totalReferrals: data.length.toString(),
-        totalConversions: data.filter(s => s.status === 'active').length.toString(),
+        totalConversions: data.filter(s => s.status === 'approved').length.toString(),
         totalEarnings: `Rp ${(data.length * 500000).toLocaleString('id-ID')}`,
         currentBalance: `Rp ${(data.length * 350000).toLocaleString('id-ID')}`
       });

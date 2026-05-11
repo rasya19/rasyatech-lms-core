@@ -48,6 +48,13 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /registrations/{registrationId} {
+      allow read: if isAdmin();
+      allow create: if true;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
     match /settings/{settingId} {
       allow get: if true;
       allow write: if isAdmin();

@@ -110,7 +110,7 @@ export default function Purchase() {
     email: '',
     phone: '',
     password: '',
-    referralCode: '',
+    referralCode: new URLSearchParams(window.location.search).get('ref') || '',
   });
   interface BankAccount {
     id: string;
@@ -178,11 +178,11 @@ export default function Purchase() {
       );
       const user = userCredential.user;
 
-      // 2. Save School Data to Firestore
+      // 2. Save Registration Data to Firestore
       const slug = formData.schoolName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      const registrationId = slug; // Use Slug as document ID for easier public lookup
+      const registrationId = `${slug}-${Date.now()}`; // Unique ID for each registration attempt
       
-      await setDoc(doc(db, 'schools', registrationId), {
+      await setDoc(doc(db, 'registrations', registrationId), {
         ownerUid: user.uid,
         name: formData.schoolName,
         npsn: formData.npsn,

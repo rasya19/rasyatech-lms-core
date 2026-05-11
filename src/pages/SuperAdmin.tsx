@@ -13,7 +13,10 @@ import { collection, getDocs, query, where, doc, updateDoc, deleteDoc, setDoc, s
 import { db } from '../lib/firebase';
 
 export default function SuperAdmin() {
+  const [activeTab, setActiveTab] = useState<'schools' | 'registrations' | 'affiliates'>('schools');
   const [schools, setSchools] = useState<any[]>([]);
+  const [registrations, setRegistrations] = useState<any[]>([]);
+  const [affiliates, setAffiliates] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSchool, setEditingSchool] = useState<any>(null);
@@ -30,21 +33,48 @@ export default function SuperAdmin() {
   });
 
   useEffect(() => {
-    fetchSchools();
-  }, []);
+    fetchAllData();
+  }, [activeTab]);
 
-  const fetchSchools = async () => {
+  const fetchAllData = async () => {
     setIsLoading(true);
     try {
-      const q = query(collection(db, 'schools'), orderBy('createdAt', 'desc'));
-      const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
-      setSchools(data);
+      if (activeTab === 'schools') {
+        const q = query(collection(db, 'schools'), orderBy('createdAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+        setSchools(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
+      } else if (activeTab === 'registrations') {
+        const q = query(collection(db, 'registrations'), orderBy('createdAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+        setRegistrations(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
+      } else if (activeTab === 'affiliates') {
+        const q = query(collection(db, 'affiliates'), orderBy('createdAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+        setAffiliates(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
+      }
     } catch (error: any) {
-      console.error('Error fetching schools:', error);
-      toast.error('Gagal memuat data sekolah: ' + error.message);
+      console.error('Error fetching data:', error);
+      toast.error('Gagal memuat data: ' + error.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleApproveRegistration = async (reg: any) => {
+    if (!window.confirm(`Aktifkan sekolah "${reg.name}"?`)) return;
+    try {
+      const schoolId = reg.slug;
+      await setDoc(doc(db, 'schools', schoolId), {
+        ...reg,
+        status: 'active',
+        updatedAt: serverTimestamp(),
+        approvedAt: serverTimestamp(),
+      });
+      await updateDoc(doc(db, 'registrations', reg.id), { status: 'approved' });
+      toast.success('Sekolah berhasil diaktifkan!');
+      fetchAllData();
+    } catch (error: any) {
+      toast.error('Gagal mengaktifkan: ' + error.message);
     }
   };
 
@@ -70,7 +100,7 @@ export default function SuperAdmin() {
       
       setIsModalOpen(false);
       setEditingSchool(null);
-      fetchSchools();
+      fetchAllData();
     } catch (error: any) {
       toast.error('Gagal menyimpan: ' + error.message);
     }
@@ -81,7 +111,7 @@ export default function SuperAdmin() {
     try {
       await deleteDoc(doc(db, 'schools', id));
       toast.success('Institusi berhasil dihapus');
-      fetchSchools();
+      fetchAllData();
     } catch (error: any) {
       toast.error('Gagal menghapus: ' + error.message);
     }
@@ -127,9 +157,9 @@ export default function SuperAdmin() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
          {[
            { label: 'Total Sekolah', value: schools.length, icon: Building2, color: 'text-brand-accent' },
-           { label: 'Sekolah Aktif', value: schools.filter(s => s.status === 'active').length, icon: CheckCircle2, color: 'text-emerald-400' },
-           { label: 'Pendaftar Baru', value: '12', icon: TrendingUp, color: 'text-blue-400' },
-           { label: 'Estimasi Revenue', value: 'Rp 45.2M', icon: DollarSign, color: 'text-brand-accent' }
+           { label: 'Pendaftar Baru', value: registrations.filter(r => r.status === 'pending').length, icon: Rocket, color: 'text-orange-400' },
+           { label: 'Total Affiliate', value: affiliates.length, icon: Users, color: 'text-blue-400' },
+           { label: 'Estimasi Revenue', value: 'Rp 45.2M', icon: DollarSign, color: 'text-emerald-400' }
          ].map((stat, i) => (
            <div key={i} className="bg-white p-6 rounded-[2rem] border border-brand-border shadow-sm group hover:border-brand-accent transition-all">
               <div className="flex justify-between items-start mb-4">
@@ -143,17 +173,42 @@ export default function SuperAdmin() {
          ))}
       </div>
 
+      {/* Tabs Selection */}
+      <div className="flex gap-4 bg-slate-100 p-2 rounded-2xl w-fit">
+         {[
+           { id: 'schools', label: 'Network Sekolah', icon: Globe },
+           { id: 'registrations', label: 'Pendaftar Baru', icon: Rocket },
+           { id: 'affiliates', label: 'Manajemen Affiliate', icon: Users }
+         ].map((tab) => (
+           <button
+             key={tab.id}
+             onClick={() => setActiveTab(tab.id as any)}
+             className={cn(
+               "flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all italic",
+               activeTab === tab.id 
+                 ? "bg-brand-sidebar text-brand-accent shadow-lg" 
+                 : "text-slate-500 hover:bg-white hover:text-brand-sidebar"
+             )}
+           >
+             <tab.icon className="w-4 h-4" /> {tab.label}
+           </button>
+         ))}
+      </div>
+
       {/* Database View */}
       <div className="bg-white border border-brand-border rounded-[3rem] p-8 shadow-sm">
          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <h2 className="text-sm font-black text-brand-sidebar uppercase italic tracking-widest flex items-center gap-3">
-               <Globe className="w-5 h-5 text-brand-accent" /> Network Directory
+               {activeTab === 'schools' && <Globe className="w-5 h-5 text-brand-accent" />}
+               {activeTab === 'registrations' && <Rocket className="w-5 h-5 text-orange-400" />}
+               {activeTab === 'affiliates' && <Users className="w-5 h-5 text-blue-400" />}
+               {activeTab === 'schools' ? 'Network Directory' : activeTab === 'registrations' ? 'Pending Registrations' : 'Partner Network'}
             </h2>
             <div className="relative w-full md:w-96">
                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                <input 
                  type="text" 
-                 placeholder="Cari institusi atau slug..."
+                 placeholder="Search entries..."
                  value={searchTerm}
                  onChange={(e) => setSearchTerm(e.target.value)}
                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-brand-border rounded-xl text-[10px] font-bold outline-none focus:border-brand-accent transition-all"
@@ -162,100 +217,114 @@ export default function SuperAdmin() {
          </div>
 
          <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left border-collapse min-w-[1000px]">
-               <thead>
-                  <tr className="border-b border-brand-border">
-                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Info Institusi</th>
-                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Endpoint / Slug</th>
-                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Paket & Status</th>
-                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Masa Berlaku</th>
-                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic text-right">Aksi</th>
-                  </tr>
-               </thead>
-               <tbody className="divide-y divide-slate-50">
-                  {isLoading ? (
-                    <tr>
-                       <td colSpan={5} className="py-20 text-center">
-                          <Loader2 className="w-8 h-8 animate-spin text-brand-accent mx-auto mb-4" />
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sinkronisasi Data Institusi...</p>
-                       </td>
-                    </tr>
-                  ) : filteredSchools.length === 0 ? (
-                    <tr>
-                       <td colSpan={5} className="py-20 text-center">
-                          <AlertCircle className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tidak ada sekolah ditemukan</p>
-                       </td>
-                    </tr>
-                  ) : filteredSchools.map((school) => (
-                    <tr key={school.id} className="group hover:bg-slate-50/50 transition-colors">
-                       <td className="px-6 py-6">
-                          <div className="flex items-center gap-4">
-                             <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-brand-sidebar text-xl italic group-hover:bg-brand-accent group-hover:text-white transition-all">
-                                {school.name?.[0]}
+            {activeTab === 'schools' && (
+               <table className="w-full text-left border-collapse min-w-[1000px]">
+                  <thead>
+                     <tr className="border-b border-brand-border">
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Info Institusi</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Endpoint / Slug</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Paket & Status</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic text-right">Aksi</th>
+                     </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                     {isLoading ? (
+                       <tr><td colSpan={4} className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin text-brand-accent mx-auto" /></td></tr>
+                     ) : filteredSchools.map((school) => (
+                       <tr key={school.id} className="group hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-6">
+                             <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-brand-sidebar text-xl italic group-hover:bg-brand-accent group-hover:text-white transition-all">{school.name?.[0]}</div>
+                                <div>
+                                   <p className="text-xs font-black text-brand-sidebar uppercase italic tracking-tight">{school.name}</p>
+                                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">NPSN: {school.npsn || '-'}</p>
+                                </div>
                              </div>
-                             <div>
-                                <p className="text-xs font-black text-brand-sidebar uppercase italic tracking-tight">{school.name}</p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">NPSN: {school.npsn || '-'}</p>
-                             </div>
-                          </div>
-                       </td>
-                       <td className="px-6 py-6">
-                          <div className="flex items-center gap-2">
+                          </td>
+                          <td className="px-6 py-6">
                              <code className="text-xs font-black text-brand-accent bg-brand-accent/5 px-2 py-1 rounded">/{school.slug}</code>
-                             <a href={`/s/${school.slug}`} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-300 hover:text-brand-accent transition-colors">
-                                <ExternalLink className="w-4 h-4" />
-                             </a>
-                          </div>
-                       </td>
-                       <td className="px-6 py-6">
-                          <div className="space-y-1.5">
-                             <span className="text-[9px] font-black bg-brand-sidebar text-white px-2.5 py-1 rounded uppercase tracking-[0.2em]">{school.packageId}</span>
-                             <div className="flex items-center gap-1.5">
-                                <div className={cn("w-1.5 h-1.5 rounded-full", school.status === 'active' ? 'bg-emerald-500' : 'bg-red-500')} />
-                                <span className={cn("text-[9px] font-black uppercase tracking-widest", school.status === 'active' ? 'text-emerald-500' : 'text-red-500')}>
-                                   {school.status === 'active' ? 'AKTIVAT' : 'SUSPEND'}
-                                </span>
+                          </td>
+                          <td className="px-6 py-6">
+                             <div className="flex items-center gap-1.5"><div className={cn("w-1.5 h-1.5 rounded-full", school.status === 'active' ? 'bg-emerald-500' : 'bg-red-500')} /><span className={cn("text-[11px] font-black uppercase tracking-widest", school.status === 'active' ? 'text-emerald-500' : 'text-red-500')}>{school.status}</span></div>
+                          </td>
+                          <td className="px-6 py-6 text-right">
+                             <div className="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button className="p-2.5 bg-white border border-brand-border rounded-xl text-slate-400 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
                              </div>
-                          </div>
-                       </td>
-                       <td className="px-6 py-6">
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                             {school.expiryDate ? new Date(school.expiryDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Permanent'}
-                          </p>
-                       </td>
-                       <td className="px-6 py-6 text-right">
-                          <div className="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                          </td>
+                       </tr>
+                     ))}
+                  </tbody>
+               </table>
+            )}
+
+            {activeTab === 'registrations' && (
+               <table className="w-full text-left border-collapse min-w-[1000px]">
+                  <thead>
+                     <tr className="border-b border-brand-border">
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Nama Sekolah</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Admin</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Kontak (WhatsApp)</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic text-right">Aksi Konfirmasi</th>
+                     </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                     {isLoading ? (
+                       <tr><td colSpan={4} className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin text-brand-accent mx-auto" /></td></tr>
+                     ) : registrations.filter(r => r.status === 'pending').map((reg) => (
+                       <tr key={reg.id} className="group hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-6">
+                             <p className="text-xs font-black text-brand-sidebar uppercase italic tracking-tight">{reg.name}</p>
+                             <p className="text-[10px] font-black text-brand-accent uppercase tracking-widest italic mt-1">{reg.packageId} Plan</p>
+                          </td>
+                          <td className="px-6 py-6">
+                             <p className="text-[10px] font-bold text-slate-500 uppercase">{reg.adminName}</p>
+                             <p className="text-[10px] font-bold text-slate-400">{reg.adminEmail}</p>
+                          </td>
+                          <td className="px-6 py-6 font-mono text-[11px] font-black text-brand-sidebar">{reg.whatsapp}</td>
+                          <td className="px-6 py-6 text-right">
                              <button 
-                               onClick={() => {
-                                 setEditingSchool(school);
-                                 setFormData({
-                                   name: school.name || '',
-                                   slug: school.slug || '',
-                                   npsn: school.npsn || '',
-                                   adminEmail: school.adminEmail || '',
-                                   packageId: school.packageId || 'basic',
-                                   status: school.status || 'active',
-                                   expiryDate: school.expiryDate || ''
-                                 });
-                                 setIsModalOpen(true);
-                               }}
-                               className="p-2.5 bg-white border border-brand-border rounded-xl text-slate-400 hover:text-brand-accent hover:border-brand-accent transition-all shadow-sm"
+                               onClick={() => handleApproveRegistration(reg)}
+                               className="bg-brand-accent text-brand-sidebar px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest italic hover:scale-105 transition-all shadow-lg shadow-brand-accent/20"
                              >
-                                <Edit2 className="w-4 h-4" />
+                                <CheckCircle2 className="w-4 h-4 mr-2" /> Aktifkan Sekolah
                              </button>
-                             <button 
-                               onClick={() => handleDelete(school.id, school.name)}
-                               className="p-2.5 bg-white border border-brand-border rounded-xl text-slate-400 hover:text-red-500 hover:border-red-500 transition-all shadow-sm"
-                             >
-                                <Trash2 className="w-4 h-4" />
-                             </button>
-                          </div>
-                       </td>
-                    </tr>
-                  ))}
-               </tbody>
-            </table>
+                          </td>
+                       </tr>
+                     ))}
+                  </tbody>
+               </table>
+            )}
+
+            {activeTab === 'affiliates' && (
+               <table className="w-full text-left border-collapse min-w-[1000px]">
+                  <thead>
+                     <tr className="border-b border-brand-border">
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Nama Affiliate</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Kode Referral</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Total Referral</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic text-right">Status</th>
+                     </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                     {isLoading ? (
+                       <tr><td colSpan={4} className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin text-brand-accent mx-auto" /></td></tr>
+                     ) : affiliates.map((aff) => (
+                       <tr key={aff.id} className="group hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-6">
+                             <p className="text-xs font-black text-brand-sidebar uppercase italic tracking-tight">{aff.name}</p>
+                             <p className="text-[10px] font-bold text-slate-400">{aff.email}</p>
+                          </td>
+                          <td className="px-6 py-6"><code className="text-xs font-black text-brand-accent">{aff.referralCode}</code></td>
+                          <td className="px-6 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">{aff.totalReferrals || 0} SEKOALAH</td>
+                          <td className="px-6 py-6 text-right">
+                             <span className="text-[9px] font-black bg-brand-bg text-brand-sidebar px-3 py-1 rounded-full uppercase tracking-widest">Partner Aktif</span>
+                          </td>
+                       </tr>
+                     ))}
+                  </tbody>
+               </table>
+            )}
          </div>
       </div>
 
