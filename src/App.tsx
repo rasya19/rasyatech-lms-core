@@ -7,6 +7,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useParams, Outlet, Navigate, useLocation } from 'react-router-dom';
 import { SchoolProvider, useSchool } from './contexts/SchoolContext';
 import Layout from './components/Layout';
+import AutoLogout from './components/AutoLogout';
 import Dashboard from './pages/Dashboard';
 import CourseDetail from './pages/CourseDetail';
 import LandingPage from './pages/LandingPage';
@@ -122,6 +123,7 @@ function AppContent() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/preview" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/admin" element={<Login />} />
       <Route path="/ujian/:id" element={<UjianSiswa />} />
       <Route path="/purchase" element={<Purchase />} />
       <Route path="/super-admin" element={<SuperAdmin />} />
@@ -276,6 +278,7 @@ export default function App() {
     <BrowserRouter>
       <Toaster position="top-right" richColors />
       <SchoolProvider>
+        <AutoLogout />
         <ReferralTracker />
         <AppContent />
       </SchoolProvider>

@@ -109,7 +109,7 @@ export default function LandingPage() {
                 <span className="font-black text-brand-sidebar uppercase italic tracking-tighter leading-none text-xl">
                   {parts.first} <span className="text-brand-accent">{parts.rest}</span>
                 </span>
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mt-1">Supported by <span className="text-brand-accent">Rasyacomp</span></span>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mt-1">Powered by <span className="text-brand-accent">Rasyatech</span></span>
              </div>
           </Link>
           
@@ -135,12 +135,7 @@ export default function LandingPage() {
                 Affiliate <Users className="w-3.5 h-3.5 text-brand-accent" />
               </Link>
             )}
-            {!school && (
-              <a href="https://rasyatech.rsch.my.id/#daftar" className="bg-white border-2 border-brand-sidebar text-brand-sidebar px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-50 transition-all italic flex items-center gap-2">
-                Daftar Sekolah <Rocket className="w-3 h-3 text-brand-accent" />
-              </a>
-            )}
-            <Link to={school ? "/login" : "/login"} className="bg-brand-sidebar text-white px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-accent hover:scale-105 transition-all shadow-xl shadow-brand-sidebar/20 italic">
+            <Link to="/login" className="bg-brand-sidebar text-white px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-accent hover:scale-105 transition-all shadow-xl shadow-brand-sidebar/20 italic">
               Portal Masuk
             </Link>
           </div>
@@ -185,15 +180,6 @@ export default function LandingPage() {
                       Daftar Affiliate <Users className="w-4 h-4 text-brand-sidebar" />
                     </Link>
                   )}
-                  {!school && (
-                    <a 
-                      href="https://rasyatech.rsch.my.id/#daftar" 
-                      onClick={() => setIsMenuOpen(false)}
-                      className="w-full bg-white border-2 border-brand-sidebar text-brand-sidebar py-4 rounded-xl text-center text-xs font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 italic"
-                    >
-                      Daftar Sekolah <Rocket className="w-4 h-4 text-brand-accent" />
-                    </a>
-                  )}
                   <Link 
                     to="/login" 
                     onClick={() => setIsMenuOpen(false)}
@@ -233,18 +219,14 @@ export default function LandingPage() {
               <p className="text-xl text-slate-500 font-medium italic mb-12 max-w-xl leading-relaxed">
                 Pusat Kegiatan Belajar Masyarakat (PKBM) yang mengutamakan kualitas, fleksibilitas, dan kemajuan teknologi untuk mencerdaskan bangsa Indonesia.
               </p>
-              <div className="flex flex-col sm:flex-row gap-5">
-                 {school ? (
-                   <Link to="/login" className="bg-brand-sidebar text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] shadow-2xl shadow-brand-sidebar/40 flex items-center justify-center gap-4 group/btn hover:scale-105 active:scale-95 transition-all italic">
-                     Portal Masuk <ShieldCheck className="w-5 h-5 group-hover/btn:translate-x-2 transition-transform" />
-                   </Link>
-                 ) : (
-                   <a href="https://rasyatech.rsch.my.id/#daftar" className="bg-brand-sidebar text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] shadow-2xl shadow-brand-sidebar/40 flex items-center justify-center gap-4 group/btn hover:scale-105 active:scale-95 transition-all italic">
-                     Daftar Sekarang <Rocket className="w-5 h-5 group-hover/btn:translate-x-2 transition-transform" />
-                   </a>
-                 )}
-                 <Link to={school ? "/dashboard/ppdb" : "/ppdb"} className="bg-white border-2 border-brand-sidebar text-brand-sidebar px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] hover:bg-slate-50 transition-all flex items-center justify-center italic">
-                   PPDB Online
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-12">
+                 <Link to="/login" className="bg-brand-sidebar text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] shadow-2xl shadow-brand-sidebar/40 flex flex-col items-center justify-center gap-1 group/btn hover:scale-105 active:scale-95 transition-all italic h-32">
+                    <Users className="w-6 h-6 mb-2 text-brand-accent" />
+                    <span>LOGIN GURU</span>
+                 </Link>
+                 <Link to="/login" className="bg-brand-accent text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.25em] shadow-2xl shadow-brand-accent/40 flex flex-col items-center justify-center gap-1 group/btn hover:scale-105 active:scale-95 transition-all italic h-32">
+                    <BookOpen className="w-6 h-6 mb-2 text-brand-sidebar" />
+                    <span>LOGIN SISWA</span>
                  </Link>
               </div>
            </motion.div>
@@ -486,7 +468,7 @@ export default function LandingPage() {
                       <span className="font-black text-brand-sidebar uppercase italic tracking-tighter leading-none text-lg">
                         {parts.first} <span className="text-brand-accent">{parts.rest}</span>
                       </span>
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mt-1.5">Infrastructure by <span className="text-brand-accent">Rasyacomp</span></span>
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mt-1.5">Powered by <span className="text-brand-accent">Rasyatech</span></span>
                    </div>
                   </div>
                   <p className="text-sm text-slate-500 max-w-sm italic leading-relaxed">
@@ -525,14 +507,15 @@ export default function LandingPage() {
          <div className="max-w-7xl mx-auto px-6 mt-20 pt-8 border-t border-brand-border flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
                <span>© 2026 {schoolName}. All Rights Reserved.</span>
+               <Link to="/admin" className="opacity-10 hover:opacity-100 transition-opacity lowercase italic tracking-tighter text-[6px] ml-1">System Entry</Link>
                <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-100 rounded-lg shadow-sm">
                   <Activity className="w-3 h-3 text-brand-accent" />
                   <span className="text-[9px] font-black italic tracking-tighter text-slate-600">{visitorCount.toLocaleString()} PENGUNJUNG</span>
                </div>
             </div>
             <div className="flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-full">
-               <span className="text-slate-500">Official Tech Partner:</span>
-               <span className="text-brand-sidebar font-black italic tracking-tighter text-xs">RASYAC<span className="text-brand-accent">OMP</span></span>
+               <span className="text-slate-500">Powered by:</span>
+               <span className="text-brand-sidebar font-black italic tracking-tighter text-xs">RASYATECH</span>
             </div>
          </div>
       </footer>
