@@ -166,6 +166,7 @@ export default function Layout() {
               { icon: ArrowUpCircle, label: 'Kenaikan Kelas', path: `${prefix}/dashboard/kenaikan` },
               { icon: FileText, label: 'Cek Raport', path: `${prefix}/dashboard/raport` },
               { icon: FileBarChart, label: 'Analitik e-Rapor', path: `${prefix}/dashboard/analitik` },
+              { icon: BookOpen, label: 'Materi Ajar (E-Modul)', path: `${prefix}/dashboard/materi` },
               { icon: ScanFace, label: 'Deteksi Objek AI', path: `${prefix}/dashboard/deteksi-objek` },
             ]
           },
@@ -204,7 +205,7 @@ export default function Layout() {
               { icon: Calendar, label: 'Jadwal Pelajaran', path: `${prefix}/dashboard/akademik` },
               { icon: Book, label: 'Agenda Mengajar', path: `${prefix}/dashboard/agenda` },
               { icon: UserCheck, label: 'Presensi Siswa', path: `${prefix}/dashboard/presensi` },
-              { icon: BookOpen, label: 'Materi Ajar', path: `${prefix}/dashboard/materi` },
+              { icon: BookOpen, label: 'Materi Ajar (E-Modul)', path: `${prefix}/dashboard/materi` },
               { icon: Link2, label: 'Relasi Mengajar', path: `${prefix}/dashboard/relasi` },
               { icon: FileText, label: 'Cek Raport', path: `${prefix}/dashboard/raport` },
             ]
@@ -225,7 +226,7 @@ export default function Layout() {
         return [
           { icon: LayoutDashboard, label: 'Dashboard', path: `${prefix}/dashboard` },
           { icon: UserCheck, label: 'Presensi Saya', path: `${prefix}/dashboard/presensi` },
-          { icon: BookOpen, label: 'Materi Saya', path: `${prefix}/dashboard/materi` },
+          { icon: BookOpen, label: 'Materi Ajar (E-Modul)', path: `${prefix}/dashboard/materi` },
           { icon: ClipboardCheck, label: 'Ikut Ujian', path: `${prefix}/dashboard/ujian` },
           { icon: MessageSquare, label: 'Ruang Diskusi', path: `${prefix}/dashboard/diskusi` },
           { icon: FileBarChart, label: 'Nilai Saya', path: `${prefix}/dashboard/nilai` },

@@ -25,10 +25,12 @@ import { cn } from '../lib/utils';
 interface Modul {
   id: string;
   title: string;
+  subject: string;
   tutor: string;
   modules: number;
   category: string;
   program: string;
+  pdfUrl?: string;
   color?: string;
 }
 
@@ -45,10 +47,12 @@ export default function Materi() {
 
   const [formData, setFormData] = useState({
     title: '',
+    subject: '',
     tutor: '',
     modules: 0,
     category: 'Akademik',
-    program: 'Paket C'
+    program: 'Paket C',
+    pdfUrl: ''
   });
 
   const categories = ['Akademik', 'Vokasi', 'Keterampilan', 'Umum'];
@@ -72,10 +76,12 @@ export default function Materi() {
         setMateriList(data.map(item => ({
           id: item.id,
           title: item.judul || item.title || '',
+          subject: item.mata_pelajaran || item.subject || '',
           tutor: item.pengampu || item.tutor || '',
           modules: item.total_modul || item.modules || 0,
           category: item.kategori || item.category || 'Akademik',
           program: item.program || '',
+          pdfUrl: item.pdf_url || item.pdfUrl || '#',
           color: item.warna || 'bg-brand-sidebar'
         })));
       } else {
@@ -94,19 +100,23 @@ export default function Materi() {
       setEditingModul(modul);
       setFormData({
         title: modul.title,
+        subject: modul.subject,
         tutor: modul.tutor,
         modules: modul.modules,
         category: modul.category,
-        program: modul.program
+        program: modul.program,
+        pdfUrl: modul.pdfUrl || ''
       });
     } else {
       setEditingModul(null);
       setFormData({
         title: '',
+        subject: '',
         tutor: '',
         modules: 0,
         category: 'Akademik',
-        program: 'Paket C'
+        program: 'Paket C',
+        pdfUrl: ''
       });
     }
     setIsModalOpen(true);
@@ -117,21 +127,43 @@ export default function Materi() {
     setIsSaving(true);
     
     try {
-      const payload = {
+      const payload: any = {
         judul: formData.title,
+        mata_pelajaran: formData.subject,
         pengampu: formData.tutor,
         total_modul: formData.modules,
         kategori: formData.category,
-        program: formData.program
+        program: formData.program,
+        pdf_url: formData.pdfUrl
       };
 
-      if (editingModul && editingModul.id) {
-        const { error } = await supabase.from('materi_ajar').update(payload).eq('id', editingModul.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('materi_ajar').insert([payload]);
-        if (error) throw error;
-      }
+      const performSave = async (data: any) => {
+        if (editingModul && editingModul.id) {
+          const { error } = await supabase.from('materi_ajar').update(data).eq('id', editingModul.id);
+          if (error) {
+            if (error.message.includes('mata_pelajaran') || error.message.includes('pdf_url')) {
+              const cleaned = { ...data };
+              delete cleaned.mata_pelajaran;
+              delete cleaned.pdf_url;
+              const { error: retryError } = await supabase.from('materi_ajar').update(cleaned).eq('id', editingModul.id);
+              if (retryError) throw retryError;
+            } else throw error;
+          }
+        } else {
+          const { error } = await supabase.from('materi_ajar').insert([data]);
+          if (error) {
+            if (error.message.includes('mata_pelajaran') || error.message.includes('pdf_url')) {
+              const cleaned = { ...data };
+              delete cleaned.mata_pelajaran;
+              delete cleaned.pdf_url;
+              const { error: retryError } = await supabase.from('materi_ajar').insert([cleaned]);
+              if (retryError) throw retryError;
+            } else throw error;
+          }
+        }
+      };
+
+      await performSave(payload);
       
       await fetchMateri();
       setIsModalOpen(false);
@@ -170,10 +202,12 @@ export default function Materi() {
 
       const importedMateri = data.map(item => ({
         judul: item.Judul || item.title || '',
+        mata_pelajaran: item["Mata Pelajaran"] || item.subject || '',
         pengampu: item.Pengampu || item.tutor || '',
         total_modul: parseInt(item.Modules || item.modules || '0'),
         kategori: item.Kategori || item.category || 'Akademik',
-        program: item.Program || item.program || ''
+        program: item.Program || item.program || '',
+        pdf_url: item["PDF Link"] || item.pdf_url || '#'
       }));
 
       try {
@@ -193,8 +227,8 @@ export default function Materi() {
 
   const downloadTemplate = () => {
     const data = [
-      ["Judul", "Pengampu", "Modules", "Kategori", "Program"],
-      ["Bahasa Indonesia - Paket C", "Dra. Siti Aminah", "12", "Akademik", "Paket C"]
+      ["Judul", "Mata Pelajaran", "Pengampu", "Modules", "Kategori", "Program", "PDF Link"],
+      ["Bahasa Indonesia - Paket C", "Bahasa Indonesia", "Dra. Siti Aminah", "12", "Akademik", "Paket C", "#"]
     ];
     const ws = XLSX.utils.aoa_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -204,6 +238,7 @@ export default function Materi() {
 
   const filteredMateri = materiList.filter(m => {
     const matchesSearch = m.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         m.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          m.tutor.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesProgram = filterProgram === 'Semua Program' || m.program === filterProgram;
     return matchesSearch && matchesProgram;
@@ -215,8 +250,8 @@ export default function Materi() {
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-1">
         <div>
-          <h2 className="text-xl font-bold text-brand-text-main italic">MODUL <span className="not-italic text-brand-accent">PEMBELAJARAN</span></h2>
-          <p className="text-[10px] text-brand-text-muted font-bold uppercase tracking-[0.2em]">Bank Materi PKBM Armilla Nusa</p>
+          <h2 className="text-xl font-bold text-brand-text-main italic">MATERI AJAR <span className="not-italic text-brand-accent">(E-MODUL)</span></h2>
+          <p className="text-[10px] text-brand-text-muted font-bold uppercase tracking-[0.2em]">PKBM Armilla Nusa Digital Library</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           {userRole === 'Admin' && (
@@ -315,23 +350,29 @@ export default function Materi() {
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex gap-2">
                     <span className="text-[8px] font-black text-brand-accent bg-brand-accent/5 px-2 py-1 rounded-lg uppercase tracking-wider">{m.category}</span>
-                    <span className="text-[8px] font-black text-indigo-500 bg-indigo-50 px-2 py-1 rounded-lg uppercase tracking-wider">{m.program}</span>
+                    <span className="text-[8px] font-black text-indigo-500 bg-indigo-50 px-2 py-1 rounded-lg uppercase tracking-wider font-mono">{m.program}</span>
                   </div>
                   <span className="text-[9px] font-black text-slate-400 uppercase italic tracking-tighter">{m.modules} Modul</span>
                 </div>
-                <h4 className="font-black text-base text-brand-text-main leading-snug mb-3 group-hover:text-brand-accent transition-colors uppercase italic">{m.title}</h4>
+                <h4 className="font-black text-base text-brand-text-main leading-snug mb-1 group-hover:text-brand-accent transition-colors uppercase italic">{m.title}</h4>
+                <p className="text-[9px] font-bold text-brand-accent uppercase tracking-widest mb-3">{m.subject}</p>
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-500">
                     {m.tutor.split(' ').filter(n => n.length > 2).map(n => n[0]).join('').slice(0,2).toUpperCase() || 'TR'}
                   </div>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Pengampu: <span className="text-brand-sidebar italic">{m.tutor}</span></p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Guru: <span className="text-brand-sidebar italic">{m.tutor}</span></p>
                 </div>
               </div>
 
               <div className="mt-4 pt-5 border-t border-brand-border flex justify-between items-center">
-                <Link to={`/dashboard/course/${m.id}`} className="text-[10px] font-black text-brand-accent hover:underline flex items-center gap-1.5 uppercase tracking-[0.2em] italic">
-                  Akses Materi <ChevronRight className="w-4 h-4" />
-                </Link>
+                <a 
+                  href={m.pdfUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-[10px] font-black text-brand-accent hover:underline flex items-center gap-1.5 uppercase tracking-[0.2em] italic"
+                >
+                  Buka Materi <Download className="w-3 h-3" />
+                </a>
                 <div className="flex -space-x-2">
                   <div className="w-6 h-6 rounded-lg bg-slate-50 border border-white flex items-center justify-center text-[8px] text-slate-400 font-black">+14</div>
                 </div>
@@ -371,25 +412,48 @@ export default function Materi() {
                   </button>
                 </div>
 
-                <form onSubmit={handleSave} className="space-y-5">
+                <form onSubmit={handleSave} className="space-y-5 shadow-inner">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic">Judul Materi / Modul</label>
+                    <label className="text-[10px] font-black text-brand-accent uppercase tracking-widest ml-1 italic">Judul Modul</label>
                     <input 
                       type="text" required
-                      placeholder="Contoh: Bahasa Indonesia - Paket C"
+                      placeholder="Contoh: Modul 1 Bahasa Indonesia"
                       value={formData.title}
                       onChange={(e) => setFormData({...formData, title: e.target.value})}
                       className="w-full bg-slate-50 border border-brand-border rounded-2xl p-4 text-xs font-bold focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none transition-all"
                     />
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-brand-accent uppercase tracking-widest ml-1 italic">Mata Pelajaran</label>
+                      <input 
+                        type="text" required
+                        placeholder="Mata Pelajaran"
+                        value={formData.subject}
+                        onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                        className="w-full bg-slate-50 border border-brand-border rounded-2xl p-4 text-xs font-bold focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-brand-accent uppercase tracking-widest ml-1 italic">Guru Pengampu</label>
+                      <input 
+                        type="text" required
+                        placeholder="Nama Guru"
+                        value={formData.tutor}
+                        onChange={(e) => setFormData({...formData, tutor: e.target.value})}
+                        className="w-full bg-slate-50 border border-brand-border rounded-2xl p-4 text-xs font-bold focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic">Guru Pengampu</label>
+                    <label className="text-[10px] font-black text-brand-accent uppercase tracking-widest ml-1 italic">Link File PDF (Placeholder)</label>
                     <input 
-                      type="text" required
-                      placeholder="Nama Lengkap Guru"
-                      value={formData.tutor}
-                      onChange={(e) => setFormData({...formData, tutor: e.target.value})}
+                      type="text"
+                      placeholder="https://example.com/modul.pdf"
+                      value={formData.pdfUrl}
+                      onChange={(e) => setFormData({...formData, pdfUrl: e.target.value})}
                       className="w-full bg-slate-50 border border-brand-border rounded-2xl p-4 text-xs font-bold focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent outline-none transition-all"
                     />
                   </div>
