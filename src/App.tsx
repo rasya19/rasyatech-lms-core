@@ -61,13 +61,13 @@ function GuestGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (role === 'Tamu') {
       const isDashboardRoot = location.pathname.endsWith('/dashboard') || location.pathname.endsWith('/dashboard/');
-      const isAllowed = allowedPaths.some(path => location.pathname.startsWith(path)) || isDashboardRoot;
+      const isAllowed = allowedPaths.some(path => location.pathname.includes(path)) || isDashboardRoot;
       
       if (!isAllowed) {
-        toast.error('Akses Terbatas untuk Tamu');
+        toast.error('Akses Terbatas: Login sebagai Tamu');
       }
     }
-  }, [location, role]);
+  }, [location.pathname, role]);
 
   if (role === 'Tamu') {
     const isDashboardRoot = location.pathname.endsWith('/dashboard') || location.pathname.endsWith('/dashboard/');

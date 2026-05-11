@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
+import { toast } from 'sonner';
 
 interface Teacher {
   id: string;
@@ -50,6 +51,7 @@ export default function Guru() {
       
       if (error && !error.message.includes('Could not find the table')) {
         console.error('Error fetching guru:', error);
+        toast.error('Gagal mengambil data guru: ' + error.message);
         return;
       }
 
@@ -151,10 +153,10 @@ export default function Guru() {
         }
       }
       
-      alert('Password berhasil direset ke 12345678');
+      toast.success('Password berhasil direset ke 12345678');
       fetchGuru();
     } catch (error: any) {
-      alert('Gagal reset password: ' + error.message);
+      toast.error('Gagal reset password: ' + error.message);
     }
   };
 
@@ -168,6 +170,7 @@ export default function Guru() {
         nip: formData.nip,
         email: formData.email,
         phone: formData.phone,
+        whatsapp: formData.phone, // Send both just in case
         alamat: formData.alamat,
         password: formData.password
       };
@@ -182,9 +185,19 @@ export default function Guru() {
           const { error } = await supabase.from('profiles_guru').update(data).eq('id', editingGuru.id);
           if (error) {
             // Graceful degradation if column missing
+            let cleanedData = { ...data };
+            let retryNeeded = false;
+            
             if (error.message.includes("must_change_password")) {
-              const cleanedData = { ...data };
               delete cleanedData.must_change_password;
+              retryNeeded = true;
+            }
+            if (error.message.includes("whatsapp")) {
+              delete cleanedData.whatsapp;
+              retryNeeded = true;
+            }
+            
+            if (retryNeeded) {
               const { error: retryError } = await supabase.from('profiles_guru').update(cleanedData).eq('id', editingGuru.id);
               if (retryError) throw retryError;
             } else {
@@ -198,9 +211,23 @@ export default function Guru() {
           const { error } = await supabase.from('profiles_guru').insert([data]);
           if (error) {
             // Graceful degradation if column missing
+            let cleanedData = { ...data };
+            let retryNeeded = false;
+            
             if (error.message.includes("must_change_password")) {
-              const cleanedData = { ...data };
               delete cleanedData.must_change_password;
+              retryNeeded = true;
+            }
+            if (error.message.includes("whatsapp")) {
+              delete cleanedData.whatsapp;
+              retryNeeded = true;
+            }
+            if (error.message.includes("nip")) {
+               // Some tables use different columns for ID/NIP
+               // but we keep nip as it is standard. Only remove if specifically failing.
+            }
+
+            if (retryNeeded) {
               const { error: retryError } = await supabase.from('profiles_guru').insert([cleanedData]);
               if (retryError) throw retryError;
             } else {
@@ -212,11 +239,12 @@ export default function Guru() {
 
       await performSave(payload);
       
+      toast.success('Data guru berhasil disimpan');
       await fetchGuru();
       setIsModalOpen(false);
     } catch (err: any) {
       console.error('Save error:', err);
-      alert('Gagal menyimpan data guru: ' + (err.message || 'Unknown error'));
+      toast.error('Gagal menyimpan data guru: ' + (err.message || 'Unknown error'));
     } finally {
       setIsSaving(false);
     }
@@ -228,14 +256,16 @@ export default function Guru() {
         try {
           const { error } = await supabase.from('profiles_guru').delete().eq('id', id);
           if (error && !error.message.includes('Could not find the table')) throw error;
+          toast.success('Data guru berhasil dihapus');
         } catch (err) {
           console.error(err);
-          alert('Gagal menghapus data guru.');
+          toast.error('Gagal menghapus data guru.');
         }
       }
       await fetchGuru();
     }
   };
+
 
   const downloadTemplate = () => {
     const data = [

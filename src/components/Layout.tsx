@@ -1,6 +1,6 @@
 import { SCHOOL_NAME, getSchoolParts } from '../constants';
-import React, { useState } from 'react';
-import { NavLink, Outlet, useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { NavLink, Outlet, useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useSchool } from '../contexts/SchoolContext';
 import { 
   LayoutDashboard, 
@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { toast } from 'sonner';
 
 import { supabase } from '../lib/supabase';
 
@@ -50,6 +51,8 @@ type Role = 'Admin' | 'Guru' | 'Siswa' | 'Tamu';
 export default function Layout() {
   const { schoolSlug } = useParams();
   const { school } = useSchool();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [role, setRole] = useState<Role>((localStorage.getItem('userRole') as Role) || 'Siswa');
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -68,6 +71,24 @@ export default function Layout() {
     'Ujian Online': false,
     'Keuangan': false
   });
+
+  // URL Guard for Tamu/Guest Role
+  useEffect(() => {
+    if (role === 'Tamu') {
+      const allowedPaths = ['/dashboard/diskusi', '/dashboard/settings', '/login'];
+      const currentPath = location.pathname;
+      const prefix = schoolSlug ? `/s/${schoolSlug}` : '';
+      
+      const normalizedAllowed = allowedPaths.map(p => prefix + p);
+      
+      const isAllowed = normalizedAllowed.some(p => currentPath === p) || currentPath === '/' || currentPath === prefix + '/';
+      
+      if (!isAllowed) {
+        toast.error('Akses Terbatas: Anda login sebagai Tamu.');
+        navigate(prefix + '/dashboard/diskusi');
+      }
+    }
+  }, [role, location.pathname, navigate, schoolSlug]);
 
   const toggleMenu = (label: string) => {
     setOpenMenus(prev => ({ ...prev, [label]: !prev[label] }));
