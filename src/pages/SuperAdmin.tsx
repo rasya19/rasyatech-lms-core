@@ -9,7 +9,7 @@ import { motion } from 'motion/react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
-import { collection, getDocs, query, where, doc, updateDoc, deleteDoc, setDoc, serverTimestamp, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, getDoc, updateDoc, deleteDoc, setDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 export default function SuperAdmin() {
@@ -17,6 +17,7 @@ export default function SuperAdmin() {
   const [schools, setSchools] = useState<any[]>([]);
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [affiliates, setAffiliates] = useState<any[]>([]);
+  const [visitorCount, setVisitorCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSchool, setEditingSchool] = useState<any>(null);
@@ -51,6 +52,12 @@ export default function SuperAdmin() {
         const q = query(collection(db, 'affiliates'), orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);
         setAffiliates(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
+      }
+
+      // Always fetch visitor count
+      const statsSnap = await getDoc(doc(db, 'settings', 'stats'));
+      if (statsSnap.exists()) {
+        setVisitorCount(statsSnap.data().visitorCount || 0);
       }
     } catch (error: any) {
       console.error('Error fetching data:', error);
@@ -153,12 +160,12 @@ export default function SuperAdmin() {
         </div>
       </div>
 
-      {/* Stats Section */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
          {[
            { label: 'Total Sekolah', value: schools.length, icon: Building2, color: 'text-brand-accent' },
            { label: 'Pendaftar Baru', value: registrations.filter(r => r.status === 'pending').length, icon: Rocket, color: 'text-orange-400' },
            { label: 'Total Affiliate', value: affiliates.length, icon: Users, color: 'text-blue-400' },
+           { label: 'Web Visitors', value: visitorCount.toLocaleString(), icon: Zap, color: 'text-amber-400' },
            { label: 'Estimasi Revenue', value: 'Rp 45.2M', icon: DollarSign, color: 'text-emerald-400' }
          ].map((stat, i) => (
            <div key={i} className="bg-white p-6 rounded-[2rem] border border-brand-border shadow-sm group hover:border-brand-accent transition-all">

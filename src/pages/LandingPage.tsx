@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SCHOOL_NAME, getSchoolParts } from '../constants';
 import { useSchool } from '../contexts/SchoolContext';
@@ -17,15 +17,48 @@ import {
   Heart,
   MessageCircle,
   Award,
-  DollarSign
+  DollarSign,
+  Activity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import AdBanner from '@/src/components/AdBanner';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export default function LandingPage() {
   const { school } = useSchool();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [visitorCount, setVisitorCount] = useState<number>(0);
+
+  useEffect(() => {
+    const trackVisitor = async () => {
+      try {
+        const statsRef = doc(db, 'settings', 'stats');
+        const statsSnap = await getDoc(statsRef);
+        
+        let currentCount = 0;
+        if (statsSnap.exists()) {
+          currentCount = statsSnap.data().visitorCount || 0;
+        }
+
+        // Only increment once per session to avoid inflated numbers during navigation
+        const sessionKey = 'rasyatech_visited';
+        if (!sessionStorage.getItem(sessionKey)) {
+          const newCount = currentCount + 1;
+          await setDoc(statsRef, { visitorCount: newCount }, { merge: true });
+          setVisitorCount(newCount);
+          sessionStorage.setItem(sessionKey, 'true');
+        } else {
+          setVisitorCount(currentCount);
+        }
+      } catch (error) {
+        console.error('Error tracking visitor:', error);
+      }
+    };
+
+    trackVisitor();
+  }, []);
 
   const schoolName = school?.name || SCHOOL_NAME;
   const parts = school?.name 
@@ -484,6 +517,10 @@ export default function LandingPage() {
          <div className="max-w-7xl mx-auto px-6 mt-20 pt-8 border-t border-brand-border flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
                <span>© 2026 {schoolName}. All Rights Reserved.</span>
+               <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-100 rounded-lg shadow-sm">
+                  <Activity className="w-3 h-3 text-brand-accent" />
+                  <span className="text-[9px] font-black italic tracking-tighter text-slate-600">{visitorCount.toLocaleString()} PENGUNJUNG</span>
+               </div>
             </div>
             <div className="flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-full">
                <span className="text-slate-500">Official Tech Partner:</span>

@@ -110,7 +110,7 @@ export default function Purchase() {
     email: '',
     phone: '',
     password: '',
-    referralCode: new URLSearchParams(window.location.search).get('ref') || '',
+    referralCode: new URLSearchParams(window.location.search).get('ref') || sessionStorage.getItem('rasya_ref') || '',
   });
   interface BankAccount {
     id: string;

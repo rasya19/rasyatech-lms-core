@@ -51,6 +51,7 @@ export default function Login() {
         if (formData.email === 'guru@pkbmarmillanusa.com' && formData.password === 'Guru123!') {
            localStorage.setItem('userRole', 'Guru');
            localStorage.setItem('teacherName', 'Guru PKBM');
+           localStorage.setItem('teacherEmail', 'guru@pkbmarmillanusa.com');
            // Removes demo flag so it behaves as real
            localStorage.removeItem('isDemoMode');
            setIsLoading(false);
@@ -63,6 +64,7 @@ export default function Login() {
            localStorage.setItem('userRole', 'Guru');
            localStorage.setItem('isDemoMode', 'true');
            localStorage.setItem('teacherName', 'Dra. Siti Aminah');
+           localStorage.setItem('teacherEmail', 'siti@email.com'); // Match with template email in Guru.tsx
            setIsLoading(false);
            navigate('/dashboard');
            return;
@@ -79,6 +81,7 @@ export default function Login() {
         if (data.user) {
           localStorage.setItem('userRole', 'Guru');
           localStorage.setItem('teacherName', data.user.email?.split('@')[0] || 'Guru');
+          localStorage.setItem('teacherEmail', data.user.email || '');
           navigate('/dashboard');
         }
         return;

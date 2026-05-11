@@ -17,6 +17,8 @@ interface Teacher {
 export default function Guru() {
   const [guruList, setGuruList] = useState<Teacher[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+  const userRole = localStorage.getItem('userRole');
   const [mapels] = useState<any[]>(() => {
     const saved = localStorage.getItem('school_mapel_list');
     if (saved) return JSON.parse(saved);
@@ -24,8 +26,19 @@ export default function Guru() {
   });
 
   useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserEmail(user.email || null);
+      } else {
+        // Fallback for static login
+        const staticEmail = localStorage.getItem('teacherEmail') || (userRole === 'Guru' ? 'guru@pkbmarmillanusa.com' : null);
+        setCurrentUserEmail(staticEmail);
+      }
+    };
+    getUser();
     fetchGuru();
-  }, []);
+  }, [userRole]);
 
   const fetchGuru = async () => {
     try {
@@ -225,33 +238,37 @@ export default function Guru() {
           <p className="text-xs text-brand-text-muted">Total {guruList.length} Guru dan Staf Terdaftar</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <button 
-            onClick={downloadTemplate}
-            className="flex items-center gap-2 bg-brand-bg border border-brand-border text-brand-text-main px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-brand-accent hover:text-white hover:border-brand-accent transition-all italic"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Template
-          </button>
-          <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 bg-white border border-brand-border text-brand-text-main px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all"
-          >
-            <FileUp className="w-3.5 h-3.5" />
-            Import
-          </button>
-          <button 
-            onClick={exportData}
-            className="flex items-center gap-2 bg-white border border-brand-border text-brand-text-main px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all"
-          >
-            <FileDown className="w-3.5 h-3.5" />
-            Export
-          </button>
-          <button 
-            onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 bg-brand-accent text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:shadow-lg shadow-brand-accent/20 transition-all"
-          >
-            <Plus className="w-4 h-4" /> Tambah Guru
-          </button>
+          {userRole === 'Admin' && (
+            <>
+              <button 
+                onClick={downloadTemplate}
+                className="flex items-center gap-2 bg-brand-bg border border-brand-border text-brand-text-main px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-brand-accent hover:text-white hover:border-brand-accent transition-all italic"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Template
+              </button>
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 bg-white border border-brand-border text-brand-text-main px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all"
+              >
+                <FileUp className="w-3.5 h-3.5" />
+                Import
+              </button>
+              <button 
+                onClick={exportData}
+                className="flex items-center gap-2 bg-white border border-brand-border text-brand-text-main px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                Export
+              </button>
+              <button 
+                onClick={() => handleOpenModal()}
+                className="flex items-center gap-2 bg-brand-accent text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:shadow-lg shadow-brand-accent/20 transition-all"
+              >
+                <Plus className="w-4 h-4" /> Tambah Guru
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -263,20 +280,24 @@ export default function Guru() {
             className="bg-white p-4 rounded-xl border border-brand-border shadow-sm group hover:border-brand-accent transition-all flex flex-col items-center text-center relative"
           >
             <div className="absolute top-2 right-2 flex gap-2">
-                       <button 
-                         onClick={() => handleOpenModal(g)} 
-                         className="p-1.5 bg-white border border-brand-border rounded-md transition-all text-slate-400 hover:text-brand-accent shadow-sm"
-                         title="Edit Guru"
-                       >
-                         <Edit2 className="w-3 h-3" />
-                       </button>
-                       <button 
-                         onClick={() => handleDelete(g.id)} 
-                         className="p-1.5 bg-white border border-brand-border rounded-md transition-all text-slate-400 hover:text-red-500 shadow-sm"
-                         title="Hapus Guru"
-                       >
-                         <Trash2 className="w-3 h-3" />
-                       </button>
+                       {(userRole === 'Admin' || currentUserEmail === g.email) && (
+                         <button 
+                           onClick={() => handleOpenModal(g)} 
+                           className="p-1.5 bg-white border border-brand-border rounded-md transition-all text-slate-400 hover:text-brand-accent shadow-sm"
+                           title="Edit Guru"
+                         >
+                           <Edit2 className="w-3 h-3" />
+                         </button>
+                       )}
+                       {userRole === 'Admin' && (
+                         <button 
+                           onClick={() => handleDelete(g.id)} 
+                           className="p-1.5 bg-white border border-brand-border rounded-md transition-all text-slate-400 hover:text-red-500 shadow-sm"
+                           title="Hapus Guru"
+                         >
+                           <Trash2 className="w-3 h-3" />
+                         </button>
+                       )}
             </div>
 
             <div className="relative mb-3">
@@ -300,7 +321,13 @@ export default function Guru() {
             </div>
             
             <button 
-              onClick={() => handleOpenModal(g)}
+              onClick={() => {
+                if (userRole === 'Admin' || currentUserEmail === g.email) {
+                  handleOpenModal(g);
+                } else {
+                  alert('Hanya admin atau pemilik akun yang dapat mengedit biodata ini.');
+                }
+              }}
               className="w-full mt-4 py-2 bg-slate-50 group-hover:bg-brand-accent group-hover:text-white rounded-lg text-[9px] font-bold text-brand-text-muted transition-all uppercase tracking-widest"
             >
               Biodata Lengkap

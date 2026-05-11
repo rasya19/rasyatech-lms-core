@@ -259,15 +259,24 @@ function PresensiWrapper() {
   return role === 'Siswa' ? <PresensiSiswa /> : <Presensi />;
 }
 
-export default function App() {
+function ReferralTracker() {
+  const location = useLocation();
   useEffect(() => {
-    document.title = 'Rasyatech';
-  }, []);
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      sessionStorage.setItem('rasya_ref', ref);
+    }
+  }, [location]);
+  return null;
+}
 
+export default function App() {
   return (
     <BrowserRouter>
       <Toaster position="top-right" richColors />
       <SchoolProvider>
+        <ReferralTracker />
         <AppContent />
       </SchoolProvider>
     </BrowserRouter>
