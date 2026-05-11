@@ -262,7 +262,7 @@ function PresensiWrapper() {
 
 export default function App() {
   useEffect(() => {
-    document.title = 'PKBM Armilla Nusa';
+    document.title = 'Rasyatech';
   }, []);
 
   return (
