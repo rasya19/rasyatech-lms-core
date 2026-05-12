@@ -14,6 +14,24 @@ import { db } from '../lib/firebase';
 
 export default function SuperAdmin() {
   const [activeTab, setActiveTab] = useState<'schools' | 'registrations' | 'affiliates'>('schools');
+  const [isGeneratingDemo, setIsGeneratingDemo] = useState(false);
+
+  const handleGenerateDemoAccounts = async () => {
+    setIsGeneratingDemo(true);
+    try {
+      const response = await fetch('/api/seed-demo', { method: 'POST' });
+      const result = await response.json();
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error('Gagal: ' + result.message);
+      }
+    } catch (error: any) {
+      toast.error('Terjadi kesalahan sistem.');
+    } finally {
+      setIsGeneratingDemo(false);
+    }
+  };
   const [schools, setSchools] = useState<any[]>([]);
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [affiliates, setAffiliates] = useState<any[]>([]);
@@ -147,15 +165,14 @@ export default function SuperAdmin() {
           </div>
         </div>
         
-        <div className="relative z-10 flex gap-4 w-full md:w-auto">
+        <div className="relative z-10 flex flex-wrap gap-4 w-full md:w-auto">
            <button 
-             onClick={async () => {
-               const { seedDemoData } = await import('../lib/seedDemoData');
-               await seedDemoData();
-             }}
-             className="p-4 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-all"
+             onClick={handleGenerateDemoAccounts}
+             disabled={isGeneratingDemo}
+             className="flex-1 md:flex-none bg-emerald-600 text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest italic flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-emerald-600/20 disabled:opacity-50 disabled:grayscale"
            >
-             <Database className="w-5 h-5" />
+             {isGeneratingDemo ? <Loader2 className="w-5 h-5 animate-spin" /> : <Rocket className="w-5 h-5" />}
+             Generate 3 Demo Accounts
            </button>
            <button 
              onClick={() => {

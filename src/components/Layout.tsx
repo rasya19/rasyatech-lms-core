@@ -61,6 +61,7 @@ export default function Layout() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [lockedFeatureName, setLockedFeatureName] = useState('');
+  const [userPlan, setUserPlan] = useState<'Silver' | 'Gold' | 'Platinum' | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
@@ -74,6 +75,25 @@ export default function Layout() {
     'Ujian Online': false,
     'Keuangan': false
   });
+
+  // Fetch User Plan from Supabase Profile
+  useEffect(() => {
+    async function fetchProfile() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subscription_plan')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile?.subscription_plan) {
+          setUserPlan(profile.subscription_plan);
+        }
+      }
+    }
+    fetchProfile();
+  }, []);
 
   // URL Guard for Tamu/Guest Role & Subscription Plan
   useEffect(() => {
@@ -120,7 +140,8 @@ export default function Layout() {
 
   // Dynamic Theme Logic
   useEffect(() => {
-    if (school?.subscription_plan === 'Platinum') {
+    const activePlan = userPlan || school?.subscription_plan || 'Silver';
+    if (activePlan === 'Platinum') {
       document.documentElement.style.setProperty('--color-brand-accent', '#D4AF37');
       document.documentElement.style.setProperty('--color-brand-sidebar', '#1a1a1a');
       document.body.style.transition = 'all 0.5s ease-in-out';
@@ -128,7 +149,7 @@ export default function Layout() {
       document.documentElement.style.setProperty('--color-brand-accent', '#3b82f6');
       document.documentElement.style.setProperty('--color-brand-sidebar', '#0f172a');
     }
-  }, [school?.subscription_plan]);
+  }, [school?.subscription_plan, userPlan]);
 
   const toggleMenu = (label: string) => {
     setOpenMenus(prev => ({ ...prev, [label]: !prev[label] }));
@@ -200,7 +221,7 @@ export default function Layout() {
 
   const getNavItems = (): (any & { isExternal?: boolean })[] => {
     const prefix = schoolSlug ? `/s/${schoolSlug}` : '';
-    const plan = school?.subscription_plan || 'Silver';
+    const plan = userPlan || school?.subscription_plan || 'Silver';
     
     const getPlanRank = (p: string) => {
       if (p === 'Platinum') return 3;

@@ -172,9 +172,14 @@ export default function Login() {
 
       // Successful login
       if (data.user) {
-        // Here you would typically check user role from a profile table
-        // For now, we'll set it temporarily
-        localStorage.setItem('userRole', 'Admin');
+        // Fetch role from profiles table
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role') // assuming 'role' column exists in 'profiles'
+          .eq('id', data.user.id)
+          .single();
+        
+        localStorage.setItem('userRole', profile?.role || 'Siswa');
         navigate('/dashboard');
       }
     } catch (error: any) {
@@ -365,37 +370,40 @@ export default function Login() {
               </div>
 
               <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mt-2">
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 italic">Akses Demo / Testing:</p>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 italic">Akses Demo Presentation:</p>
                  <div className="space-y-3">
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 p-2 bg-slate-900/50 rounded-lg border border-slate-700/50">
                        <div className="flex-1">
-                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Role</p>
-                         <code className="text-xs font-black text-emerald-400">Admin</code>
+                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1 font-black">Plan</p>
+                         <code className="text-[10px] font-black text-slate-300">Silver</code>
                        </div>
                        <div className="flex-1">
-                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Email / Pass</p>
-                         <code className="text-[10px] font-black text-emerald-400">demo_admin / demo123</code>
-                       </div>
-                    </div>
-                    <div className="flex gap-4">
-                       <div className="flex-1">
-                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Role</p>
-                         <code className="text-xs font-black text-emerald-400">Guru</code>
-                       </div>
-                       <div className="flex-1">
-                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Email / Pass</p>
-                         <code className="text-[10px] font-black text-emerald-400">demo_guru / teacher123</code>
+                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1 font-black">Email</p>
+                         <code className="text-[10px] font-black text-emerald-400">silver@demo.com</code>
                        </div>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 p-2 bg-slate-900/50 rounded-lg border border-slate-700/50">
                        <div className="flex-1">
-                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Role</p>
-                         <code className="text-xs font-black text-emerald-400">Siswa</code>
+                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1 font-black">Plan</p>
+                         <code className="text-[10px] font-black text-amber-400">Gold</code>
                        </div>
                        <div className="flex-1">
-                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">NISN</p>
-                         <code className="text-[10px] font-black text-emerald-400">0012345678</code>
+                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1 font-black">Email</p>
+                         <code className="text-[10px] font-black text-emerald-400">gold@demo.com</code>
                        </div>
+                    </div>
+                    <div className="flex gap-4 p-2 bg-slate-900/50 rounded-lg border border-slate-700/50">
+                       <div className="flex-1">
+                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1 font-black">Plan</p>
+                         <code className="text-[10px] font-black text-brand-accent">Platinum</code>
+                       </div>
+                       <div className="flex-1">
+                         <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1 font-black">Email</p>
+                         <code className="text-[10px] font-black text-emerald-400">platinum@demo.com</code>
+                       </div>
+                    </div>
+                    <div className="text-center pt-1">
+                      <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Password: <span className="text-emerald-400">rasyatech123</span></p>
                     </div>
                  </div>
               </div>
