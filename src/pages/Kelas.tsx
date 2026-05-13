@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layers, Users, Plus, GraduationCap, X, Check, Trash2, ArrowRight, TrendingUp, Sparkles, Loader2, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useSchool } from '../contexts/SchoolContext';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 
@@ -9,9 +10,11 @@ interface ClassData {
   nama_kelas: string;
   tingkat: string;
   wali_kelas_id: string;
+  school_id: string;
 }
 
 export default function Kelas() {
+  const { school } = useSchool();
   const [activeTab, setActiveTab] = useState<'daftar' | 'kenaikan'>('daftar');
   
   const [classes, setClasses] = useState<ClassData[]>([]);
@@ -20,20 +23,23 @@ export default function Kelas() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    if (!school) return;
     fetchKelasList();
     fetchGuruList();
     fetchStudentCounts();
-  }, []);
+  }, [school]);
 
   const fetchKelasList = async () => {
+    if (!school) return;
     try {
-      const { data, error } = await supabase.from('kelas').select('*').order('nama_kelas', { ascending: true });
+      const { data, error } = await supabase.from('kelas').select('*').eq('school_id', school.npsn).order('nama_kelas', { ascending: true });
       if (data) {
         setClasses(data.map((d: any) => ({
           id: d.id,
           nama_kelas: d.nama_kelas,
           tingkat: d.tingkat || '',
-          wali_kelas_id: d.wali_kelas_id || ''
+          wali_kelas_id: d.wali_kelas_id || '',
+          school_id: d.school_id
         })));
       }
     } catch (err) {
@@ -124,7 +130,8 @@ export default function Kelas() {
           id: newClass.id,
           nama_kelas: newClass.nama_kelas,
           tingkat: newClass.tingkat || '',
-          wali_kelas_id: newClass.wali_kelas_id || ''
+          wali_kelas_id: newClass.wali_kelas_id || '',
+          school_id: newClass.school_id || ''
         }]);
       }
       setIsModalOpen(false);

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { useSchool } from '../contexts/SchoolContext';
 import { supabase } from '../lib/supabase';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
@@ -18,21 +19,24 @@ export interface Student {
   whatsapp: string;
   status: 'Aktif' | 'Nonaktif' | 'Lulus' | 'Pindah';
   photourl?: string;
+  school_id: string;
 }
 
 export default function DataSiswa() {
+  const { school } = useSchool();
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<{id: string, name: string}[]>([]);
 
   React.useEffect(() => {
     const fetchClasses = async () => {
-      const { data } = await supabase.from('kelas').select('id, nama_kelas').order('nama_kelas', { ascending: true });
+      if (!school) return;
+      const { data } = await supabase.from('kelas').select('id, nama_kelas').eq('school_id', school.npsn).order('nama_kelas', { ascending: true });
       if (data) {
         setClasses(data.map(d => ({ id: d.id, name: d.nama_kelas })));
       }
     };
     fetchClasses();
-  }, []);
+  }, [school]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -54,15 +58,17 @@ export default function DataSiswa() {
 
   useEffect(() => {
     fetchStudents();
-  }, []);
+  }, [school]);
 
   const fetchStudents = async () => {
+     if (!school) return;
     try {
       setIsLoading(true);
       setFetchError(null);
       const { data, error } = await supabase
         .from('profiles_siswa')
         .select('*')
+        .eq('school_id', school.npsn)
         .order('nama', { ascending: true });
 
       if (error) {
@@ -116,6 +122,7 @@ export default function DataSiswa() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!school) return;
     setIsSaving(true);
     try {
       if (isEditing && formData.id) {
@@ -127,7 +134,8 @@ export default function DataSiswa() {
             class: formData.class,
             whatsapp: formData.whatsapp,
             status: formData.status,
-            photourl: formData.photourl
+            photourl: formData.photourl,
+            school_id: school.npsn
           })
           .eq('id', formData.id);
 
@@ -142,7 +150,8 @@ export default function DataSiswa() {
             class: formData.class,
             whatsapp: formData.whatsapp,
             status: formData.status,
-            photourl: formData.photourl
+            photourl: formData.photourl,
+            school_id: school.npsn
           }])
           .select();
 
@@ -196,7 +205,8 @@ export default function DataSiswa() {
           class: String(item.Kelas || item.class || item.kelas || ''),
           whatsapp: String(item.WhatsApp || item.whatsapp || item.noHp || ''),
           status: item.Status || item.status || 'Aktif',
-          photourl: item.photourl || ''
+          photourl: item.photourl || '',
+          school_id: school.npsn
         })).filter(s => s.nama);
 
         if (toInsert.length > 0) {

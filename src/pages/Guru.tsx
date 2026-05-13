@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Mail, Phone, MoreVertical, Plus, Download, X, Check, FileUp, FileDown, Edit2, Trash2, Sparkles, Loader2, CloudUpload, ShieldAlert, RefreshCw } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
+import { useSchool } from '../contexts/SchoolContext';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
@@ -15,9 +16,11 @@ interface Teacher {
   alamat?: string;
   password?: string;
   must_change_password?: boolean;
+  school_id: string;
 }
 
 export default function Guru() {
+  const { school } = useSchool();
   const [guruList, setGuruList] = useState<Teacher[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
@@ -41,13 +44,14 @@ export default function Guru() {
       }
     };
     getUser();
-    fetchGuru();
-  }, [userRole]);
+    if (school) fetchGuru();
+  }, [userRole, school]);
 
   const fetchGuru = async () => {
+    if (!school) return;
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.from('profiles_guru').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('profiles_guru').select('*').eq('school_id', school.npsn).order('created_at', { ascending: false });
       
       if (error && !error.message.includes('Could not find the table')) {
         console.error('Error fetching guru:', error);
@@ -64,7 +68,8 @@ export default function Guru() {
           phone: item.phone || item.whatsapp || '',
           alamat: item.alamat || '',
           password: item.password || '',
-          must_change_password: item.must_change_password || false
+          must_change_password: item.must_change_password || false,
+          school_id: item.school_id
         }));
         setGuruList(formattedData);
 
@@ -77,7 +82,6 @@ export default function Guru() {
           }
         }
       } else {
-        // Fallback for demo or first load if no table/data
         setGuruList([]);
       }
     } catch (err) {
@@ -162,6 +166,7 @@ export default function Guru() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!school) return;
     setIsSaving(true);
     
     try {
@@ -172,7 +177,8 @@ export default function Guru() {
         phone: formData.phone,
         whatsapp: formData.phone, // Send both just in case
         alamat: formData.alamat,
-        password: formData.password
+        password: formData.password,
+        school_id: school.npsn
       };
 
       // If Guru edits their own profile, clear the force change flag
@@ -293,7 +299,7 @@ export default function Guru() {
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !school) return;
 
     const reader = new FileReader();
     reader.onload = async (evt) => {
@@ -307,7 +313,8 @@ export default function Guru() {
         nama: item.Nama || item.name || '',
         nip: String(item.NIP || item.nip || ''),
         email: item.Email || item.email || '',
-        phone: item.Telepon || item.phone || String(item.phone || '')
+        phone: item.Telepon || item.phone || String(item.phone || ''),
+        school_id: school.npsn
       }));
 
       try {
