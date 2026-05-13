@@ -449,8 +449,11 @@ export default function Login() {
 
         {/* Footer Help */}
         <div className="pt-8 border-t border-slate-800 text-center">
-           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">
+           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic mb-2">
               Bermasalah dengan akun? <button className="text-emerald-400 hover:underline decoration-2 underline-offset-4">Hubungi Admin</button>
+           </p>
+           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">
+              Belum punya akun? <Link to="/register-user" className="text-emerald-400 hover:underline decoration-2 underline-offset-4">Daftar sekarang</Link>
            </p>
         </div>
       </div>
