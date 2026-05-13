@@ -77,7 +77,9 @@ export default function Layout() {
     'Keuangan': false
   });
 
-  // Fetch User Plan from Supabase Profile
+  // Fetch User Plan and Approval Status
+  const [isApproved, setIsApproved] = useState<boolean | null>(null);
+
   useEffect(() => {
     async function fetchProfile() {
       const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
@@ -85,19 +87,30 @@ export default function Layout() {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // Coba periksa di table profiles (umum) atau table spesifik berdasarkan role jika perlu
         const { data: profile } = await supabase
           .from('profiles')
-          .select('subscription_plan')
+          .select('subscription_plan, is_approved')
           .eq('id', user.id)
           .single();
         
-        if (profile?.subscription_plan) {
-          setUserPlan(profile.subscription_plan);
+        if (profile) {
+          if (profile.subscription_plan) {
+            setUserPlan(profile.subscription_plan);
+          }
+          setIsApproved(profile.is_approved ?? false); // default false jika null
         }
       }
     }
     fetchProfile();
   }, []);
+
+  // Redirect if not approved
+  useEffect(() => {
+    if (isApproved === false && location.pathname !== '/pending-activation') {
+      navigate('/pending-activation');
+    }
+  }, [isApproved, location.pathname, navigate]);
 
   // URL Guard for Tamu/Guest Role & Subscription Plan
   useEffect(() => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, Sparkles, X, Check, Search, Filter, Edit2, Trash2 } from 'lucide-react';
-import { collection, addDoc, onSnapshot, query, serverTimestamp, orderBy, where } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, serverTimestamp, orderBy, where, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useSchool } from '../contexts/SchoolContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -17,6 +17,7 @@ interface StudentRegistration {
   nik: string;
   createdAt: any;
   status: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  is_approved: boolean; // NEW FIELD
 }
 
 export default function PPDB() {
@@ -84,6 +85,7 @@ export default function PPDB() {
         ...formData,
         schoolId: school.id,
         status: 'PENDING',
+        is_approved: false, // NEW FIELD
         createdAt: serverTimestamp()
       });
       setIsSubmitted(true);
@@ -92,6 +94,19 @@ export default function PPDB() {
       alert('Gagal mengirim pendaftaran.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  
+  const handleApprove = async (id: string) => {
+    try {
+      await updateDoc(doc(db, 'ppdb_registrations', id), {
+        status: 'VERIFIED',
+        is_approved: true
+      });
+      alert('Pendaftar berhasil diverifikasi!');
+    } catch (error) {
+      alert('Gagal verifikasi.');
     }
   };
 

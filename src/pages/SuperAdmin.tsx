@@ -93,10 +93,11 @@ export default function SuperAdmin() {
       await setDoc(doc(db, 'schools', schoolId), {
         ...reg,
         status: 'active',
+        is_approved: true, // NEW FIELD
         updatedAt: serverTimestamp(),
         approvedAt: serverTimestamp(),
       });
-      await updateDoc(doc(db, 'registrations', reg.id), { status: 'approved' });
+      await updateDoc(doc(db, 'registrations', reg.id), { status: 'approved', is_approved: true }); // NEW FIELD
       toast.success('Sekolah berhasil diaktifkan!');
       fetchAllData();
     } catch (error: any) {

@@ -30,6 +30,7 @@ import Kelas from './pages/Kelas';
 import KenaikanKelas from './pages/KenaikanKelas';
 import SKL from './pages/SKL';
 import PPDB from './pages/PPDB';
+import PendingActivation from './pages/PendingActivation';
 import Pengumuman from './pages/Pengumuman';
 import Site from './pages/Site';
 import Statistik from './pages/Statistik';
@@ -163,6 +164,7 @@ function AppContent() {
       <Route path="/purchase" element={<Purchase />} />
       <Route path="/super-admin" element={<SuperAdmin />} />
       <Route path="/affiliate" element={<AffiliateDashboard />} />
+      <Route path="/pending-activation" element={<PendingActivation />} />
       
       {/* If subdomain/custom domain is detected, allow accessing dashboard routes at root */}
       {school && (
