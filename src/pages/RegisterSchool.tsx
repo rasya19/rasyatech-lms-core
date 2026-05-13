@@ -33,6 +33,12 @@ export default function RegisterSchool() {
       if (error) throw error;
 
       toast.success('Pendaftaran sekolah berhasil! Mohon tunggu verifikasi.');
+      
+      // WhatsApp notification
+      const message = `Halo Rasyatech, sekolah baru "${formData.name}" (NPSN: ${formData.npsn}) telah mendaftar. Mohon segera dilakukan verifikasi.`;
+      const waUrl = `https://wa.me/6281918226387?text=${encodeURIComponent(message)}`;
+      window.open(waUrl, '_blank');
+
       navigate('/');
     } catch (error) {
       console.error(error);

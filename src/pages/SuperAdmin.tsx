@@ -64,9 +64,18 @@ export default function SuperAdmin() {
         const querySnapshot = await getDocs(q);
         setSchools(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
       } else if (activeTab === 'registrations') {
-        const q = query(collection(db, 'registrations'), orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
-        setRegistrations(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
+        const { data, error } = await supabase.from('registrations').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+        if (error) throw error;
+        setRegistrations(data?.map(d => ({
+          id: d.id,
+          name: d.school_name,
+          npsn: d.npsn,
+          adminName: d.admin_name,
+          adminEmail: d.admin_email,
+          whatsapp: d.whatsapp,
+          packageId: 'basic', // Default
+          subscription_plan: 'Silver' // Default
+        })) || []);
       } else if (activeTab === 'affiliates') {
         const q = query(collection(db, 'affiliates'), orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);
@@ -89,15 +98,22 @@ export default function SuperAdmin() {
   const handleApproveRegistration = async (reg: any) => {
     if (!window.confirm(`Aktifkan sekolah "${reg.name}"?`)) return;
     try {
-      const schoolId = reg.slug;
-      await setDoc(doc(db, 'schools', schoolId), {
-        ...reg,
+      const slug = reg.name.toLowerCase().replace(/\s+/g, '-');
+      
+      const { error: schoolError } = await supabase.from('schools').insert([{
+        name: reg.name,
+        slug: slug,
+        npsn: reg.npsn,
+        admin_email: reg.adminEmail,
         status: 'active',
-        is_approved: true, // NEW FIELD
-        updatedAt: serverTimestamp(),
-        approvedAt: serverTimestamp(),
-      });
-      await updateDoc(doc(db, 'registrations', reg.id), { status: 'approved', is_approved: true }); // NEW FIELD
+        is_approved: true,
+        created_at: new Date().toISOString()
+      }]);
+      if (schoolError) throw schoolError;
+
+      const { error: regError } = await supabase.from('registrations').update({ status: 'approved', is_approved: true }).eq('id', reg.id);
+      if (regError) throw regError;
+      
       toast.success('Sekolah berhasil diaktifkan!');
       fetchAllData();
     } catch (error: any) {
