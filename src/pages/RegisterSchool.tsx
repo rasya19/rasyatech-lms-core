@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { Rocket, Loader2 } from 'lucide-react';
 
@@ -20,15 +19,23 @@ export default function RegisterSchool() {
     e.preventDefault();
     setLoading(true);
     try {
-      await addDoc(collection(db, 'registrations'), {
-        ...formData,
+      const { error } = await supabase.from('registrations').insert([{
+        school_name: formData.name,
+        npsn: formData.npsn,
+        admin_name: formData.adminName,
+        admin_email: formData.adminEmail,
+        whatsapp: formData.whatsapp,
         status: 'pending',
         is_approved: false,
-        createdAt: serverTimestamp()
-      });
+        created_at: new Date().toISOString()
+      }]);
+      
+      if (error) throw error;
+
       toast.success('Pendaftaran sekolah berhasil! Mohon tunggu verifikasi.');
       navigate('/');
     } catch (error) {
+      console.error(error);
       toast.error('Gagal mendaftar. Silakan coba lagi.');
     } finally {
       setLoading(false);
