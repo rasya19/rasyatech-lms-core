@@ -79,6 +79,9 @@ export default function Layout() {
   // Fetch User Plan from Supabase Profile
   useEffect(() => {
     async function fetchProfile() {
+      const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
+      if (isDemoMode) return;
+
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
@@ -175,9 +178,10 @@ export default function Layout() {
   };
 
   const handleLogout = async () => {
+    const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
     try {
       const studentId = localStorage.getItem('studentId');
-      if (studentId) {
+      if (studentId && !isDemoMode) {
         await supabase.from('profiles_siswa').update({ is_online: false }).eq('id', studentId);
       }
       // Attempt sign out but don't strictly await it to prevent "stuck" redirects
