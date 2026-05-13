@@ -23,20 +23,20 @@ export interface Student {
 }
 
 export default function DataSiswa() {
-  const { school } = useSchool();
+  const { school, loading: schoolLoading } = useSchool();
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<{id: string, name: string}[]>([]);
 
   React.useEffect(() => {
     const fetchClasses = async () => {
-      if (!school) return;
+      if (schoolLoading || !school) return;
       const { data } = await supabase.from('kelas').select('id, nama_kelas').eq('school_id', school.npsn).order('nama_kelas', { ascending: true });
       if (data) {
         setClasses(data.map(d => ({ id: d.id, name: d.nama_kelas })));
       }
     };
     fetchClasses();
-  }, [school]);
+  }, [school, schoolLoading]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -58,10 +58,15 @@ export default function DataSiswa() {
 
   useEffect(() => {
     fetchStudents();
-  }, [school]);
+  }, [school, schoolLoading]);
 
   const fetchStudents = async () => {
-     if (!school) return;
+     if (schoolLoading) return;
+     if (!school) {
+       setIsLoading(false);
+       return;
+     }
+
     try {
       setIsLoading(true);
       setFetchError(null);
