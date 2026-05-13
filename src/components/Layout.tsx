@@ -44,6 +44,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import UpgradeModal from './UpgradeModal';
+import DemoModeBanner from './DemoModeBanner';
 
 import { supabase } from '../lib/supabase';
 
@@ -116,8 +117,11 @@ export default function Layout() {
     }
 
     // Subscription Plan Guard
-    if (school && role === 'Admin') {
-      const plan = school.subscription_plan || 'Silver';
+    const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
+    const demoPlan = localStorage.getItem('demoPlan');
+    const plan = isDemoMode ? (demoPlan || 'Silver') : (school?.subscription_plan || 'Silver');
+
+    if (role === 'Admin') {
       
       const goldFeatures = ['/dashboard/keuangan', '/keuangan/tagihan', '/dashboard/raport', '/dashboard/analitik'];
       const platinumFeatures = ['/dashboard/aset', '/dashboard/statistik']; 
@@ -702,17 +706,7 @@ export default function Layout() {
         </header>
 
         {/* Demo Mode Banner */}
-        {isDemoMode && (
-          <div className="bg-brand-accent/10 border-b border-brand-accent/20 px-4 lg:px-8 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-brand-accent animate-pulse" />
-              <span className="text-[10px] font-black text-brand-accent uppercase tracking-[0.2em] italic">Aktif: Mode Demo & Uji Coba</span>
-            </div>
-            <p className="text-[9px] text-brand-accent font-bold italic leading-none hidden md:block">
-              Beberapa fitur tulis-ke-spreadsheet mungkin dibatasi untuk menjaga keamanan data utama.
-            </p>
-          </div>
-        )}
+        <DemoModeBanner />
 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8">
