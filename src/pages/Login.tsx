@@ -158,7 +158,9 @@ export default function Login() {
         { email: 'platinum@demo.com', plan: 'Platinum' }
       ];
       
-      const demoAccount = demoAccounts.find(a => a.email === formData.email);
+      const emailTrimmed = formData.email.trim().toLowerCase();
+      const demoAccount = demoAccounts.find(a => a.email.toLowerCase() === emailTrimmed);
+      
       if (demoAccount && formData.password === 'rasyatech123') {
         localStorage.setItem('userRole', 'Admin');
         localStorage.setItem('isDemoMode', 'true');
