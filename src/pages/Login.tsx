@@ -151,6 +151,24 @@ export default function Login() {
         return;
       }
 
+      // Demo presentation bypass
+      const demoAccounts = [
+        { email: 'silver@demo.com', plan: 'Silver' },
+        { email: 'gold@demo.com', plan: 'Gold' },
+        { email: 'platinum@demo.com', plan: 'Platinum' }
+      ];
+      
+      const demoAccount = demoAccounts.find(a => a.email === formData.email);
+      if (demoAccount && formData.password === 'rasyatech123') {
+        localStorage.setItem('userRole', 'Admin');
+        localStorage.setItem('isDemoMode', 'true');
+        localStorage.setItem('demoPlan', demoAccount.plan);
+        localStorage.setItem('adminName', 'Demo Presenter');
+        setIsLoading(false);
+        navigate('/dashboard');
+        return;
+      }
+      
       // Demo bypass for convenient testing 
       if (formData.email === 'demo_admin' && formData.password === 'demo123') {
         localStorage.setItem('userRole', 'Admin');

@@ -140,7 +140,9 @@ export default function Layout() {
 
   // Dynamic Theme Logic
   useEffect(() => {
-    const activePlan = userPlan || school?.subscription_plan || 'Silver';
+    const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
+    const demoPlan = localStorage.getItem('demoPlan');
+    const activePlan = isDemoMode ? (demoPlan || 'Silver') : (userPlan || school?.subscription_plan || 'Silver');
     if (activePlan === 'Platinum') {
       document.documentElement.style.setProperty('--color-brand-accent', '#D4AF37');
       document.documentElement.style.setProperty('--color-brand-sidebar', '#1a1a1a');
@@ -221,7 +223,9 @@ export default function Layout() {
 
   const getNavItems = (): (any & { isExternal?: boolean })[] => {
     const prefix = schoolSlug ? `/s/${schoolSlug}` : '';
-    const plan = userPlan || school?.subscription_plan || 'Silver';
+    const isDemoMode = localStorage.getItem('isDemoMode') === 'true';
+    const demoPlan = localStorage.getItem('demoPlan');
+    const plan = isDemoMode ? (demoPlan || 'Silver') : (userPlan || school?.subscription_plan || 'Silver');
     
     const getPlanRank = (p: string) => {
       if (p === 'Platinum') return 3;
