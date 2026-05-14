@@ -53,13 +53,17 @@ export default function SuperAdmin() {
   }, [activeTab]);
 
   const fetchAllData = async () => {
+    console.log('fetchAllData called for:', activeTab);
     setIsLoading(true);
     try {
       if (activeTab === 'schools') {
+        console.log('Fetching schools...');
         const { data, error } = await supabase.from('schools').select('*').order('created_at', { ascending: false });
         if (error) throw error;
+        console.log('Fetched schools:', data);
         setSchools(data || []);
       } else if (activeTab === 'registrations') {
+        console.log('Fetching registrations...');
         const { data, error } = await supabase.from('registrations').select('*').order('created_at', { ascending: false });
         if (error) {
           console.error('Error fetching registrations:', error);
@@ -78,8 +82,10 @@ export default function SuperAdmin() {
           subscription_plan: 'Silver' 
         })) || []);
       } else if (activeTab === 'affiliates') {
+        console.log('Fetching affiliates...');
         const { data, error } = await supabase.from('affiliates').select('*').order('created_at', { ascending: false });
         if (error) throw error;
+        console.log('Fetched affiliates:', data);
         setAffiliates(data || []);
       }
 
