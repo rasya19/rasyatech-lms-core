@@ -31,7 +31,7 @@ export default function RegisterSchool() {
       }]);
       
       if (error) {
-        console.error('Supabase Registration Error:', error);
+        console.error('Supabase Registration Error details:', JSON.stringify(error, null, 2));
         throw error;
       }
 
