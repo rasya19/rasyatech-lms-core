@@ -64,8 +64,12 @@ export default function SuperAdmin() {
         const querySnapshot = await getDocs(q);
         setSchools(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
       } else if (activeTab === 'registrations') {
-        const { data, error } = await supabase.from('registrations').select('*').eq('status', 'pending').order('created_at', { ascending: false });
-        if (error) throw error;
+        const { data, error } = await supabase.from('registrations').select('*').order('created_at', { ascending: false });
+        if (error) {
+          console.error('Error fetching registrations:', error);
+          throw error;
+        }
+        console.log('Fetched registrations data:', data);
         setRegistrations(data?.map(d => ({
           id: d.id,
           name: d.school_name,
@@ -73,8 +77,9 @@ export default function SuperAdmin() {
           adminName: d.admin_name,
           adminEmail: d.admin_email,
           whatsapp: d.whatsapp,
-          packageId: 'basic', // Default
-          subscription_plan: 'Silver' // Default
+          status: d.status,
+          packageId: 'basic', 
+          subscription_plan: 'Silver' 
         })) || []);
       } else if (activeTab === 'affiliates') {
         const q = query(collection(db, 'affiliates'), orderBy('createdAt', 'desc'));
@@ -346,7 +351,7 @@ export default function SuperAdmin() {
                   <tbody className="divide-y divide-slate-50">
                      {isLoading ? (
                        <tr><td colSpan={4} className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin text-brand-accent mx-auto" /></td></tr>
-                     ) : registrations.filter(r => r.status === 'pending').map((reg) => (
+                     ) : registrations.map((reg) => (
                        <tr key={reg.id} className="group hover:bg-slate-50/50 transition-colors">
                               <td className="px-6 py-6">
                                  <p className="text-xs font-black text-brand-sidebar uppercase italic tracking-tight">{reg.name}</p>
@@ -361,12 +366,14 @@ export default function SuperAdmin() {
                           </td>
                           <td className="px-6 py-6 font-mono text-[11px] font-black text-brand-sidebar">{reg.whatsapp}</td>
                           <td className="px-6 py-6 text-right">
-                             <button 
-                               onClick={() => handleApproveRegistration(reg)}
-                               className="bg-brand-accent text-brand-sidebar px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest italic hover:scale-105 transition-all shadow-lg shadow-brand-accent/20"
-                             >
-                                <CheckCircle2 className="w-4 h-4 mr-2" /> Aktifkan Sekolah
-                             </button>
+                             {reg.status !== 'approved' && (
+                               <button 
+                                 onClick={() => handleApproveRegistration(reg)}
+                                 className="bg-brand-accent text-brand-sidebar px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest italic hover:scale-105 transition-all shadow-lg shadow-brand-accent/20"
+                               >
+                                  <CheckCircle2 className="w-4 h-4 mr-2" /> Aktifkan Sekolah
+                               </button>
+                             )}
                           </td>
                        </tr>
                      ))}
