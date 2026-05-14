@@ -57,8 +57,11 @@ export default function PPDB() {
     const { data, error } = await supabase
       .from('ppdb_registrations')
       .select('*')
-      .eq('school_id', school.id)
+      .eq('school_name', school.name)
       .order('created_at', { ascending: false });
+
+    console.log('DEBUG [PPDB] Data yang diterima:', data);
+    console.log('DEBUG [PPDB] Error:', error);
 
     if (error) {
       console.error("Error fetching registrations:", error);
@@ -80,7 +83,7 @@ export default function PPDB() {
       const { error } = await supabase.from('ppdb_registrations').insert([
         {
           ...formData,
-          school_id: school.id,
+          school_name: school.name,
           status: 'PENDING',
           is_approved: false,
           created_at: new Date().toISOString()
