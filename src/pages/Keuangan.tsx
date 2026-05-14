@@ -6,8 +6,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
-import { db } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 
 interface Bill {
   id: string;
@@ -84,26 +84,54 @@ export default function Keuangan() {
     }
   };
 
-  const handlePayClick = (bill: Bill) => {
-    // Generate a VA number if not already generated
+  const handlePayClick = async (bill: Bill) => {
+    // Generate VA (Simulation)
     const vaNumber = bill.vaNumber || ('8809' + Math.floor(Math.random() * 100000000).toString().padStart(8, '0'));
     
-    // Update local state temporarily
-    const updatedBills = bills.map(b => 
-      b.id === bill.id ? { ...b, vaNumber, status: b.status === 'Belum Lunas' ? 'Menunggu Pembayaran' as const : b.status } : b
-    );
-    setBills(updatedBills);
-    
-    setSelectedBill({ ...bill, vaNumber, status: bill.status === 'Belum Lunas' ? 'Menunggu Pembayaran' : bill.status });
-    setIsVaModalOpen(true);
+    try {
+      const { error } = await supabase
+        .from('bills')
+        .update({
+          vaNumber,
+          status: bill.status === 'Belum Lunas' ? 'Menunggu Pembayaran' : bill.status
+        })
+        .eq('id', bill.id);
+        
+      if (error) throw error;
+      
+      // Update local state temporarily
+      const updatedBills = bills.map(b => 
+        b.id === bill.id ? { ...b, vaNumber, status: b.status === 'Belum Lunas' ? 'Menunggu Pembayaran' as const : b.status } : b
+      );
+      setBills(updatedBills);
+      
+      setSelectedBill({ ...bill, vaNumber, status: bill.status === 'Belum Lunas' ? 'Menunggu Pembayaran' : bill.status });
+      setIsVaModalOpen(true);
+    } catch (error) {
+      console.error('Error updating VA:', error);
+      toast.error('Gagal memproses VA.');
+    }
   };
 
-  const simulatePaymentSuccess = (id: string) => {
-    const updatedBills = bills.map(b => 
-      b.id === id ? { ...b, status: 'Lunas' as const } : b
-    );
-    setBills(updatedBills);
-    setIsVaModalOpen(false);
+  const simulatePaymentSuccess = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('bills')
+        .update({ status: 'Lunas' })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      const updatedBills = bills.map(b => 
+        b.id === id ? { ...b, status: 'Lunas' as const } : b
+      );
+      setBills(updatedBills);
+      setIsVaModalOpen(false);
+      toast.success('Pembayaran berhasil!');
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Gagal memperbarui status.');
+    }
   };
 
   return (

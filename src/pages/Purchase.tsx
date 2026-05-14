@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/src/lib/utils';
 import { supabase } from '@/src/lib/supabase';
+import { toast } from 'sonner';
 
 const packages = [
   {
@@ -161,53 +162,50 @@ export default function Purchase() {
 
     setIsLoading(true);
     try {
-      // 1. Create Firebase Auth User
-      const userCredential = await createUserWithEmailAndPassword(
-        auth, 
-        formData.email, 
-        formData.password
-      );
-      const user = userCredential.user;
+      // 1. Create Supabase Auth User
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+      });
 
-      // 2. Save Registration Data to Firestore
+      if (authError) throw authError;
+
+      // 2. Save Registration Data to Supabase
       const slug = formData.schoolName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      const registrationId = `${slug}-${Date.now()}`; // Unique ID for each registration attempt
+      const registrationId = `${slug}-${Date.now()}`;
       
-      await setDoc(doc(db, 'registrations', registrationId), {
-        ownerUid: user.uid,
+      const { error: dbError } = await supabase.from('registrations').insert([{
+        id: registrationId,
+        owner_uid: authData.user?.id,
         name: formData.schoolName,
         npsn: formData.npsn,
         accreditation: formData.accreditation,
         address: formData.address,
-        adminName: formData.name,
-        adminEmail: formData.email,
+        admin_name: formData.name,
+        admin_email: formData.email,
         whatsapp: formData.phone,
-        packageId: selectedPackage.id,
-        paymentMethod: paymentMethod,
-        referralCode: formData.referralCode,
+        package_id: selectedPackage.id,
+        payment_method: paymentMethod,
+        referral_code: formData.referralCode,
         slug: slug,
         status: 'pending',
-        createdAt: serverTimestamp(),
-      });
+        created_at: new Date().toISOString(),
+      }]);
+      
+      if (dbError) throw dbError;
 
       setStep(3);
     } catch (error: any) {
       console.error('Registration error details:', error);
       let errorMessage = 'Gagal mendaftar. Silakan coba lagi.';
       
-      if (error.code === 'auth/email-already-in-use') {
+      if (error.message && error.message.includes('already registered')) {
         errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain atau hubungi admin.';
-      } else if (error.code === 'auth/weak-password') {
+      } else if (error.message && error.message.includes('password')) {
         errorMessage = 'Password terlalu lemah. Mohon gunakan minimal 6 karakter.';
-      } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = 'Metode pendaftaran Email/Password belum diaktifkan di Firebase Console. Silakan aktifkan di menu Authentication -> Sign-in method.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Format email tidak valid.';
-      } else if (error.message && error.message.includes('permission-denied')) {
-        errorMessage = 'Izin ditolak oleh Database (Security Rules). Pastikan semua data terisi dengan benar.';
       }
       
-      alert(`⚠️ ${errorMessage}\n\nDetail: ${error.message}`);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

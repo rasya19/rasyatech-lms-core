@@ -5,8 +5,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
-import { db } from '../lib/firebase';
-import { collection, addDoc, getDocs, updateDoc, doc, onSnapshot } from 'firebase/firestore';
+import { supabase } from '@/src/lib/supabase';
+import { toast } from 'sonner';
 
 interface Bills {
   id: string; // The Firestore doc id
@@ -60,36 +60,23 @@ export default function Tagihan() {
   const [isVaModalOpen, setIsVaModalOpen] = useState(false);
   
   useEffect(() => {
-    // Check and initialize dummy data if empty
-    const initData = async () => {
+    const fetchBills = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, 'tagihan'));
-        if (querySnapshot.empty) {
-          // Add dummy data
-          for (const item of DUMMY_BILLS) {
-            await addDoc(collection(db, 'tagihan'), item);
-          }
-        }
+        const { data, error } = await supabase
+          .from('tagihan')
+          .select('*')
+          .order('billId', { ascending: true });
+        
+        if (error) throw error;
+        setBills(data || []);
       } catch (error) {
-        console.error("Error initializing tags:", error);
+        console.error('Error fetching bills:', error);
+        toast.error('Gagal mengambil data tagihan.');
+      } finally {
+        setLoading(false);
       }
     };
-    initData();
-
-    // Listen to changes
-    const unsubscribe = onSnapshot(collection(db, 'tagihan'), (snapshot) => {
-      const dbBills = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Bills[];
-      setBills(dbBills);
-      setLoading(false);
-    }, (error) => {
-      console.error(error);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    fetchBills();
   }, []);
 
   const filteredBills = bills.filter(bill => {
@@ -111,27 +98,39 @@ export default function Tagihan() {
   const generateVA = async (bill: Bills) => {
     const newVa = '880' + Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
     try {
-      await updateDoc(doc(db, 'tagihan', bill.id), {
-        vaNumber: newVa
-      });
+      const { error } = await supabase
+        .from('tagihan')
+        .update({ vaNumber: newVa })
+        .eq('id', bill.id);
+      
+      if (error) throw error;
+      
       setSelectedBill({ ...bill, vaNumber: newVa });
       setIsVaModalOpen(true);
+      // Re-fetch or update state
+      setBills(prev => prev.map(b => b.id === bill.id ? { ...b, vaNumber: newVa } : b));
     } catch (e) {
       console.error(e);
-      alert('Gagal generate VA, coba lagi.');
+      toast.error('Gagal generate VA, coba lagi.');
     }
   };
 
   const markAsPaid = async (id: string) => {
     try {
-      await updateDoc(doc(db, 'tagihan', id), {
-        status: 'Lunas' as const
-      });
+      const { error } = await supabase
+        .from('tagihan')
+        .update({ status: 'Lunas' })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
       setIsVaModalOpen(false);
-      alert('Pembayaran berhasil dikonfirmasi dan status diubah jadi Lunas!');
+      // Re-fetch or update state
+      setBills(prev => prev.map(b => b.id === id ? { ...b, status: 'Lunas' } : b));
+      toast.success('Pembayaran berhasil dikonfirmasi!');
     } catch (e) {
       console.error(e);
-      alert('Gagal update status, periksa koneksi atau izin Firestore.');
+      toast.error('Gagal update status, periksa koneksi.');
     }
   };
 

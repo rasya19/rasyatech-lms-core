@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 import { useSchool } from '../contexts/SchoolContext';
 import { toast } from 'sonner';
 import { UserPlus, Loader2 } from 'lucide-react';
@@ -21,13 +20,13 @@ export default function RegisterUser() {
     if (!school) return;
     setLoading(true);
     try {
-      await addDoc(collection(db, 'user_registrations'), {
+      await supabase.from('user_registrations').insert([{
         ...formData,
         school_id: school.npsn,
         status: 'pending',
         is_approved: false,
-        createdAt: serverTimestamp()
-      });
+        created_at: new Date().toISOString()
+      }]);
       toast.success('Pendaftaran berhasil! Menunggu persetujuan Admin Sekolah.');
       navigate('/');
     } catch (error) {
