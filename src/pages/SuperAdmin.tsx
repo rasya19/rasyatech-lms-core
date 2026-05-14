@@ -69,12 +69,15 @@ export default function SuperAdmin() {
         console.log('Fetching registrations...');
         const { data, error } = await supabase.from('registrations').select('*').order('created_at', { ascending: false });
         
-        console.log('DEBUG [SuperAdmin] Result:', { data, error });
+        console.log('DEBUG [SuperAdmin] RAW data:', data);
+        console.log('DEBUG [SuperAdmin] Error:', error);
         
         if (error) {
           console.error('Error fetching registrations:', error);
           throw error;
         }
+        
+        console.log('DEBUG [SuperAdmin] Found', data?.length, 'registrations');
         
         setRegistrations(data?.map(d => ({
           id: d.id,
