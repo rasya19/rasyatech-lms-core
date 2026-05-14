@@ -67,23 +67,29 @@ export default function SuperAdmin() {
         setSchools(data || []);
       } else if (activeTab === 'registrations') {
         console.log('Fetching registrations...');
-        const { data, error } = await supabase.from('registrations').select('*').order('created_at', { ascending: false });
+        let { data, error } = await supabase.from('registrations').select('*').order('created_at', { ascending: false });
+        
         if (error) {
           console.error('Error fetching registrations:', error);
           throw error;
         }
-        console.log('Fetched registrations data from Supabase:', data);
-        if (data && data.length > 0) {
-           console.log('First registration record:', data[0]);
-        } else {
-           console.log('No registrations found in Supabase.');
+        
+        if (!data || data.length === 0) {
+            console.log('Registrations (plural) is empty, trying registration (singular)...');
+            const { data: dataSingular, error: errorSingular } = await supabase.from('registration').select('*').order('created_at', { ascending: false });
+            if (!errorSingular) {
+                console.log('Found data in registration (singular):', dataSingular);
+                data = dataSingular;
+            }
         }
+        
+        console.log('Fetched registrations data from Supabase:', data);
         setRegistrations(data?.map(d => ({
           id: d.id,
-          name: d.school_name,
+          name: d.school_name || d.name,
           npsn: d.npsn,
-          adminName: d.admin_name,
-          adminEmail: d.admin_email,
+          adminName: d.admin_name || d.adminName,
+          adminEmail: d.admin_email || d.adminEmail,
           whatsapp: d.whatsapp,
           status: d.status,
           packageId: 'basic', 
