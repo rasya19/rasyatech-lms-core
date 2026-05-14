@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Building2, Users, Rocket, Zap, Search, 
-  Plus, Edit2, Trash2, ShieldCheck, ExternalLink,
-  Loader2, CheckCircle2, AlertCircle, TrendingUp,
-  DollarSign, Globe, Settings, Lock, Database
+  Plus, Edit2, Trash2, ShieldCheck, 
+  Loader2, CheckCircle2, Globe, DollarSign
 } from 'lucide-react';
-import { motion } from 'motion/react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
-import { collection, getDocs, query, where, doc, getDoc, updateDoc, deleteDoc, setDoc, serverTimestamp, orderBy } from 'firebase/firestore';
-import { db } from '../lib/firebase';
 
 export default function SuperAdmin() {
   const [activeTab, setActiveTab] = useState<'schools' | 'registrations' | 'affiliates'>('schools');
@@ -60,16 +56,16 @@ export default function SuperAdmin() {
     setIsLoading(true);
     try {
       if (activeTab === 'schools') {
-        const q = query(collection(db, 'schools'), orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
-        setSchools(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
+        const { data, error } = await supabase.from('schools').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        setSchools(data || []);
       } else if (activeTab === 'registrations') {
         const { data, error } = await supabase.from('registrations').select('*').order('created_at', { ascending: false });
         if (error) {
           console.error('Error fetching registrations:', error);
           throw error;
         }
-        console.log('Fetched registrations data:', data);
+        console.log('Fetched registrations data from Supabase:', data);
         setRegistrations(data?.map(d => ({
           id: d.id,
           name: d.school_name,
@@ -82,15 +78,15 @@ export default function SuperAdmin() {
           subscription_plan: 'Silver' 
         })) || []);
       } else if (activeTab === 'affiliates') {
-        const q = query(collection(db, 'affiliates'), orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
-        setAffiliates(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
+        const { data, error } = await supabase.from('affiliates').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        setAffiliates(data || []);
       }
 
       // Always fetch visitor count
-      const statsSnap = await getDoc(doc(db, 'settings', 'stats'));
-      if (statsSnap.exists()) {
-        setVisitorCount(statsSnap.data().visitorCount || 0);
+      const { data: stats, error: statsError } = await supabase.from('settings').select('value').eq('key', 'visitor_count').single();
+      if (!statsError && stats) {
+        setVisitorCount(parseInt(stats.value) || 0);
       }
     } catch (error: any) {
       console.error('Error fetching data:', error);
@@ -130,19 +126,26 @@ export default function SuperAdmin() {
     e.preventDefault();
     try {
       const schoolData = {
-        ...formData,
-        updatedAt: serverTimestamp(),
+        name: formData.name,
+        slug: formData.slug,
+        npsn: formData.npsn,
+        admin_email: formData.adminEmail,
+        status: formData.status,
+        subscription_plan: formData.subscription_plan,
+        expiry_date: formData.expiryDate || null
       };
 
       if (editingSchool) {
-        await updateDoc(doc(db, 'schools', editingSchool.id), schoolData);
+        const { error } = await supabase.from('schools').update(schoolData).eq('id', editingSchool.id);
+        if (error) throw error;
         toast.success('Institusi berhasil diperbarui');
       } else {
-        const id = formData.slug || Math.random().toString(36).substring(7);
-        await setDoc(doc(db, 'schools', id), {
-          ...schoolData,
-          createdAt: serverTimestamp(),
-        });
+        const { error } = await supabase.from('schools').insert([{
+            ...schoolData,
+            is_approved: true,
+            created_at: new Date().toISOString()
+        }]);
+        if (error) throw error;
         toast.success('Institusi baru berhasil didaftarkan');
       }
       
@@ -157,7 +160,8 @@ export default function SuperAdmin() {
   const handleDelete = async (id: string, name: string) => {
     if (!window.confirm(`Hapus institusi "${name}"? Seluruh data terkait akan hilang.`)) return;
     try {
-      await deleteDoc(doc(db, 'schools', id));
+      const { error } = await supabase.from('schools').delete().eq('id', id);
+      if (error) throw error;
       toast.success('Institusi berhasil dihapus');
       fetchAllData();
     } catch (error: any) {
@@ -319,9 +323,14 @@ export default function SuperAdmin() {
                                   onClick={() => {
                                     setEditingSchool(school);
                                     setFormData({
-                                      ...formData,
-                                      ...school,
-                                      subscription_plan: (school as any).subscription_plan || 'Silver'
+                                      name: school.name,
+                                      slug: school.slug,
+                                      npsn: school.npsn,
+                                      adminEmail: school.admin_email,
+                                      packageId: 'basic',
+                                      subscription_plan: school.subscription_plan || 'Silver',
+                                      status: school.status,
+                                      expiryDate: school.expiry_date || ''
                                     });
                                     setIsModalOpen(true);
                                   }}
@@ -329,7 +338,7 @@ export default function SuperAdmin() {
                                 >
                                    <Edit2 className="w-4 h-4" />
                                 </button>
-                                <button className="p-2.5 bg-white border border-brand-border rounded-xl text-slate-400 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
+                                <button onClick={() => handleDelete(school.id, school.name)} className="p-2.5 bg-white border border-brand-border rounded-xl text-slate-400 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
                              </div>
                           </td>
                        </tr>
@@ -482,7 +491,7 @@ export default function SuperAdmin() {
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Subscription Plan</label>
                           <select 
                             value={formData.subscription_plan} 
-                            onChange={(e) => setFormData({...formData, subscription_plan: e.target.value as any})}
+                            onChange={(e) => setFormData({...formData, subscription_plan: e.target.value})}
                             className="w-full bg-slate-50 border border-brand-border rounded-2xl p-4 text-xs font-bold outline-none"
                           >
                              <option value="Silver">SILVER</option>
@@ -498,7 +507,7 @@ export default function SuperAdmin() {
                             onChange={(e) => setFormData({...formData, expiryDate: e.target.value})} 
                             className="w-full bg-slate-50 border border-brand-border rounded-2xl p-4 text-xs font-bold focus:border-brand-accent outline-none" 
                           />
-                       </div>
+                        </div>
                     </div>
 
                     <button type="submit" className="w-full bg-brand-sidebar text-white py-5 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:bg-brand-accent transition-all shadow-xl shadow-brand-sidebar/20 italic">
