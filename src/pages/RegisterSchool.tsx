@@ -30,7 +30,10 @@ export default function RegisterSchool() {
         created_at: new Date().toISOString()
       }]);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase Registration Error:', error);
+        throw error;
+      }
 
       toast.success('Pendaftaran sekolah berhasil! Mohon tunggu verifikasi.');
       
