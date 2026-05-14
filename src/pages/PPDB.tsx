@@ -52,23 +52,22 @@ export default function PPDB() {
   });
 
   // Fetch registrations
-  useEffect(() => {
+  const fetchRegistrations = async () => {
     if (!school?.id) return;
-    
-    const fetchRegistrations = async () => {
-      const { data, error } = await supabase
-        .from('ppdb_registrations')
-        .select('*')
-        .eq('school_id', school.id)
-        .order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('ppdb_registrations')
+      .select('*')
+      .eq('school_id', school.id)
+      .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error("Error fetching registrations:", error);
-      } else {
-        setRegistrations(data || []);
-      }
-    };
-    
+    if (error) {
+      console.error("Error fetching registrations:", error);
+    } else {
+      setRegistrations(data || []);
+    }
+  };
+
+  useEffect(() => {
     fetchRegistrations();
   }, [school?.id]);
 
@@ -89,6 +88,7 @@ export default function PPDB() {
       ]);
       
       if (error) throw error;
+      fetchRegistrations();
       setIsSubmitted(true);
     } catch (error) {
       console.error('Error submitting registration:', error);
@@ -110,6 +110,7 @@ export default function PPDB() {
         .eq('id', id);
         
       if (error) throw error;
+      fetchRegistrations();
       alert('Pendaftar berhasil diverifikasi!');
     } catch (error) {
       alert('Gagal verifikasi.');

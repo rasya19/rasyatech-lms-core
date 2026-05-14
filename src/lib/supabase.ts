@@ -4,8 +4,29 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const cleanSupabaseUrl = supabaseUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-if (!cleanSupabaseUrl || !supabaseAnonKey) {
-  throw new Error('Supabase URL atau Anon Key belum dikonfigurasi. Silakan atur VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY di Secrets Environment Anda.');
+const dummyClient = {
+  from: () => ({
+    select: () => ({ eq: () => ({ order: () => ({ data: [], error: 'Supabase Not Configured' }), single: () => ({ data: null, error: 'Supabase Not Configured' }) }) }),
+    insert: () => Promise.resolve({ data: null, error: 'Supabase Not Configured' }),
+    update: () => ({ eq: () => Promise.resolve({ data: null, error: 'Supabase Not Configured' }) }),
+    delete: () => ({ eq: () => Promise.resolve({ data: null, error: 'Supabase Not Configured' }) }),
+  }),
+  auth: {
+    signUp: async () => ({ error: 'Supabase Not Configured' }),
+    signInWithPassword: async () => ({ error: 'Supabase Not Configured' }),
+    signOut: async () => ({ error: 'Supabase Not Configured' })
+  }
+} as any;
+
+let client;
+try {
+  if (cleanSupabaseUrl && supabaseAnonKey && cleanSupabaseUrl.startsWith('http')) {
+     client = createClient(cleanSupabaseUrl, supabaseAnonKey);
+  } else {
+     client = dummyClient;
+  }
+} catch (e) {
+  client = dummyClient;
 }
 
-export const supabase = createClient(cleanSupabaseUrl, supabaseAnonKey);
+export const supabase = client;

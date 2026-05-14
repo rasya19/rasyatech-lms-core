@@ -118,7 +118,15 @@ function SchoolLoader() {
     </div>
   );
 
-  if (!school && !loading && !error) return null;
+  if (!school && !loading && !error) return (
+    <div className="flex items-center justify-center min-h-screen bg-slate-50 p-6 text-center">
+      <div className="space-y-4">
+        <h2 className="text-xl font-black text-slate-800 uppercase tracking-widest">Portal Tidak Ditemukan</h2>
+        <p className="text-xs text-slate-500">Sekolah atau institusi yang anda cari belum terdaftar atau portal sedang dalam proses setup.</p>
+        <a href="/register-school" className="inline-block mt-4 bg-brand-sidebar text-white px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest">Daftar Sekolah</a>
+      </div>
+    </div>
+  );
 
   return <Outlet />;
 }
