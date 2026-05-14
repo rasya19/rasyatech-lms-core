@@ -23,8 +23,6 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import AdBanner from '@/src/components/AdBanner';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
 
 export default function LandingPage() {
   const { school } = useSchool();
@@ -39,33 +37,6 @@ export default function LandingPage() {
       sessionStorage.setItem('rasya_ref', ref);
       console.log('Referral code detected and stored:', ref);
     }
-
-    const trackVisitor = async () => {
-      try {
-        const statsRef = doc(db, 'settings', 'stats');
-        const statsSnap = await getDoc(statsRef);
-        
-        let currentCount = 0;
-        if (statsSnap.exists()) {
-          currentCount = statsSnap.data().visitorCount || 0;
-        }
-
-        // Only increment once per session to avoid inflated numbers during navigation
-        const sessionKey = 'rasyatech_visited';
-        if (!sessionStorage.getItem(sessionKey)) {
-          const newCount = currentCount + 1;
-          await setDoc(statsRef, { visitorCount: newCount }, { merge: true });
-          setVisitorCount(newCount);
-          sessionStorage.setItem(sessionKey, 'true');
-        } else {
-          setVisitorCount(currentCount);
-        }
-      } catch (error) {
-        console.error('Error tracking visitor:', error);
-      }
-    };
-
-    trackVisitor();
   }, []);
 
   const schoolName = school?.name || SCHOOL_NAME;

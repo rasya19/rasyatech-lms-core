@@ -3,8 +3,7 @@ import { Globe, Layout as LayoutIcon, Image as ImageIcon, MessageSquare, Setting
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useSchool } from '../contexts/SchoolContext';
-import { db } from '../lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { supabase } from '../lib/supabase';
 
 interface Berita {
   id: string;
@@ -531,13 +530,16 @@ export default function Site() {
                 if (!school) return;
                 setIsSavingIdentity(true);
                 try {
-                  const schoolRef = doc(db, 'schools', school.id);
-                  await updateDoc(schoolRef, {
-                    name: identityForm.name,
-                    npsn: identityForm.npsn,
-                    accreditation: identityForm.accreditation,
-                    logoUrl: identityForm.logoUrl
-                  });
+                  const { error } = await supabase
+                    .from('schools')
+                    .update({
+                      name: identityForm.name,
+                      npsn: identityForm.npsn,
+                      accreditation: identityForm.accreditation,
+                      logoUrl: identityForm.logoUrl
+                    })
+                    .eq('id', school.id);
+                  if (error) throw error;
                   alert('Identitas sekolah berhasil diperbarui!');
                   window.location.reload();
                 } catch (error) {
@@ -717,12 +719,15 @@ export default function Site() {
                 if (!school) return;
                 setIsSavingContact(true);
                 try {
-                  const schoolRef = doc(db, 'schools', school.id);
-                  await updateDoc(schoolRef, {
-                    address: identityForm.address,
-                    whatsapp: identityForm.whatsapp,
-                    adminEmail: identityForm.email
-                  });
+                  const { error } = await supabase
+                    .from('schools')
+                    .update({
+                      address: identityForm.address,
+                      whatsapp: identityForm.whatsapp,
+                      adminEmail: identityForm.email
+                    })
+                    .eq('id', school.id);
+                  if (error) throw error;
                   alert('Info kontak berhasil diperbarui!');
                   window.location.reload();
                 } catch (error) {

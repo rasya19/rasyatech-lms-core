@@ -9,8 +9,6 @@ import { motion } from 'motion/react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
-import { collection, getDocs, query, where, orderBy, doc, getDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
 
 export default function AffiliateDashboard() {
   const [stats, setStats] = useState({
@@ -33,19 +31,25 @@ export default function AffiliateDashboard() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const q = query(collection(db, 'registrations'), where('referralCode', '==', affiliateId));
-      const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+      const { data, error } = await supabase
+        .from('registrations')
+        .select('*')
+        .eq('referralCode', affiliateId);
+        
+      if (error) throw error;
       
-      setReferrals(data);
+      const formattedData = data || [];
+      
+      setReferrals(formattedData);
       setStats({
-        totalReferrals: data.length.toString(),
-        totalConversions: data.filter(s => s.status === 'approved').length.toString(),
-        totalEarnings: `Rp ${(data.length * 500000).toLocaleString('id-ID')}`,
-        currentBalance: `Rp ${(data.length * 350000).toLocaleString('id-ID')}`
+        totalReferrals: formattedData.length.toString(),
+        totalConversions: formattedData.filter(s => s.status === 'approved').length.toString(),
+        totalEarnings: `Rp ${(formattedData.length * 500000).toLocaleString('id-ID')}`,
+        currentBalance: `Rp ${(formattedData.length * 350000).toLocaleString('id-ID')}`
       });
     } catch (error) {
       console.error('Error fetching affiliate data:', error);
+      toast.error('Gagal mengambil data referral.');
     } finally {
       setIsLoading(false);
     }
@@ -173,7 +177,7 @@ export default function AffiliateDashboard() {
                        </td>
                        <td className="px-6 py-6">
                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                             {r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString('id-ID') : 'Memproses...'}
+                             {r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID') : 'Memproses...'}
                           </p>
                        </td>
                        <td className="px-6 py-6 font-mono text-[10px] font-black text-brand-sidebar uppercase italic tracking-widest">

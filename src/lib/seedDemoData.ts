@@ -1,5 +1,4 @@
-import { db } from '../lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 
 export async function seedDemoData() {
@@ -13,7 +12,7 @@ export async function seedDemoData() {
         subscription_plan: 'Silver',
         status: 'active',
         adminEmail: 'demo.silver@example.com',
-        createdAt: serverTimestamp()
+        createdAt: new Date().toISOString()
       },
       {
         id: 'demo-gold',
@@ -23,7 +22,7 @@ export async function seedDemoData() {
         subscription_plan: 'Gold',
         status: 'active',
         adminEmail: 'demo.gold@example.com',
-        createdAt: serverTimestamp()
+        createdAt: new Date().toISOString()
       },
       {
         id: 'demo-platinum',
@@ -33,13 +32,12 @@ export async function seedDemoData() {
         subscription_plan: 'Platinum',
         status: 'active',
         adminEmail: 'demo.platinum@example.com',
-        createdAt: serverTimestamp()
+        createdAt: new Date().toISOString()
       }
     ];
 
-    for (const school of demoSchools) {
-      await setDoc(doc(db, 'schools', school.id), school);
-    }
+    const { error } = await supabase.from('schools').insert(demoSchools);
+    if (error) throw error;
     
     toast.success('Data demo berhasil di-seeding!');
   } catch (error: any) {

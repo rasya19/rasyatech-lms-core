@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, Sparkles, X, Check, Search, Filter, Edit2, Trash2 } from 'lucide-react';
-import { collection, addDoc, onSnapshot, query, serverTimestamp, orderBy, where, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 import { useSchool } from '../contexts/SchoolContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -15,9 +14,9 @@ interface StudentRegistration {
   email: string;
   jk: string;
   nik: string;
-  createdAt: any;
+  created_at: string; // Updated name
   status: 'PENDING' | 'VERIFIED' | 'REJECTED';
-  is_approved: boolean; // NEW FIELD
+  is_approved: boolean;
 }
 
 export default function PPDB() {
@@ -56,23 +55,21 @@ export default function PPDB() {
   useEffect(() => {
     if (!school?.id) return;
     
-    const q = query(
-      collection(db, 'ppdb_registrations'),
-      where('schoolId', '==', school.id),
-      orderBy('createdAt', 'desc')
-    );
+    const fetchRegistrations = async () => {
+      const { data, error } = await supabase
+        .from('ppdb_registrations')
+        .select('*')
+        .eq('school_id', school.id)
+        .order('created_at', { ascending: false });
 
-    const unsub = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as StudentRegistration[];
-      setRegistrations(docs);
-    }, (error) => {
-      console.error("Error fetching registrations:", error);
-    });
-
-    return () => unsub();
+      if (error) {
+        console.error("Error fetching registrations:", error);
+      } else {
+        setRegistrations(data || []);
+      }
+    };
+    
+    fetchRegistrations();
   }, [school?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,13 +78,17 @@ export default function PPDB() {
 
     setIsLoading(true);
     try {
-      await addDoc(collection(db, 'ppdb_registrations'), {
-        ...formData,
-        schoolId: school.id,
-        status: 'PENDING',
-        is_approved: false, // NEW FIELD
-        createdAt: serverTimestamp()
-      });
+      const { error } = await supabase.from('ppdb_registrations').insert([
+        {
+          ...formData,
+          school_id: school.id,
+          status: 'PENDING',
+          is_approved: false,
+          created_at: new Date().toISOString()
+        }
+      ]);
+      
+      if (error) throw error;
       setIsSubmitted(true);
     } catch (error) {
       console.error('Error submitting registration:', error);
@@ -100,10 +101,15 @@ export default function PPDB() {
   
   const handleApprove = async (id: string) => {
     try {
-      await updateDoc(doc(db, 'ppdb_registrations', id), {
-        status: 'VERIFIED',
-        is_approved: true
-      });
+      const { error } = await supabase
+        .from('ppdb_registrations')
+        .update({
+          status: 'VERIFIED',
+          is_approved: true
+        })
+        .eq('id', id);
+        
+      if (error) throw error;
       alert('Pendaftar berhasil diverifikasi!');
     } catch (error) {
       alert('Gagal verifikasi.');
@@ -233,7 +239,7 @@ export default function PPDB() {
                                <p className="text-[10px] text-slate-400">{r.email}</p>
                             </td>
                             <td className="py-4 text-[10px] font-bold text-slate-400">
-                               {r.createdAt && typeof r.createdAt.toDate === 'function' ? format(r.createdAt.toDate(), 'dd/MM/yyyy') : '-'}
+                               {r.created_at ? format(new Date(r.created_at), 'dd/MM/yyyy') : '-'}
                             </td>
                             <td className="py-4">
                                <span className={cn(

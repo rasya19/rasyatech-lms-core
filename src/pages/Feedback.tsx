@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 import { useSchool } from '../contexts/SchoolContext';
 import { Star, MessageSquare } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { toast } from 'sonner';
 
 export default function Feedback() {
   const { school } = useSchool();
@@ -24,19 +24,23 @@ export default function Feedback() {
     e.preventDefault();
     setLoading(true);
     try {
-      await addDoc(collection(db, 'feedbacks'), {
-        schoolId: school?.id || 'unknown',
-        schoolName: school?.name || 'Unknown',
-        name: adminName,
-        role: jabatan,
-        feedback: feedback,
-        ratings: ratings,
-        createdAt: serverTimestamp(),
-      });
+      const { error } = await supabase.from('feedbacks').insert([
+        {
+          school_id: school?.id || 'unknown',
+          school_name: school?.name || 'Unknown',
+          name: adminName,
+          role: jabatan,
+          feedback: feedback,
+          ratings: ratings,
+          created_at: new Date().toISOString(),
+        }
+      ]);
+      
+      if (error) throw error;
       setSubmitted(true);
     } catch (error) {
       console.error('Error submitting feedback:', error);
-      alert('Terjadi kesalahan saat mengirim feedback.');
+      toast.error('Terjadi kesalahan saat mengirim feedback.');
     } finally {
       setLoading(false);
     }

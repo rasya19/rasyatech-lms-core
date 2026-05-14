@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   Check, 
@@ -16,10 +16,7 @@ import { generateInvoicePDF } from '../services/pdfService';
 import { format } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/src/lib/utils';
-import { db, auth } from '@/src/lib/firebase';
-import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { useEffect } from 'react';
+import { supabase } from '@/src/lib/supabase';
 
 const packages = [
   {
@@ -135,22 +132,16 @@ export default function Purchase() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const settingsSnap = await getDoc(doc(db, 'settings', 'payment'));
-        if (settingsSnap.exists()) {
-          const data = settingsSnap.data();
-          // Migration/Normalization
+        const { data, error } = await supabase
+          .from('settings')
+          .select('*')
+          .eq('id', 'payment')
+          .single();
+        if (error && error.code !== 'PGRST116') throw error;
+        if (data) {
           setPaymentSettings({
-            banks: data.banks || (data.bankName ? [{
-              id: 'legacy-bank',
-              name: data.bankName,
-              account: data.bankAccount,
-              recipient: data.bankRecipient
-            }] : []),
-            ewallets: data.ewallets || (data.ewalletNumber ? [{
-              id: 'legacy-ewallet',
-              name: 'E-Wallet',
-              number: data.ewalletNumber
-            }] : []),
+            banks: data.banks || [],
+            ewallets: data.ewallets || [],
             vaInfo: data.vaInfo || ''
           });
         }

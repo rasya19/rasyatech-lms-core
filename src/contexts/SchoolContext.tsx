@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { supabase } from '../lib/supabase';
 
 interface School {
   id: string;
@@ -34,8 +33,6 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Use a ref to keep track of the current school slug to avoid unnecessary fetches
-  // and dependency loops in useEffects that use setSchoolBySlug
   const currentSchoolSlugRef = React.useRef<string | null>(null);
 
   useEffect(() => {
@@ -45,7 +42,6 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const resolveByHostname = async () => {
       const hostname = window.location.hostname;
-      // You can define your production base domain here
       const baseDomain = 'armillalms.id'; 
       
       let slug = '';
@@ -54,7 +50,6 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       if (hostname.endsWith(`.${baseDomain}`)) {
         slug = hostname.replace(`.${baseDomain}`, '');
       } else if (hostname !== baseDomain && !hostname.includes('localhost') && !hostname.includes('run.app')) {
-        // Assume it might be a custom domain if it's not the base domain and not a dev environment
         customDomain = hostname;
       }
 
@@ -63,11 +58,14 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       } else if (customDomain) {
         setLoading(true);
         try {
-          const q = query(collection(db, 'schools'), where('custom_domain', '==', customDomain));
-          const querySnapshot = await getDocs(q);
-          if (!querySnapshot.empty) {
-            const data = querySnapshot.docs[0].data();
-            setSchool({ id: querySnapshot.docs[0].id, ...data } as School);
+          const { data, error } = await supabase
+            .from('schools')
+            .select('*')
+            .eq('custom_domain', customDomain)
+            .single();
+            
+          if (!error && data) {
+            setSchool(data as School);
           }
         } catch (err) {
           console.error('Custom domain resolution error:', err);
@@ -83,30 +81,32 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   const setSchoolBySlug = useCallback(async (slug: string) => {
     const normalizedSlug = slug.toLowerCase();
     
-    // If already loaded and matches slug, do nothing. 
-    // We use the ref to check the latest value without triggering dependency changes.
     if (currentSchoolSlugRef.current === normalizedSlug) return;
     
     setLoading(true);
     setError(null);
     try {
-      const docRef = doc(db, 'schools', normalizedSlug);
-      const docSnap = await getDoc(docRef);
+      // First try fetching by ID (which is the slug in this project based on original code)
+      let { data, error } = await supabase
+        .from('schools')
+        .select('*')
+        .eq('id', normalizedSlug)
+        .single();
       
-      if (docSnap.exists()) {
-        setSchool({ id: docSnap.id, ...docSnap.data() } as School);
+      if (error) {
+        // Fallback: try by slug
+        ({ data, error } = await supabase
+            .from('schools')
+            .select('*')
+            .eq('slug', normalizedSlug)
+            .single());
+      }
+      
+      if (!error && data) {
+        setSchool(data as School);
       } else {
-        // Fallback: try query if migration is not fully complete or for compatibility
-        const q = query(collection(db, 'schools'), where('slug', '==', normalizedSlug));
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-          const doc = querySnapshot.docs[0];
-          setSchool({ id: doc.id, ...doc.data() } as School);
-        } else {
-          setSchool(null);
-          setError('Sekolah tidak ditemukan');
-        }
+        setSchool(null);
+        setError('Sekolah tidak ditemukan');
       }
     } catch (err) {
       console.error('Fetch school error:', err);
@@ -114,7 +114,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, []); // Empty dependencies to keep the function reference stable
+  }, []);
 
   return (
     <SchoolContext.Provider value={{ school, loading, error, setSchoolBySlug }}>
