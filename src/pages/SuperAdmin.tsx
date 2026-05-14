@@ -59,7 +59,10 @@ export default function SuperAdmin() {
       if (activeTab === 'schools') {
         console.log('Fetching schools...');
         const { data, error } = await supabase.from('schools').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching schools:', error);
+          throw error;
+        }
         console.log('Fetched schools:', data);
         setSchools(data || []);
       } else if (activeTab === 'registrations') {
@@ -84,7 +87,10 @@ export default function SuperAdmin() {
       } else if (activeTab === 'affiliates') {
         console.log('Fetching affiliates...');
         const { data, error } = await supabase.from('affiliates').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching affiliates:', error);
+          throw error;
+        }
         console.log('Fetched affiliates:', data);
         setAffiliates(data || []);
       }
