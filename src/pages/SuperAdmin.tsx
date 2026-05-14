@@ -73,6 +73,11 @@ export default function SuperAdmin() {
           throw error;
         }
         console.log('Fetched registrations data from Supabase:', data);
+        if (data && data.length > 0) {
+           console.log('First registration record:', data[0]);
+        } else {
+           console.log('No registrations found in Supabase.');
+        }
         setRegistrations(data?.map(d => ({
           id: d.id,
           name: d.school_name,
