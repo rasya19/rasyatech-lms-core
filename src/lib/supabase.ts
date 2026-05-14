@@ -4,6 +4,10 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const cleanSupabaseUrl = supabaseUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
+console.log('DEBUG SUPABASE URL:', supabaseUrl);
+console.log('DEBUG SUPABASE KEY EXISTS:', !!supabaseAnonKey);
+console.log('DEBUG SUPABASE KEY STARTS WITH eyJ:', supabaseAnonKey.startsWith('eyJ'));
+
 // Buat mock client jika credentials belum diisi agar app tidak crash
 export let supabase: any;
 
