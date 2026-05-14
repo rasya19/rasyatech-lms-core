@@ -41,8 +41,8 @@ export default function RegisterSchool() {
 
       navigate('/');
     } catch (error) {
-      console.error(error);
-      toast.error('Gagal mendaftar. Silakan coba lagi.');
+      console.error('Registration Error:', error);
+      toast.error('Gagal mendaftar. Silakan cek konsol atau coba lagi.');
     } finally {
       setLoading(false);
     }
