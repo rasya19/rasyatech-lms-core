@@ -67,33 +67,25 @@ export default function SuperAdmin() {
         setSchools(data || []);
       } else if (activeTab === 'registrations') {
         console.log('Fetching registrations...');
-        let { data, error } = await supabase.from('registrations').select('*').order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('registrations').select('*').order('created_at', { ascending: false });
+        
+        console.log('DEBUG [SuperAdmin] Result:', { data, error });
         
         if (error) {
           console.error('Error fetching registrations:', error);
           throw error;
         }
         
-        if (!data || data.length === 0) {
-            console.log('Registrations (plural) is empty, trying registration (singular)...');
-            const { data: dataSingular, error: errorSingular } = await supabase.from('registration').select('*').order('created_at', { ascending: false });
-            if (!errorSingular) {
-                console.log('Found data in registration (singular):', dataSingular);
-                data = dataSingular;
-            }
-        }
-        
-        console.log('Fetched registrations data from Supabase:', data);
         setRegistrations(data?.map(d => ({
           id: d.id,
-          name: d.school_name || d.name,
+          name: d.school_name,
           npsn: d.npsn,
-          adminName: d.admin_name || d.adminName,
-          adminEmail: d.admin_email || d.adminEmail,
+          adminName: d.admin_name,
+          adminEmail: d.admin_email,
           whatsapp: d.whatsapp,
           status: d.status,
-          packageId: 'basic', 
-          subscription_plan: 'Silver' 
+          packageId: d.packageId || 'basic',
+          subscription_plan: d.subscription_plan || 'Silver'
         })) || []);
       } else if (activeTab === 'affiliates') {
         console.log('Fetching affiliates...');
