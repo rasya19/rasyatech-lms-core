@@ -180,17 +180,17 @@ export default function Dashboard() {
         return;
       }
 
-      const worksheetData = data.map(row => {
+      const worksheetData = data.map((row: any) => {
         let predikat = 'Kurang';
         if (row.nilai >= 85) predikat = 'Sangat Baik';
         else if (row.nilai >= 70) predikat = 'Baik';
         else if (row.nilai >= 55) predikat = 'Cukup';
 
         return {
-          'Nama Siswa': row.profiles_siswa?.nama,
-          'NISN': row.profiles_siswa?.nisn,
-          'Kelas': row.profiles_siswa?.class,
-          'Nama Ujian': row.bank_soal?.nama_ujian,
+          'Nama Siswa': row.profiles_siswa?.[0]?.nama || row.profiles_siswa?.nama,
+          'NISN': row.profiles_siswa?.[0]?.nisn || row.profiles_siswa?.nisn,
+          'Kelas': row.profiles_siswa?.[0]?.class || row.profiles_siswa?.class,
+          'Nama Ujian': row.bank_soal?.[0]?.nama_ujian || row.bank_soal?.nama_ujian,
           'Skor': row.nilai,
           'Predikat': predikat,
           'Waktu Selesai': new Date(row.end_time).toLocaleString('id-ID')
