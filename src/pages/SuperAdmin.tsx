@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Building2, Users, Rocket, Zap, Search, 
   Plus, Edit2, Trash2, ShieldCheck, 
@@ -9,8 +10,19 @@ import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 
 export default function SuperAdmin() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'schools' | 'registrations' | 'affiliates'>('schools');
   const [isGeneratingDemo, setIsGeneratingDemo] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.email !== 'ismanto095@gmail.com') {
+        navigate('/login');
+      }
+    };
+    checkAuth();
+  }, [navigate]);
 
   const handleGenerateDemoAccounts = async () => {
     setIsGeneratingDemo(true);
