@@ -144,7 +144,9 @@ export default function SuperAdmin() {
         slug: slug,
         npsn: reg.npsn,
         status: 'active',
-        created_at: new Date().toISOString()
+        subscription_plan: reg.subscription_plan || 'Silver',
+        adminEmail: reg.adminEmail,
+        createdAt: new Date().toISOString()
       }]);
       if (schoolError) throw schoolError;
 
@@ -177,7 +179,7 @@ export default function SuperAdmin() {
       } else {
         const { error } = await supabase.from('schools').insert([{
             ...schoolData,
-            created_at: new Date().toISOString()
+            createdAt: new Date().toISOString()
         }]);
         if (error) throw error;
         toast.success('Institusi baru berhasil didaftarkan');
