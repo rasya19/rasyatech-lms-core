@@ -81,6 +81,9 @@ export default function SuperAdmin() {
           throw error;
         }
         console.log('Fetched schools:', data);
+        if (data && data.length > 0) {
+          console.log('Keys in school:', Object.keys(data[0]));
+        }
         setSchools(data || []);
       } else if (activeTab === 'registrations') {
         console.log('Fetching registrations...');
