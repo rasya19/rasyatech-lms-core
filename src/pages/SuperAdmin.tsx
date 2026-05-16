@@ -143,7 +143,6 @@ export default function SuperAdmin() {
         name: reg.name,
         slug: slug,
         npsn: reg.npsn,
-        admin_email: reg.adminEmail,
         status: 'active',
         is_approved: true,
         created_at: new Date().toISOString()
