@@ -24,6 +24,11 @@ export default function SuperAdmin() {
     checkAuth();
   }, [navigate]);
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/super-admin/login');
+  };
+
   const handleGenerateDemoAccounts = async () => {
     setIsGeneratingDemo(true);
     try {
@@ -222,6 +227,12 @@ export default function SuperAdmin() {
         </div>
         
         <div className="relative z-10 flex flex-wrap gap-4 w-full md:w-auto">
+           <button 
+             onClick={handleLogout}
+             className="flex-1 md:flex-none bg-red-600 text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest italic flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-red-600/20"
+           >
+             Sign Out
+           </button>
            <button 
              onClick={handleGenerateDemoAccounts}
              disabled={isGeneratingDemo}
