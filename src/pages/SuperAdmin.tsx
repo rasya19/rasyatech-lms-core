@@ -140,7 +140,7 @@ export default function SuperAdmin() {
       const slug = reg.name.toLowerCase().replace(/\s+/g, '-');
       
       const { error: schoolError } = await supabase.from('schools').insert([{
-        name: reg.name,
+        school_name: reg.name,
         slug: slug,
         npsn: reg.npsn,
         status: 'active',
@@ -162,7 +162,7 @@ export default function SuperAdmin() {
     e.preventDefault();
     try {
       const schoolData = {
-        name: formData.name,
+        school_name: formData.name,
         slug: formData.slug,
         npsn: formData.npsn,
         status: formData.status,
