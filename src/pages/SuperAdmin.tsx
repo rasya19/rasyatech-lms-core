@@ -144,7 +144,6 @@ export default function SuperAdmin() {
         slug: slug,
         npsn: reg.npsn,
         status: 'active',
-        is_approved: true,
         created_at: new Date().toISOString()
       }]);
       if (schoolError) throw schoolError;
@@ -166,7 +165,6 @@ export default function SuperAdmin() {
         name: formData.name,
         slug: formData.slug,
         npsn: formData.npsn,
-        admin_email: formData.adminEmail,
         status: formData.status,
         subscription_plan: formData.subscription_plan,
         expiry_date: formData.expiryDate || null
@@ -179,7 +177,6 @@ export default function SuperAdmin() {
       } else {
         const { error } = await supabase.from('schools').insert([{
             ...schoolData,
-            is_approved: true,
             created_at: new Date().toISOString()
         }]);
         if (error) throw error;
