@@ -50,6 +50,7 @@ import Presensi from './pages/Presensi';
 import AgendaGuru from './pages/AgendaGuru';
 import PresensiSiswa from './pages/PresensiSiswa';
 import SuperAdmin from './pages/SuperAdmin';
+import SuperAdminLogin from './pages/SuperAdminLogin';
 import AffiliateDashboard from './pages/AffiliateDashboard';
 import { toast, Toaster } from 'sonner';
 
@@ -173,6 +174,7 @@ function AppContent() {
       <Route path="/ujian/:id" element={<UjianSiswa />} />
       <Route path="/purchase" element={<Purchase />} />
       <Route path="/super-admin" element={<SuperAdmin />} />
+      <Route path="/super-admin/login" element={<SuperAdminLogin />} />
       <Route path="/affiliate" element={<AffiliateDashboard />} />
       <Route path="/pending-activation" element={<PendingActivation />} />
       <Route path="/register-school" element={<RegisterSchool />} />

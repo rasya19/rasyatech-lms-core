@@ -18,7 +18,7 @@ export default function SuperAdmin() {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || user.email !== 'ismanto095@gmail.com') {
-        navigate('/login');
+        navigate('/super-admin/login');
       }
     };
     checkAuth();
