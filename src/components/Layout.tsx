@@ -273,7 +273,6 @@ export default function Layout() {
               { icon: Book, label: 'Mata Pelajaran', path: `${prefix}/dashboard/mata-pelajaran`, minPlan: 'Silver' },
               { icon: Layers, label: 'Kelola Kelas', path: `${prefix}/dashboard/kelas`, minPlan: 'Silver' },
               { icon: UserPlus, label: 'Data Pendaftar', path: `${prefix}/dashboard/ppdb`, minPlan: 'Silver' },
-              { icon: ScanFace, label: 'Manajemen Pendaftar', path: `/super-admin`, minPlan: 'Silver' },
             ]
           },
           {
