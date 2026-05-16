@@ -86,7 +86,7 @@ export default function SuperAdmin() {
         console.log('Fetching registrations...');
         const { data, error } = await supabase.from('registrations').select('*').order('created_at', { ascending: false });
         
-        console.log('DEBUG [SuperAdmin] RAW data:', data);
+        console.log('DEBUG [SuperAdmin] RAW data (stringified):', JSON.stringify(data));
         console.log('DEBUG [SuperAdmin] Error:', error);
         
         if (error) {
@@ -96,17 +96,20 @@ export default function SuperAdmin() {
         
         console.log('DEBUG [SuperAdmin] Found', data?.length, 'registrations');
         
-        setRegistrations(data?.map(d => ({
+        const mappedData = data?.map(d => ({
           id: d.id,
-          name: d.school_name,
-          npsn: d.npsn,
-          adminName: d.admin_name,
-          adminEmail: d.admin_email,
-          whatsapp: d.whatsapp,
-          status: d.status,
+          name: d.school_name || 'No Name',
+          npsn: d.npsn || '-',
+          adminName: d.admin_name || '-',
+          adminEmail: d.admin_email || '-',
+          whatsapp: d.whatsapp || '-',
+          status: d.status || 'pending',
           packageId: d.packageId || 'basic',
           subscription_plan: d.subscription_plan || 'Silver'
-        })) || []);
+        })) || [];
+        
+        console.log('DEBUG [SuperAdmin] Mapped Data:', mappedData);
+        setRegistrations(mappedData);
       } else if (activeTab === 'affiliates') {
         console.log('Fetching affiliates...');
         const { data, error } = await supabase.from('affiliates').select('*').order('created_at', { ascending: false });
