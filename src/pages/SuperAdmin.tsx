@@ -121,14 +121,18 @@ export default function SuperAdmin() {
         setAffiliates(data || []);
       }
 
-      // Always fetch visitor count
-      const { data: stats, error: statsError } = await supabase.from('settings').select('value').eq('key', 'visitor_count').single();
-      if (!statsError && stats) {
-        setVisitorCount(parseInt(stats.value) || 0);
+      // Robust visitor count fetch: don't let it block other data
+      try {
+        const { data: stats, error: statsError } = await supabase.from('settings').select('value').eq('key', 'visitor_count').single();
+        if (!statsError && stats) {
+          setVisitorCount(parseInt(stats.value) || 0);
+        }
+      } catch (visitorError) {
+        console.warn('Could not fetch visitor count, skipping:', visitorError);
       }
     } catch (error: any) {
       console.error('Error fetching data:', error);
-      toast.error('Gagal memuat data: ' + error.message);
+      toast.error('Gagal memuat data utama: ' + error.message);
     } finally {
       setIsLoading(false);
     }
