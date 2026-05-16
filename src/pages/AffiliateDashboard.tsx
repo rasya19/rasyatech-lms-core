@@ -22,7 +22,7 @@ export default function AffiliateDashboard() {
   const [copied, setCopied] = useState(false);
   
   const affiliateId = localStorage.getItem('affiliateId') || 'RASYA-PARTNER-001';
-  const referralLink = `https://rasyatech.rsch.my.id/purchase?ref=${affiliateId}`;
+  const referralLink = `${window.location.origin}/purchase?ref=${affiliateId}`;
 
   useEffect(() => {
     fetchData();

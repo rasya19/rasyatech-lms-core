@@ -45,7 +45,7 @@ async function startServer() {
         { email: 'platinum@demo.com', plan: 'Platinum' }
       ];
 
-      const password = 'rasyatech123';
+      const password = 'DemoAccount123!';
 
       for (const user of demoUsers) {
         // 1. Delete old user if exists (to be clean)

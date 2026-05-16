@@ -144,25 +144,37 @@ export default function SuperAdmin() {
   const handleApproveRegistration = async (reg: any) => {
     if (!window.confirm(`Aktifkan sekolah "${reg.name}"?`)) return;
     try {
+      console.log('DEBUG [SuperAdmin] Attempting activation for:', reg.name);
       const slug = reg.name.toLowerCase().replace(/\s+/g, '-');
       
-      const { error: schoolError } = await supabase.from('schools').insert([{
-        name: reg.name,
+      // Sanitized object for insertion
+      const schoolData = {
+        school_name: reg.name,
         slug: slug,
-        npsn: reg.npsn,
+        npsn: reg.npsn || null,
         status: 'active',
-        subscription_plan: reg.subscription_plan || 'Silver',
-        adminEmail: reg.adminEmail,
-        createdAt: new Date().toISOString()
-      }]);
-      if (schoolError) throw schoolError;
+        subscription_plan: reg.subscription_plan || 'Silver'
+      };
+      
+      console.log('DEBUG [SuperAdmin] Inserting to schools:', schoolData);
+      
+      const { error: schoolError } = await supabase.from('schools').insert([schoolData]);
+
+      if (schoolError) {
+        console.error('DEBUG [SuperAdmin] School Insert Error:', schoolError);
+        throw Error(`Database Error: ${schoolError.message} (Hint: check if 'admin_email' is being sent)`);
+      }
 
       const { error: regError } = await supabase.from('registrations').update({ status: 'approved', is_approved: true }).eq('id', reg.id);
-      if (regError) throw regError;
+      if (regError) {
+        console.error('DEBUG [SuperAdmin] Reg Update Error:', regError);
+        throw regError;
+      }
       
       toast.success('Sekolah berhasil diaktifkan!');
       fetchAllData();
     } catch (error: any) {
+      console.error('DEBUG [SuperAdmin] Activation Error:', error);
       toast.error('Gagal mengaktifkan: ' + error.message);
     }
   };
@@ -171,7 +183,7 @@ export default function SuperAdmin() {
     e.preventDefault();
     try {
       const schoolData = {
-        name: formData.name,
+        school_name: formData.name,
         slug: formData.slug,
         npsn: formData.npsn,
         status: formData.status,
@@ -185,8 +197,7 @@ export default function SuperAdmin() {
         toast.success('Institusi berhasil diperbarui');
       } else {
         const { error } = await supabase.from('schools').insert([{
-            ...schoolData,
-            createdAt: new Date().toISOString()
+            ...schoolData
         }]);
         if (error) throw error;
         toast.success('Institusi baru berhasil didaftarkan');

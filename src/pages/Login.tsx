@@ -161,7 +161,7 @@ export default function Login() {
       const emailTrimmed = formData.email.trim().toLowerCase();
       const demoAccount = demoAccounts.find(a => a.email.toLowerCase() === emailTrimmed);
       
-      if (demoAccount && formData.password === 'rasyatech123') {
+      if (demoAccount && formData.password === 'DemoAccount123!') {
         localStorage.setItem('userRole', 'Admin');
         localStorage.setItem('isDemoMode', 'true');
         localStorage.setItem('demoPlan', demoAccount.plan);
@@ -423,7 +423,7 @@ export default function Login() {
                        </div>
                     </div>
                     <div className="text-center pt-1">
-                      <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Password: <span className="text-emerald-400">rasyatech123</span></p>
+                      <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Password: <span className="text-emerald-400">DemoAccount123!</span></p>
                     </div>
                  </div>
               </div>
